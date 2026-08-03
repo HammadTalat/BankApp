@@ -1,4 +1,6 @@
 package com.redmath.bankapp.transaction.enums;
 
-public class TransactionIndicator {
+public enum TransactionIndicator {
+    DEBIT,
+    CREDIT,
 }

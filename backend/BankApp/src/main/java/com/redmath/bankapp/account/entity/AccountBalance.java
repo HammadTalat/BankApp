@@ -1,18 +1,9 @@
 package com.redmath.bankapp.account.entity;
 
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.ForeignKey;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -26,7 +17,7 @@ public class AccountBalance {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(
+    @ManyToOne(
             fetch = FetchType.LAZY,
             optional = false
     )
@@ -34,7 +25,6 @@ public class AccountBalance {
             name = "account_number",
             referencedColumnName = "account_number",
             nullable = false,
-            unique = true,
             foreignKey = @ForeignKey(
                     name = "fk_account_balance_account"
             )
@@ -74,6 +64,13 @@ public class AccountBalance {
 
         this.amount = BigDecimal.ZERO;
         this.indicator = BalanceIndicator.NONE;
+        this.balanceDate = LocalDateTime.now();
+    }
+
+    public AccountBalance(BankAccount account, BigDecimal amount, BalanceIndicator indicator) {
+        this.account = account;
+        this.amount = amount;
+        this.indicator = indicator;
         this.balanceDate = LocalDateTime.now();
     }
 

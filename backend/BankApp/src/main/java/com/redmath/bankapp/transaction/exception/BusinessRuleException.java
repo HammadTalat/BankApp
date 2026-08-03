@@ -1,4 +1,4 @@
-package com.redmath.bankapp.exception;
+package com.redmath.bankapp.transaction.exception;
 
 public class BusinessRuleException extends RuntimeException {
 
