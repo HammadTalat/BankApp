@@ -1,4 +1,4 @@
-package com.redmath.bankapp.transaction.dto;
+package com.redmath.bankapp.transaction.enums;
 
 public enum OperationStatus {
     PENDING,

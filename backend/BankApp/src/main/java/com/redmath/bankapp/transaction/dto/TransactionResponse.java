@@ -1,5 +1,6 @@
 package com.redmath.bankapp.transaction.dto;
 import com.redmath.bankapp.transaction.entity.AccountTransaction;
+import com.redmath.bankapp.transaction.enums.TransactionIndicator;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -9,7 +10,7 @@ public record TransactionResponse(
         String operationId,
         String description,
         BigDecimal amount,
-        BalanceIndicator indicator,
+        TransactionIndicator indicator,
         LocalDateTime transactionDate,
         String accountId,          // Primary account number
         String recipientAccountId  // Recipient account number (null for non-transfer ops)

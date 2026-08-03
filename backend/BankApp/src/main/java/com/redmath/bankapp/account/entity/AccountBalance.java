@@ -2,6 +2,8 @@ package com.redmath.bankapp.account.entity;
 
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -65,6 +67,13 @@ public class AccountBalance {
         this.balanceDate = LocalDateTime.now();
     }
 
+    public AccountBalance(BankAccount account, BigDecimal amount, BalanceIndicator indicator) {
+        this.account = account;
+        this.amount = amount;
+        this.indicator = indicator;
+        this.balanceDate = LocalDateTime.now();
+    }
+
     public Long getId() {
         return id;
     }
@@ -85,5 +94,34 @@ public class AccountBalance {
         return indicator;
     }
 
+    public void updateBalance(
+            BigDecimal newAmount,
+            BalanceIndicator newIndicator
+    ) {
+        Objects.requireNonNull(
+                newAmount,
+                "Balance amount is required"
+        );
 
+        Objects.requireNonNull(
+                newIndicator,
+                "Balance indicator is required"
+        );
+
+        if (newAmount.signum() < 0) {
+            throw new IllegalArgumentException(
+                    "Account balance cannot be negative"
+            );
+        }
+
+        if (newIndicator == BalanceIndicator.NONE) {
+            throw new IllegalArgumentException(
+                    "NONE cannot be used for a balance update"
+            );
+        }
+
+        this.amount = newAmount;
+        this.indicator = newIndicator;
+        this.balanceDate = LocalDateTime.now();
+    }
 }

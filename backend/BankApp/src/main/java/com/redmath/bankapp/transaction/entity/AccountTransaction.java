@@ -1,5 +1,8 @@
 package com.redmath.bankapp.transaction.entity;
 
+import com.redmath.bankapp.account.entity.BalanceIndicator;
+import com.redmath.bankapp.account.entity.BankAccount;
+import com.redmath.bankapp.transaction.enums.TransactionIndicator;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -24,12 +27,12 @@ public class AccountTransaction {
 
     // Foreign Key: fk_transaction_account
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "account_id", referencedColumnName = "id", nullable = false)
+    @JoinColumn(name = "account_number", referencedColumnName = "account_number", nullable = false)
     private BankAccount account;
 
     // Foreign Key: fk_transaction_recipient (Nullable for deposits/withdrawals)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "recipient_account_id", referencedColumnName = "id")
+    @JoinColumn(name = "recipient_account_number", referencedColumnName = "account_number")
     private BankAccount recipientAccount;
 
     @Column(name = "description", length = 255, nullable = false)
@@ -40,7 +43,7 @@ public class AccountTransaction {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "indicator", length = 10, nullable = false)
-    private BalanceIndicator indicator;
+    private TransactionIndicator indicator;
 
     @Column(name = "transaction_date", nullable = false, updatable = false)
     private LocalDateTime transactionDate;
