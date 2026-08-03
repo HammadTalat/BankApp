@@ -5,6 +5,7 @@ import com.redmath.bankapp.account.entity.AccountBalance;
 import com.redmath.bankapp.account.entity.AccountBalance;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface AccountBalanceRepository
@@ -15,6 +16,15 @@ public interface AccountBalanceRepository
     );
 
     boolean existsByAccount_AccountNumber(
+            String accountNumber
+    );
+    Optional<AccountBalance>
+    findFirstByAccount_AccountNumberOrderByIdDesc(
+            String accountNumber
+    );
+
+    List<AccountBalance>
+    findAllByAccount_AccountNumberOrderByIdDesc(
             String accountNumber
     );
 }
