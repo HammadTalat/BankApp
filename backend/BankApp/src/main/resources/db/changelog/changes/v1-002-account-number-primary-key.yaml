@@ -1,0 +1,187 @@
+databaseChangeLog:
+
+  - changeSet:
+      id: 007-update-local-credential-foreign-key
+      author: bank-team
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: local_credential
+            constraintName: fk_local_credential_user
+
+        - addForeignKeyConstraint:
+            baseTableName: local_credential
+            baseColumnNames: email
+            referencedTableName: app_user
+            referencedColumnNames: email
+            constraintName: fk_local_credential_user
+            onDelete: RESTRICT
+            onUpdate: CASCADE
+
+
+  - changeSet:
+      id: 008-use-account-number-as-primary-key
+      author: bank-team
+      changes:
+
+        - dropTable:
+            tableName: account_transaction
+
+        - dropTable:
+            tableName: account_balance
+
+        - dropTable:
+            tableName: bank_account
+
+
+        - createTable:
+            tableName: bank_account
+            columns:
+              - column:
+                  name: account_number
+                  type: VARCHAR(20)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: user_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    unique: true
+
+        - addForeignKeyConstraint:
+            baseTableName: bank_account
+            baseColumnNames: user_id
+            referencedTableName: app_user
+            referencedColumnNames: id
+            constraintName: fk_bank_account_user
+            onDelete: RESTRICT
+
+
+        - createTable:
+            tableName: account_balance
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              - column:
+                  name: account_number
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+                    unique: true
+
+              - column:
+                  name: balance_date
+                  type: DATETIME
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: amount
+                  type: DECIMAL(19,2)
+                  defaultValueNumeric: 0.00
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: indicator
+                  type: VARCHAR(10)
+                  defaultValue: NONE
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: account_balance
+            baseColumnNames: account_number
+            referencedTableName: bank_account
+            referencedColumnNames: account_number
+            constraintName: fk_account_balance_account
+            onDelete: RESTRICT
+            onUpdate: CASCADE
+
+
+        - createTable:
+            tableName: account_transaction
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              - column:
+                  name: operation_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: account_number
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: recipient_account_number
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: description
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: amount
+                  type: DECIMAL(19,2)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: indicator
+                  type: VARCHAR(10)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: transaction_date
+                  type: DATETIME
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: account_transaction
+            baseColumnNames: account_number
+            referencedTableName: bank_account
+            referencedColumnNames: account_number
+            constraintName: fk_transaction_account
+            onDelete: RESTRICT
+            onUpdate: CASCADE
+
+        - addForeignKeyConstraint:
+            baseTableName: account_transaction
+            baseColumnNames: recipient_account_number
+            referencedTableName: bank_account
+            referencedColumnNames: account_number
+            constraintName: fk_transaction_recipient
+            onDelete: RESTRICT
+            onUpdate: CASCADE
