@@ -16,3 +16,8 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
+management:
+  logging:
+    export:
+      otlp:
+        enabled: false
