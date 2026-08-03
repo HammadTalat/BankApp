@@ -1,5 +1,9 @@
 package com.redmath.bankapp.user.entity;
 
-public class Role {
+public enum Role {
+
+  ADMIN,
+
+  ACCOUNT_HOLDER
 
 }

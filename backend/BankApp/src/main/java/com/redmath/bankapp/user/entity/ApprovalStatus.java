@@ -1,5 +1,11 @@
 package com.redmath.bankapp.user.entity;
 
-public class ApprovalStatus {
+public enum ApprovalStatus {
+
+  PENDING,
+
+  APPROVED,
+
+  REJECTED
 
 }
