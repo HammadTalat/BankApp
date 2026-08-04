@@ -2,11 +2,14 @@ package com.redmath.bankapp.admin.service;
 
 
 import com.redmath.bankapp.account.entity.AccountBalance;
+import com.redmath.bankapp.account.entity.AccountStatus;
 import com.redmath.bankapp.account.entity.BankAccount;
 import com.redmath.bankapp.account.repository.AccountBalanceRepository;
 import com.redmath.bankapp.account.repository.BankAccountRepository;
+import com.redmath.bankapp.admin.dto.response.AccountClosureResponse;
 import com.redmath.bankapp.admin.dto.response.AdminAccountDetailsResponse;
 import com.redmath.bankapp.admin.dto.response.AdminAccountSummaryResponse;
+import com.redmath.bankapp.admin.exception.InvalidAccountStateException;
 import com.redmath.bankapp.admin.exception.ResourceNotFoundException;
 import com.redmath.bankapp.user.entity.AppUser;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +17,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
 
 @Service
 @RequiredArgsConstructor
@@ -89,5 +94,50 @@ public class AdminAccountService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Balance not found for account: " + accountNumber
                 ));
+    }
+    @Transactional
+    public AccountClosureResponse closeAccount(
+            String accountNumber
+    ) {
+        BankAccount account = findAccount(accountNumber);
+
+        validateAccountIsActive(account);
+
+        AccountBalance latestBalance =
+                findLatestBalance(accountNumber);
+
+        validateZeroBalance(latestBalance);
+
+        account.close();
+
+        BankAccount closedAccount =
+                bankAccountRepository.save(account);
+
+        return new AccountClosureResponse(
+                closedAccount.getAccountNumber(),
+                closedAccount.getStatus(),
+                latestBalance.getAmount()
+        );
+    }
+    private void validateZeroBalance(
+            AccountBalance balance
+    ) {
+        boolean hasRemainingBalance =
+                balance.getAmount().compareTo(BigDecimal.ZERO) != 0;
+
+        if (hasRemainingBalance) {
+            throw new InvalidAccountStateException(
+                    "Account balance must be zero before closing"
+            );
+        }
+    }
+    private void validateAccountIsActive(
+            BankAccount account
+    ) {
+        if (account.getStatus() != AccountStatus.ACTIVE) {
+            throw new InvalidAccountStateException(
+                    "Only active accounts can be closed"
+            );
+        }
     }
 }

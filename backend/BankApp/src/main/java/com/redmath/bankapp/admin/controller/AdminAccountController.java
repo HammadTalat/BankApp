@@ -1,6 +1,7 @@
 package com.redmath.bankapp.admin.controller;
 
 
+import com.redmath.bankapp.admin.dto.response.AccountClosureResponse;
 import com.redmath.bankapp.admin.dto.response.AdminAccountDetailsResponse;
 import com.redmath.bankapp.admin.dto.response.AdminAccountSummaryResponse;
 import com.redmath.bankapp.admin.service.AdminAccountService;
@@ -10,11 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/admin/accounts")
@@ -59,6 +56,14 @@ public class AdminAccountController {
     ) {
         return ResponseEntity.ok(
                 adminAccountService.getAccountDetails(accountNumber)
+        );
+    }
+    @PostMapping("/{accountNumber}/close")
+    public ResponseEntity<AccountClosureResponse> closeAccount(
+            @PathVariable String accountNumber
+    ) {
+        return ResponseEntity.ok(
+                adminAccountService.closeAccount(accountNumber)
         );
     }
 }
