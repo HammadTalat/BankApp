@@ -114,7 +114,7 @@ public class TransactionService {
         balanceRepository.save(newReceiverLedgerEntry);
 
         // 8. Generate Audit Ledger Entries (Operation ID connects DEBIT & CREDIT records)
-        String operationId = "op-" + UUID.randomUUID();
+        String operationId = UUID.randomUUID().toString();
 
         AccountTransaction debitRecord = createLedgerRecord(
                 senderAccount, receiverAccount, request.amount(),
