@@ -2,7 +2,9 @@ package com.redmath.bankapp.admin.controller;
 
 import com.redmath.bankapp.admin.dto.response.AdminUserResponse;
 import com.redmath.bankapp.admin.dto.response.UserApprovalResponse;
+import com.redmath.bankapp.admin.dto.response.UserRejectionResponse;
 import com.redmath.bankapp.admin.service.AdminApprovalService;
+import com.redmath.bankapp.admin.service.AdminRejectionService;
 import com.redmath.bankapp.admin.service.AdminUserService;
 import com.redmath.bankapp.user.entity.ApprovalStatus;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ public class AdminUserController {
 
     private final AdminApprovalService adminApprovalService;
     private final AdminUserService adminUserService;
+    private final AdminRejectionService adminRejectionService;
 
     @GetMapping
 //    @PreAuthorize("hasRole('ADMIN')")
@@ -36,6 +39,14 @@ public class AdminUserController {
     ) {
         return ResponseEntity.ok(
                 adminApprovalService.approveUser(userId)
+        );
+    }
+    @PostMapping("/{userId}/reject")
+    public ResponseEntity<UserRejectionResponse> rejectUser(
+            @PathVariable Long userId
+    ) {
+        return ResponseEntity.ok(
+                adminRejectionService.rejectUser(userId)
         );
     }
 }
