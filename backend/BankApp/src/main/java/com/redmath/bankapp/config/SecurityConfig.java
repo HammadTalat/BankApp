@@ -3,7 +3,6 @@ package com.redmath.bankapp.config;
 import com.redmath.bankapp.auth.security.ApiSecurityService;
 import com.redmath.bankapp.auth.security.ApiAuthenticationFailureHandler;
 import com.redmath.bankapp.auth.security.ApiAuthenticationSuccessHandler;
-import com.redmath.bankapp.auth.security.HttpCookieOAuth2AuthorizationRequestRepository;
 import com.redmath.bankapp.auth.security.OAuth2SuccessHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,20 +25,17 @@ public class SecurityConfig {
 
   private final ApiAuthenticationSuccessHandler apiAuthenticationSuccessHandler;
   private final ApiAuthenticationFailureHandler authenticationFailureHandler;
-  private final HttpCookieOAuth2AuthorizationRequestRepository authorizationRequestRepository;
   private final OAuth2SuccessHandler oAuth2SuccessHandler;
   private final ApiSecurityService apiSecurityService;
 
   public SecurityConfig(
       ApiAuthenticationSuccessHandler apiAuthenticationSuccessHandler,
       ApiAuthenticationFailureHandler authenticationFailureHandler,
-      HttpCookieOAuth2AuthorizationRequestRepository authorizationRequestRepository,
       OAuth2SuccessHandler oAuth2SuccessHandler,
       ApiSecurityService apiSecurityService) {
 
     this.apiAuthenticationSuccessHandler = apiAuthenticationSuccessHandler;
     this.authenticationFailureHandler = authenticationFailureHandler;
-    this.authorizationRequestRepository = authorizationRequestRepository;
     this.oAuth2SuccessHandler = oAuth2SuccessHandler;
     this.apiSecurityService = apiSecurityService;
   }
@@ -126,9 +122,6 @@ public class SecurityConfig {
         )
 
         .oauth2Login(oauth2 -> oauth2
-            .authorizationEndpoint(authorization -> authorization
-                .authorizationRequestRepository(authorizationRequestRepository)
-            )
             .successHandler(oAuth2SuccessHandler)
             .failureHandler(authenticationFailureHandler)
         )

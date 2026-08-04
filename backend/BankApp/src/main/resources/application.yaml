@@ -1,3 +1,6 @@
+server:
+  port: 8081
+
 spring:
   application:
     name: BankApp
@@ -14,7 +17,7 @@ spring:
               - openid
               - profile
               - email
-            redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:8080/login/oauth2/code/google}
+            redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:8081/login/oauth2/code/google}
 
   datasource:
     url: jdbc:postgresql://localhost:5432/banking_db
