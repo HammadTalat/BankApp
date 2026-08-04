@@ -28,12 +28,23 @@ public class AdminAccountService {
     private final AccountBalanceRepository accountBalanceRepository;
 
     @Transactional(readOnly = true)
-    public Page<AdminAccountSummaryResponse> getAllAccounts(
+    public Page<AdminAccountSummaryResponse> getAccounts(
+            String search,
+            AccountStatus status,
             Pageable pageable
     ) {
+        String searchValue = prepareSearchValue(search);
+
         return bankAccountRepository
-                .findAll(pageable)
+                .searchAccounts(searchValue, status, pageable)
                 .map(this::toSummaryResponse);
+    }
+    private String prepareSearchValue(String search) {
+        if (search == null || search.isBlank()) {
+            return null;
+        }
+
+        return search.trim();
     }
 
     @Transactional(readOnly = true)
