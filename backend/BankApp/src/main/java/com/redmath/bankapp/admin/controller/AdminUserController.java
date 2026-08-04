@@ -1,5 +1,6 @@
 package com.redmath.bankapp.admin.controller;
 
+import com.redmath.bankapp.admin.dto.request.UpdateUserRequest;
 import com.redmath.bankapp.admin.dto.response.AdminUserResponse;
 import com.redmath.bankapp.admin.dto.response.UserApprovalResponse;
 import com.redmath.bankapp.admin.dto.response.UserRejectionResponse;
@@ -7,6 +8,7 @@ import com.redmath.bankapp.admin.service.AdminApprovalService;
 import com.redmath.bankapp.admin.service.AdminRejectionService;
 import com.redmath.bankapp.admin.service.AdminUserService;
 import com.redmath.bankapp.user.entity.ApprovalStatus;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -33,6 +35,24 @@ public class AdminUserController {
 
         return ResponseEntity.ok(users);
     }
+    @GetMapping("/{userId}")
+    public ResponseEntity<AdminUserResponse> getUser(
+            @PathVariable Long userId
+    ) {
+        return ResponseEntity.ok(
+                adminUserService.getUserById(userId)
+        );
+    }
+    @PatchMapping("/{userId}")
+    public ResponseEntity<AdminUserResponse> updateUser(
+            @PathVariable Long userId,
+            @Valid @RequestBody UpdateUserRequest request
+    ) {
+        return ResponseEntity.ok(
+                adminUserService.updateUser(userId, request)
+        );
+    }
+
     @PostMapping("/{userId}/approve")
     public ResponseEntity<UserApprovalResponse> approveUser(
             @PathVariable Long userId
