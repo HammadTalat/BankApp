@@ -128,6 +128,8 @@ public class SecurityConfig {
 
             .loginProcessingUrl("/api/v1/auth/login")
 
+          .usernameParameter("email")
+
             .successHandler(apiAuthenticationSuccessHandler)
 
             .failureHandler(authenticationFailureHandler)

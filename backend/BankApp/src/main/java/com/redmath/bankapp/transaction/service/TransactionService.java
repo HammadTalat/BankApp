@@ -7,11 +7,10 @@ import com.redmath.bankapp.account.entity.BalanceIndicator;
 import com.redmath.bankapp.account.entity.BankAccount;
 import com.redmath.bankapp.account.repository.AccountBalanceRepository;
 import com.redmath.bankapp.account.repository.BankAccountRepository;
+import com.redmath.bankapp.transaction.dto.*;
 import com.redmath.bankapp.transaction.exception.BusinessRuleException;
 import com.redmath.bankapp.transaction.exception.InsufficientBalanceException;
 import com.redmath.bankapp.transaction.exception.UnauthorizedAccessException;
-import com.redmath.bankapp.tempconfig.security.UserPrincipal;
-import com.redmath.bankapp.transaction.dto.*;
 import com.redmath.bankapp.transaction.entity.AccountTransaction;
 import com.redmath.bankapp.transaction.enums.OperationStatus;
 import com.redmath.bankapp.transaction.enums.TransactionIndicator;
@@ -22,6 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 import javax.security.auth.login.AccountNotFoundException;
 import java.math.BigDecimal;
@@ -57,7 +57,7 @@ public class TransactionService {
 
 
     @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
-    public TransferResponse executeTransfer(UserPrincipal userPrincipal, TransferRequest request) throws AccountNotFoundException {
+        public TransferResponse executeTransfer(Jwt jwt, TransferRequest request) throws AccountNotFoundException {
         log.info("Processing transfer of {} from {} to {}",
                 request.amount(), request.senderAccountNumber(), request.receiverAccountNumber());
 
@@ -70,7 +70,7 @@ public class TransactionService {
         BankAccount senderAccount = accountRepository.findById(request.senderAccountNumber())
                 .orElseThrow(() -> new AccountNotFoundException("Sender account not found"));
 
-        validateAccountOwnership(senderAccount, userPrincipal);
+        validateAccountOwnership(senderAccount, extractUserId(jwt));
         validateAccountActive(senderAccount, "Sender");
 
         // 3. Fetch receiver account
@@ -142,10 +142,11 @@ public class TransactionService {
 
 
     @Transactional(readOnly = true)
-    public UserTransactionsResponse getUserTransactions(UserPrincipal userPrincipal, Pageable pageable) throws AccountNotFoundException {
-        log.debug("Fetching transaction history for user ID: {}", userPrincipal.getId());
+        public UserTransactionsResponse getUserTransactions(Jwt jwt, Pageable pageable) throws AccountNotFoundException {
+                Long userId = extractUserId(jwt);
+                log.debug("Fetching transaction history for user ID: {}", userId);
 
-        BankAccount account = accountRepository.findByUser_Id(userPrincipal.getId())
+                BankAccount account = accountRepository.findByUser_Id(userId)
                 .orElseThrow(() -> new AccountNotFoundException("No account linked to the current user"));
 
         Page<AccountTransaction> transactionsPage = transactionRepository
@@ -157,13 +158,23 @@ public class TransactionService {
     }
 
 
-    private void validateAccountOwnership(BankAccount account, UserPrincipal principal) {
-        if (!account.getUser().getId().equals(principal.getId())) {
+        private void validateAccountOwnership(BankAccount account, Long userId) {
+                if (!account.getUser().getId().equals(userId)) {
             log.error("Security violation: User {} attempted operation on unowned account {}",
-                    principal.getId(), account.getAccountNumber());
+                                        userId, account.getAccountNumber());
             throw new UnauthorizedAccessException("You are not authorized to execute transactions for this account");
         }
     }
+
+        private Long extractUserId(Jwt jwt) {
+                Object userIdClaim = jwt.getClaims().get("userId");
+
+                if (userIdClaim instanceof Number number) {
+                        return number.longValue();
+                }
+
+                throw new IllegalStateException("JWT does not contain a valid userId claim");
+        }
 
     private void validateAccountActive(BankAccount account, String context) {
         if (account.getStatus() != AccountStatus.ACTIVE) {
