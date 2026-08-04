@@ -35,9 +35,27 @@ public class AdminAccountService {
     ) {
         String searchValue = prepareSearchValue(search);
 
-        return bankAccountRepository
-                .searchAccounts(searchValue, status, pageable)
-                .map(this::toSummaryResponse);
+        Page<BankAccount> accounts;
+
+        if (searchValue == null && status == null) {
+            accounts = bankAccountRepository.findAll(pageable);
+
+        } else if (searchValue == null) {
+            accounts = bankAccountRepository.findAllByStatus(
+                    status,
+                    pageable
+            );
+
+        } else{
+            accounts = bankAccountRepository.searchAccounts(
+                    searchValue,
+                    status,
+                    pageable
+            );
+
+        }
+
+        return accounts.map(this::toSummaryResponse);
     }
     private String prepareSearchValue(String search) {
         if (search == null || search.isBlank()) {

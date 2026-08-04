@@ -41,4 +41,8 @@ public interface BankAccountRepository
             AccountStatus status,
             Pageable pageable
     );
+    Page<BankAccount> findAllByStatus(
+            AccountStatus status,
+            Pageable pageable
+    );
 }
