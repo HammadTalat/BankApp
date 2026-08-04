@@ -26,7 +26,7 @@ public class AdminUserController {
     private final AdminRejectionService adminRejectionService;
 
     @GetMapping
-//    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<AdminUserResponse>> getUsers(
             @RequestParam ApprovalStatus approvalStatus
     ) {

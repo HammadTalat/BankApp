@@ -1,6 +1,7 @@
 package com.redmath.bankapp.admin.controller;
 
 
+import com.redmath.bankapp.account.entity.AccountStatus;
 import com.redmath.bankapp.admin.dto.response.AccountClosureResponse;
 import com.redmath.bankapp.admin.dto.response.AdminAccountDetailsResponse;
 import com.redmath.bankapp.admin.dto.response.AdminAccountSummaryResponse;
@@ -8,6 +9,7 @@ import com.redmath.bankapp.admin.service.AdminAccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,28 +27,26 @@ public class AdminAccountController {
     private final AdminAccountService adminAccountService;
 
     @GetMapping
-    public ResponseEntity<Page<AdminAccountSummaryResponse>>
-    getAllAccounts(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(
-                    defaultValue = "" + DEFAULT_PAGE_SIZE
-            ) int size
+    public ResponseEntity<Page<AdminAccountSummaryResponse>> getAccounts(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) AccountStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
     ) {
-        int safePage = Math.max(page, 0);
-        int safeSize = Math.min(
-                Math.max(size, 1),
-                MAXIMUM_PAGE_SIZE
-        );
+        page = Math.max(page,0);
+        page = Math.min(page,10);
+        size = Math.max(size,0);
+        size = Math.min(size,20);
+        Pageable pageable = PageRequest.of(page, size);
 
-        PageRequest pageRequest = PageRequest.of(
-                safePage,
-                safeSize,
-                Sort.by("accountNumber").ascending()
-        );
+        Page<AdminAccountSummaryResponse> accounts =
+                adminAccountService.getAccounts(
+                        search,
+                        status,
+                        pageable
+                );
 
-        return ResponseEntity.ok(
-                adminAccountService.getAllAccounts(pageRequest)
-        );
+        return ResponseEntity.ok(accounts);
     }
 
     @GetMapping("/{accountNumber}")
