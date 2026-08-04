@@ -1,6 +1,7 @@
 package com.redmath.bankapp.account.repository;
 
 
+import com.redmath.bankapp.account.entity.AccountStatus;
 import com.redmath.bankapp.account.entity.BankAccount;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -17,4 +18,5 @@ public interface BankAccountRepository
     boolean existsByUser_Id(
             Long userId
     );
+    long countByStatus(AccountStatus status);
 }

@@ -22,5 +22,9 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> {
           String email,
           Long userId
   );
+  long countByRoleAndApprovalStatus(
+          Role role,
+          ApprovalStatus approvalStatus
+  );
 
 }
