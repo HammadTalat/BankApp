@@ -44,7 +44,7 @@ public class OAuthUserResolver {
         .email(email)
         .address("Not provided")
         .role(Role.ACCOUNT_HOLDER)
-        .approvalStatus(ApprovalStatus.APPROVED)
+        .approvalStatus(ApprovalStatus.PENDING)
         .build();
 
     return appUserRepository.save(appUser);
