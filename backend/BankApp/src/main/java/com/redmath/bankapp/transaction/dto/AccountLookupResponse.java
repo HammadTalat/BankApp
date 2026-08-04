@@ -1,5 +1,8 @@
 package com.redmath.bankapp.transaction.dto;
 
+import com.redmath.bankapp.account.entity.AccountStatus;
+import com.redmath.bankapp.account.entity.BankAccount;
+
 public record AccountLookupResponse(
         String accountNumber,
         String accountHolderName,
@@ -15,7 +18,7 @@ public record AccountLookupResponse(
 
         // Extract user's name if available (e.g. "Talha Ahmed" -> "Talha A.")
         String fullName = account.getUser() != null
-                ? formatHolderName(account.getUser().getFirstName(), account.getUser().getLastName())
+                ? account.getUser().getName()
                 : "Unknown";
 
         return new AccountLookupResponse(

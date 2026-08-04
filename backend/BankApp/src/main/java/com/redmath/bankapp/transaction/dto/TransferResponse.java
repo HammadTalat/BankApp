@@ -1,5 +1,7 @@
 package com.redmath.bankapp.transaction.dto;
 
+import com.redmath.bankapp.transaction.enums.OperationStatus;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
