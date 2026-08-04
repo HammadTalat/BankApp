@@ -1,0 +1,16 @@
+# Dedicated Test Database Connection
+spring:
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+  datasource:
+    url: jdbc:postgresql://localhost:5432/banking_db
+    username: postgres
+    password: postgres
+
+
+  # Schema Management
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+
