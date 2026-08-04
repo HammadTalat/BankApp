@@ -18,6 +18,9 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> {
           Role role,
           ApprovalStatus approvalStatus
   );
-
+  boolean existsByEmailIgnoreCaseAndIdNot(
+          String email,
+          Long userId
+  );
 
 }
