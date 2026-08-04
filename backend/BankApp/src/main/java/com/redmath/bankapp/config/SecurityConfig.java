@@ -130,6 +130,7 @@ public class SecurityConfig {
                 .authorizationRequestRepository(authorizationRequestRepository)
             )
             .successHandler(oAuth2SuccessHandler)
+            .failureHandler(authenticationFailureHandler)
         )
 
         .oauth2ResourceServer(resource ->

@@ -24,7 +24,7 @@ public class OAuthUserResolver {
     AppUser appUser = appUserRepository.findByEmail(email)
         .orElseGet(() -> createGoogleUser(oauth2User));
 
-    if (appUser.getApprovalStatus() != ApprovalStatus.APPROVED) {
+    if (appUser.getApprovalStatus() == ApprovalStatus.PENDING) {
       throw new OAuth2AuthenticationException(
           new OAuth2Error("account_not_approved"),
           "Your account is awaiting administrator approval."
@@ -42,7 +42,7 @@ public class OAuthUserResolver {
     AppUser appUser = AppUser.builder()
         .name(name)
         .email(email)
-        .address("Not provided")
+        .address("")
         .role(Role.ACCOUNT_HOLDER)
         .approvalStatus(ApprovalStatus.PENDING)
         .build();

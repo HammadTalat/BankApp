@@ -14,6 +14,7 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.CredentialsExpiredException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
@@ -37,6 +38,23 @@ public class ApiAuthenticationFailureHandler
     if (exception instanceof DisabledException) {
 
       message = "Your account is awaiting administrator approval.";
+
+    } else if (exception instanceof OAuth2AuthenticationException oauth2Exception) {
+
+      String description = oauth2Exception.getError().getDescription();
+
+      if (description != null && !description.isBlank()) {
+        message = description;
+      } else if (oauth2Exception.getError().getErrorCode() != null) {
+        message = switch (oauth2Exception.getError().getErrorCode()) {
+          case "access_denied" -> "Google sign-in was cancelled or denied.";
+          case "invalid_request" -> "Google sign-in request was invalid.";
+          case "server_error" -> "Google sign-in service is temporarily unavailable.";
+          default -> "Google sign-in failed.";
+        };
+      } else {
+        message = "Google sign-in failed.";
+      }
 
     } else if (exception instanceof LockedException) {
 
