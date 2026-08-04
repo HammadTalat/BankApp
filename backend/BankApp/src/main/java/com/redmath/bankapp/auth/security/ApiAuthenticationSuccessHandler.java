@@ -35,7 +35,7 @@ public class ApiAuthenticationSuccessHandler
     AppUser appUser = userDetails.getAppUser();
 
     String accessToken =
-        apiSecurityService.generateToken(userDetails);
+        apiSecurityService.generateToken(appUser);
 
     AuthResponse authResponse = new AuthResponse(
         accessToken,

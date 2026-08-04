@@ -8,8 +8,6 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.time.Instant;
 import java.util.UUID;
-import java.util.stream.Collectors;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
@@ -80,16 +78,11 @@ public class ApiSecurityService {
   /**
    * Generates JWT for authenticated user.
    */
-  public String generateToken(CustomUserDetails userDetails) {
+  public String generateToken(AppUser appUser) {
 
     Instant now = Instant.now();
 
-    AppUser appUser = userDetails.getAppUser();
-
-    String scope = userDetails.getAuthorities()
-        .stream()
-        .map(GrantedAuthority::getAuthority)
-        .collect(Collectors.joining(" "));
+    String scope = "ROLE_" + appUser.getRole().name();
 
     JwtClaimsSet claims = JwtClaimsSet.builder()
 
