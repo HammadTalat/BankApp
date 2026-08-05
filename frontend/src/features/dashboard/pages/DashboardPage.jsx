@@ -7,12 +7,34 @@ export const DashboardPage = () => {
     const [copied, setCopied] = useState(false);
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    // Balance states
+    const [balance, setBalance] = useState("25500.00");
+    const [refreshingBalance, setRefreshingBalance] = useState(false);
+
     const navigate = useNavigate();
 
     const accountNumber = "5839 2017 4638 2915";
 
+    // Fetch account balance from backend
+    const fetchBalance = () => {
+        setRefreshingBalance(true);
+        httpClient
+            .get("/api/v1/account/balance")
+            .then((data) => {
+                // BalanceResponse JSON contains { "amount": 25500.00 }
+                if (data?.amount !== undefined) {
+                    setBalance(data.amount);
+                }
+            })
+            .catch((err) => {
+                console.error("Failed to refresh balance:", err);
+            })
+            .finally(() => setRefreshingBalance(false));
+    };
+
     useEffect(() => {
-        // Fetch recent transactions from OpenAPI backend endpoint
+        // Fetch recent transactions
         httpClient
             .get("/api/v1/transaction/get-transactions?page=0&size=5")
             .then((data) => {
@@ -24,6 +46,9 @@ export const DashboardPage = () => {
                 console.error("Failed to load transactions:", err);
             })
             .finally(() => setLoading(false));
+
+        // Initial balance fetch
+        fetchBalance();
     }, []);
 
     const handleCopyAccount = () => {
@@ -105,11 +130,40 @@ export const DashboardPage = () => {
                     {/* Available Balance Card */}
                     <div className="lg:col-span-2 bg-[#2563EB] rounded-2xl p-8 text-white flex flex-col justify-between shadow-sm">
                         <div>
-                            <p className="text-blue-100 text-sm font-medium">
-                                Available Balance
-                            </p>
+                            <div className="flex items-center justify-between">
+                                <p className="text-blue-100 text-sm font-medium">
+                                    Available Balance
+                                </p>
+                                {/* Balance Refresh Button */}
+                                <button
+                                    onClick={fetchBalance}
+                                    disabled={refreshingBalance}
+                                    title="Refresh Balance"
+                                    className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-blue-100 hover:text-white transition-colors disabled:opacity-50"
+                                >
+                                    <svg
+                                        className={`w-4 h-4 ${
+                                            refreshingBalance ? "animate-spin" : ""
+                                        }`}
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth="2"
+                                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                        />
+                                    </svg>
+                                </button>
+                            </div>
+
                             <h3 className="text-4xl font-extrabold mt-3 tracking-tight">
-                                PKR 25,500.00
+                                PKR {Number(balance).toLocaleString("en-US", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                            })}
                             </h3>
                             <p className="text-blue-200 text-xs mt-3">
                                 Updated a few moments ago
