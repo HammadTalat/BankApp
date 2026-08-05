@@ -6,9 +6,9 @@ import {
 
 import { Link } from "react-router";
 
-import { ROUTES } from "../../../routes/routePaths";
+import { ROUTES } from "../routes/routePaths";
 
-function ApplicationStatusPage() {
+function HomePage() {
     return (
         <main className="flex min-h-screen items-center justify-center bg-brand-background px-5 py-10">
             <section className="w-full max-w-xl rounded-3xl border border-brand-border bg-white p-8 text-center shadow-sm sm:p-12">
@@ -56,4 +56,4 @@ function ApplicationStatusPage() {
     );
 }
 
-export default ApplicationStatusPage;
+export default HomePage;
