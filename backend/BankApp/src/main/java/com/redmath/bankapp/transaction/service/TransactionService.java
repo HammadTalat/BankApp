@@ -66,17 +66,22 @@ public class TransactionService {
             throw new BusinessRuleException("Sender and receiver accounts cannot be the same");
         }
 
-        // 2. Fetch sender account & verify security principal ownership
-        BankAccount senderAccount = accountRepository.findById(request.senderAccountNumber())
-                .orElseThrow(() -> new AccountNotFoundException("Sender account not found"));
+        // 2. Lock accounts in deterministic order to prevent DB deadlocks
+        boolean senderFirst = request.senderAccountNumber().compareTo(request.receiverAccountNumber()) < 0;
+        String firstAcc = senderFirst ? request.senderAccountNumber() : request.receiverAccountNumber();
+        String secondAcc = senderFirst ? request.receiverAccountNumber() : request.senderAccountNumber();
+
+        // Lock both parent accounts first (FOR UPDATE on bank_accounts table)
+        BankAccount firstAccount = accountRepository.findByIdForUpdate(firstAcc)
+                .orElseThrow(() -> new AccountNotFoundException("Account not found: " + firstAcc));
+        BankAccount secondAccount = accountRepository.findByIdForUpdate(secondAcc)
+                .orElseThrow(() -> new AccountNotFoundException("Account not found: " + secondAcc));
+
+        BankAccount senderAccount = senderFirst ? firstAccount : secondAccount;
+        BankAccount receiverAccount = senderFirst ? secondAccount : firstAccount;
 
         validateAccountOwnership(senderAccount, extractUserId(jwt));
         validateAccountActive(senderAccount, "Sender");
-
-        // 3. Fetch receiver account
-        BankAccount receiverAccount = accountRepository.findById(request.receiverAccountNumber())
-                .orElseThrow(() -> new AccountNotFoundException("Receiver account not found"));
-
         validateAccountActive(receiverAccount, "Receiver");
 
         // 4. Pessimistically Lock Sender Balance to prevent Race Conditions (Double-Spend)
@@ -114,7 +119,7 @@ public class TransactionService {
         balanceRepository.save(newReceiverLedgerEntry);
 
         // 8. Generate Audit Ledger Entries (Operation ID connects DEBIT & CREDIT records)
-        String operationId = "op-" + UUID.randomUUID();
+        String operationId = UUID.randomUUID().toString();
 
         AccountTransaction debitRecord = createLedgerRecord(
                 senderAccount, receiverAccount, request.amount(),

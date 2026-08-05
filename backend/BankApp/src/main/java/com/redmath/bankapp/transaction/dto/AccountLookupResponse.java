@@ -28,12 +28,4 @@ public record AccountLookupResponse(
         );
     }
 
-    /**
-     * Optional helper to mask/format name for privacy (e.g., "John Doe" -> "John D.")
-     */
-    private static String formatHolderName(String firstName, String lastName) {
-        if (firstName == null) return "Unknown";
-        if (lastName == null || lastName.isBlank()) return firstName;
-        return firstName + " " + lastName.charAt(0) + ".";
-    }
 }

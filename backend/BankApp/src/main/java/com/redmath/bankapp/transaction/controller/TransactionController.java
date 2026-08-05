@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import javax.security.auth.login.AccountNotFoundException;
@@ -37,9 +38,14 @@ public class TransactionController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PostMapping("/get-transactions")
+    @GetMapping("/get-transactions")
     public ResponseEntity<UserTransactionsResponse> getUserTransactions(@AuthenticationPrincipal Jwt jwt, @PageableDefault(page = 0, size = 10) Pageable pageable) throws AccountNotFoundException {
-        UserTransactionsResponse response = transactionService.getUserTransactions(jwt, pageable);
+
+        if (jwt == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // 401 instead of 500
+        }
+
+      UserTransactionsResponse response = transactionService.getUserTransactions(jwt, pageable);
         return ResponseEntity.ok(response);
     }
 

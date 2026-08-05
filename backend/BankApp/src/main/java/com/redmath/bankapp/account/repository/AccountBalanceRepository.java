@@ -2,7 +2,6 @@ package com.redmath.bankapp.account.repository;
 
 
 import com.redmath.bankapp.account.entity.AccountBalance;
-import com.redmath.bankapp.account.entity.AccountBalance;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -26,4 +25,11 @@ public interface AccountBalanceRepository
     @Query("SELECT b FROM AccountBalance b WHERE b.account.accountNumber = :accountNumber ORDER BY b.id DESC LIMIT 1")
     Optional<AccountBalance> findLatestBalanceForUpdate(@Param("accountNumber") String accountNumber);
 
+    @Query("SELECT b FROM AccountBalance  b WHERE b.account.accountNumber = :accountNumber ORDER BY b.id DESC LIMIT 1")
+    Optional<AccountBalance> findLatestBalance(@Param("accountNumber") String accountNumber);
+
+    Optional<AccountBalance>
+    findFirstByAccount_AccountNumberOrderByIdDesc(
+            String accountNumber
+    );
 }
