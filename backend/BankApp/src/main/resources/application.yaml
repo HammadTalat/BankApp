@@ -47,6 +47,3 @@ management:
     export:
       otlp:
         enabled: false
-logging:
-  level:
-    root: debug

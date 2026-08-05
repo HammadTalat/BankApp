@@ -1,7 +1,8 @@
 package com.redmath.bankapp;
 
 import com.redmath.bankapp.account.entity.AccountStatus;
-import com.redmath.bankapp.tempconfig.security.UserPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import com.redmath.bankapp.transaction.controller.TransactionController;
 import com.redmath.bankapp.transaction.dto.AccountLookupResponse;
 import com.redmath.bankapp.transaction.dto.TransferRequest;
@@ -19,9 +20,6 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -43,12 +41,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
+import com.redmath.bankapp.auth.security.ApiSecurityService;
+import com.redmath.bankapp.auth.security.PendingProfileAccessManager;
+
 @WebMvcTest(TransactionController.class)
-@AutoConfigureMockMvc(addFilters = true) // Bypasses Spring Security filters to isolate controller logic
+@AutoConfigureMockMvc
 class TransactionControllerTest {
 
-    private SecurityContext mockSecurityContext;
-    private UserPrincipal mockUserPrincipal;
+    private Jwt mockJwt;
 
     @Autowired
     private MockMvc mockMvc;
@@ -59,13 +59,19 @@ class TransactionControllerTest {
     @MockitoBean
     private TransactionService transactionService;
 
+    @MockitoBean
+    private ApiSecurityService apiSecurityService;
+
+    @MockitoBean
+    private PendingProfileAccessManager pendingProfileAccessManager;
+
     @BeforeEach
     void setUp() {
-        mockUserPrincipal = new UserPrincipal(1L, "user@bank.com", "PASS", Collections.emptyList());
-        UsernamePasswordAuthenticationToken auth =
-                new UsernamePasswordAuthenticationToken(mockUserPrincipal, null, mockUserPrincipal.getAuthorities());
-
-        mockSecurityContext = new SecurityContextImpl(auth);
+        mockJwt = Jwt.withTokenValue("mock-token")
+                .header("alg", "none")
+                .claim("userId", 1L)
+                .claim("sub", "user@bank.com")
+                .build();
     }
 
     // ==========================================
@@ -152,12 +158,12 @@ class TransactionControllerTest {
                     LocalDateTime.now()
             );
 
-            given(transactionService.executeTransfer(any(UserPrincipal.class), any(TransferRequest.class)))
+            given(transactionService.executeTransfer(any(Jwt.class), any(TransferRequest.class)))
                     .willReturn(mockResponse);
 
             mockMvc.perform(post("/api/v1/transaction/transfer")
                             .with(csrf())
-                            .with(securityContext(mockSecurityContext))
+                            .with(jwt().jwt(mockJwt))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isCreated())
@@ -167,7 +173,7 @@ class TransactionControllerTest {
                     .andExpect(jsonPath("$.senderAccountNumber").value("PK1000000001"))
                     .andExpect(jsonPath("$.receiverAccountNumber").value("PK2000000002"));
 
-            verify(transactionService).executeTransfer(any(UserPrincipal.class), any(TransferRequest.class));
+            verify(transactionService).executeTransfer(any(Jwt.class), any(TransferRequest.class));
         }
 
         @Test
@@ -183,7 +189,7 @@ class TransactionControllerTest {
 
             mockMvc.perform(post("/api/v1/transaction/transfer")
                             .with(csrf())
-                            .with(user(mockUserPrincipal))
+                            .with(jwt().jwt(mockJwt))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(invalidRequest)))
                     .andExpect(status().isBadRequest());
@@ -205,25 +211,25 @@ class TransactionControllerTest {
         void getUserTransactions_Authenticated_Success() throws Exception {
             UserTransactionsResponse mockResponse = new UserTransactionsResponse(Collections.emptyList(), 0, 10, 0L, true);
 
-            given(transactionService.getUserTransactions(any(UserPrincipal.class), any(Pageable.class)))
+            given(transactionService.getUserTransactions(any(Jwt.class), any(Pageable.class)))
                     .willReturn(mockResponse);
 
             mockMvc.perform(get("/api/v1/transaction/get-transactions")
-                            .with(user(mockUserPrincipal))
+                            .with(jwt().jwt(mockJwt))
                             .param("page", "0")
                             .param("size", "10"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.totalElements").value(0));
 
-            verify(transactionService).getUserTransactions(any(UserPrincipal.class), eq(PageRequest.of(0, 10)));
+            verify(transactionService).getUserTransactions(any(Jwt.class), eq(PageRequest.of(0, 10)));
         }
 
         @Test
-        @DisplayName("Should return 401 Unauthorized when UserPrincipal is null")
+        @DisplayName("Should return 302 Found redirect when Jwt is unauthenticated")
         void getUserTransactions_Unauthenticated_Returns401() throws Exception {
-            // Call endpoint without passing .with(user(...))
+            // Call endpoint without passing .with(jwt(...))
             mockMvc.perform(get("/api/v1/transaction/get-transactions"))
-                    .andExpect(status().isUnauthorized());
+                    .andExpect(status().isFound());
 
             verifyNoInteractions(transactionService);
         }

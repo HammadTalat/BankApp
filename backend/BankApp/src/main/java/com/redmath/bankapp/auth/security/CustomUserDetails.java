@@ -2,7 +2,6 @@ package com.redmath.bankapp.auth.security;
 
 import com.redmath.bankapp.auth.entity.LocalCredential;
 import com.redmath.bankapp.user.entity.AppUser;
-import com.redmath.bankapp.user.entity.ApprovalStatus;
 import java.util.Collection;
 import java.util.List;
 import lombok.Getter;

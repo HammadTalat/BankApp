@@ -20,6 +20,8 @@ public class ApiAuthenticationSuccessHandler
 
   private final ApiSecurityService apiSecurityService;
 
+  private final AuthCookieService authCookieService;
+
   private final ObjectMapper objectMapper;
 
   @Override
@@ -37,8 +39,10 @@ public class ApiAuthenticationSuccessHandler
     String accessToken =
         apiSecurityService.generateToken(appUser);
 
+    authCookieService.addAccessToken(response, accessToken);
+
     AuthResponse authResponse = new AuthResponse(
-        accessToken,
+        null,
         "Bearer",
         ApiSecurityService.TOKEN_EXPIRATION_SECONDS,
         appUser.getEmail(),

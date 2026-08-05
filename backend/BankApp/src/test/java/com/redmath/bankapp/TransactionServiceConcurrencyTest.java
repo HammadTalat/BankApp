@@ -6,7 +6,7 @@ import com.redmath.bankapp.account.entity.BalanceIndicator;
 import com.redmath.bankapp.account.entity.BankAccount;
 import com.redmath.bankapp.account.repository.AccountBalanceRepository;
 import com.redmath.bankapp.account.repository.BankAccountRepository;
-import com.redmath.bankapp.tempconfig.security.UserPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import com.redmath.bankapp.transaction.dto.TransferRequest;
 import com.redmath.bankapp.transaction.exception.InsufficientBalanceException;
 import com.redmath.bankapp.transaction.repository.AccountTransactionRepository;
@@ -50,8 +50,8 @@ class TransactionServiceConcurrencyTest {
     private AccountTransactionRepository transactionRepository;
 
 
-    private UserPrincipal userPrincipal1;
-    private UserPrincipal userPrincipal2;
+    private Jwt jwt1;
+    private Jwt jwt2;
 
     @BeforeEach
     void setUpDatabase() {
@@ -81,8 +81,8 @@ class TransactionServiceConcurrencyTest {
         userRepository.saveAndFlush(user1);
         userRepository.saveAndFlush(user2);
 
-        userPrincipal1 = new UserPrincipal(user1.getId(), user1.getName(), user1.getEmail(), Collections.emptyList());
-        userPrincipal2 = new UserPrincipal(user2.getId(), user2.getName(), user2.getEmail(), Collections.emptyList());
+        jwt1 = Jwt.withTokenValue("token1").header("alg", "none").claim("userId", user1.getId()).claim("sub", user1.getEmail()).build();
+        jwt2 = Jwt.withTokenValue("token2").header("alg", "none").claim("userId", user2.getId()).claim("sub", user2.getEmail()).build();
 
 
         // 3. Create Accounts
@@ -146,7 +146,7 @@ class TransactionServiceConcurrencyTest {
                 readyLatch.countDown(); // Signal thread is ready
                 try {
                     startLatch.await(); // Wait for green light
-                    transactionService.executeTransfer(userPrincipal1, request);
+                    transactionService.executeTransfer(jwt1, request);
                     successCount.incrementAndGet();
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -194,7 +194,7 @@ class TransactionServiceConcurrencyTest {
             executor.submit(() -> {
                 try {
                     startLatch.await();
-                    transactionService.executeTransfer(userPrincipal1, request);
+                    transactionService.executeTransfer(jwt1, request);
                     successCount.incrementAndGet();
                 } catch (Throwable t) {
                     t.printStackTrace();
@@ -233,12 +233,12 @@ class TransactionServiceConcurrencyTest {
 
         Future<?> future1 = executor.submit(() -> {
             startLatch.await();
-            return transactionService.executeTransfer(userPrincipal1, req1);
+            return transactionService.executeTransfer(jwt1, req1);
         });
 
         Future<?> future2 = executor.submit(() -> {
             startLatch.await();
-            return transactionService.executeTransfer(userPrincipal2, req2);
+            return transactionService.executeTransfer(jwt2, req2);
         });
 
         startLatch.countDown(); // Launch both at once

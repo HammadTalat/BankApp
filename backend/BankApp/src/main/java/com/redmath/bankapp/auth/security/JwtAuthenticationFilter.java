@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -33,9 +32,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       FilterChain filterChain)
       throws ServletException, IOException {
 
-    String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+    String token = getAccessToken(request);
 
-    if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+    if (token == null) {
       filterChain.doFilter(request, response);
       return;
     }
@@ -48,14 +47,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       return;
     }
 
-    String token = authorizationHeader.substring(7);
-
     try {
       Jwt jwt = apiSecurityService.decodeToken(token);
       List<GrantedAuthority> authorities = extractAuthorities(jwt);
 
       UsernamePasswordAuthenticationToken authentication =
-          new UsernamePasswordAuthenticationToken(jwt.getSubject(), token, authorities);
+          new UsernamePasswordAuthenticationToken(jwt, token, authorities);
 
       authentication.setDetails(jwt);
       SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -65,6 +62,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     filterChain.doFilter(request, response);
 
+  }
+
+  private String getAccessToken(HttpServletRequest request) {
+    if (request.getCookies() == null) {
+      return null;
+    }
+
+    return Arrays.stream(request.getCookies())
+        .filter(cookie -> AuthCookieService.ACCESS_TOKEN_COOKIE.equals(cookie.getName()))
+        .map(cookie -> cookie.getValue())
+        .filter(value -> !value.isBlank())
+        .findFirst()
+        .orElse(null);
   }
 
   private List<GrantedAuthority> extractAuthorities(Jwt jwt) {

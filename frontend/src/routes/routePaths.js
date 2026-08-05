@@ -1,5 +1,9 @@
 export const ROUTES = {
     HOME: "/",
+    LOGIN: "/login",
+    SIGNUP: "/signup",
+    COMPLETE_GOOGLE_PROFILE: "/complete-profile",
+    AUTH_TEST: "/auth-test",
     COMPONENTS: "/components",
     APPLICATION_STATUS: "/application-status",
 

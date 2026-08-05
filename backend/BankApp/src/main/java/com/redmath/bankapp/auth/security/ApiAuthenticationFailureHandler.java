@@ -4,11 +4,13 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
@@ -25,6 +27,9 @@ public class ApiAuthenticationFailureHandler
     implements AuthenticationFailureHandler {
 
   private final ObjectMapper objectMapper;
+
+  @Value("${app.frontend-url:http://localhost:5173}")
+  private String frontendUrl;
 
   @Override
   public void onAuthenticationFailure(
@@ -88,6 +93,13 @@ public class ApiAuthenticationFailureHandler
 
     }
 
+    if (isOAuthRequest(request)) {
+      response.sendRedirect(frontendUrl.replaceAll("/$", "")
+          + "/login#oauthError="
+          + URLEncoder.encode(message, StandardCharsets.UTF_8));
+      return;
+    }
+
     Map<String, Object> body = new LinkedHashMap<>();
 
     body.put("timestamp", Instant.now());
@@ -127,6 +139,12 @@ public class ApiAuthenticationFailureHandler
         body
     );
 
+  }
+
+  private boolean isOAuthRequest(HttpServletRequest request) {
+    String requestUri = request.getRequestURI();
+    return requestUri.startsWith("/oauth2/")
+        || requestUri.startsWith("/login/oauth2/");
   }
 
 }

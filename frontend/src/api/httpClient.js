@@ -1,11 +1,4 @@
-import {
-    ACCESS_TOKEN_KEY,
-    API_BASE_URL,
-} from "./apiConfig";
-
-function getAccessToken() {
-    return localStorage.getItem(ACCESS_TOKEN_KEY);
-}
+import { API_BASE_URL } from "./apiConfig";
 
 async function readResponse(response) {
     if (response.status === 204) {
@@ -47,8 +40,6 @@ function getErrorMessage(data, response) {
 }
 
 async function request(path, options = {}) {
-    const token = getAccessToken();
-
     const headers = new Headers(options.headers);
 
     const requestHasBody = options.body !== undefined;
@@ -56,10 +47,6 @@ async function request(path, options = {}) {
 
     if (requestHasBody && !bodyIsFormData) {
         headers.set("Content-Type", "application/json");
-    }
-
-    if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
     }
 
     const response = await fetch(

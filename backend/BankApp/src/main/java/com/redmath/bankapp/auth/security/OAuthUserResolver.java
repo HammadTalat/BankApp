@@ -1,6 +1,5 @@
 package com.redmath.bankapp.auth.security;
 
-import com.redmath.bankapp.auth.security.IncompleteProfileOAuth2Exception;
 import com.redmath.bankapp.user.entity.AppUser;
 import com.redmath.bankapp.user.entity.ApprovalStatus;
 import com.redmath.bankapp.user.entity.Role;

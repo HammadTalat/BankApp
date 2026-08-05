@@ -2,8 +2,10 @@ package com.redmath.bankapp.auth.controller;
 
 import com.redmath.bankapp.auth.dto.request.SignupRequest;
 import com.redmath.bankapp.auth.dto.response.SignupResponse;
+import com.redmath.bankapp.auth.security.AuthCookieService;
 import com.redmath.bankapp.auth.service.AuthService;
 import jakarta.validation.Valid;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
   private final AuthService authService;
+  private final AuthCookieService authCookieService;
 
   @PostMapping("/signup")
   public ResponseEntity<SignupResponse> signup(
@@ -25,6 +28,12 @@ public class AuthController {
     return ResponseEntity
         .status(HttpStatus.CREATED)
         .body(response);
+  }
+
+  @PostMapping("/logout")
+  public ResponseEntity<Void> logout(HttpServletResponse response) {
+    authCookieService.clearAccessToken(response);
+    return ResponseEntity.noContent().build();
   }
 
 }

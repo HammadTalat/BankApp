@@ -1,6 +1,8 @@
 package com.redmath.bankapp.transaction.controller;
-
-import com.redmath.bankapp.transaction.dto.*;
+import com.redmath.bankapp.transaction.dto.AccountLookupResponse;
+import com.redmath.bankapp.transaction.dto.TransferRequest;
+import com.redmath.bankapp.transaction.dto.TransferResponse;
+import com.redmath.bankapp.transaction.dto.UserTransactionsResponse;
 import com.redmath.bankapp.transaction.service.TransactionService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -10,13 +12,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import javax.security.auth.login.AccountNotFoundException;
 
 @RestController
-@RequestMapping("/api/v1/transaction/")
+@RequestMapping("/api/v1/transaction")
 public class TransactionController {
 
     private final TransactionService transactionService;
@@ -33,7 +34,8 @@ public class TransactionController {
     }
 
     @PostMapping("/transfer")
-    public ResponseEntity<TransferResponse> executeTransfer(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody TransferRequest request) throws AccountNotFoundException {
+    public ResponseEntity<TransferResponse> executeTransfer(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody TransferRequest request)
+        throws AccountNotFoundException {
         TransferResponse response = transactionService.executeTransfer(jwt, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
