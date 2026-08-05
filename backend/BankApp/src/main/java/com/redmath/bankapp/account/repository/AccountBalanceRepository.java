@@ -28,4 +28,8 @@ public interface AccountBalanceRepository
     @Query("SELECT b FROM AccountBalance  b WHERE b.account.accountNumber = :accountNumber ORDER BY b.id DESC LIMIT 1")
     Optional<AccountBalance> findLatestBalance(@Param("accountNumber") String accountNumber);
 
+    Optional<AccountBalance>
+    findFirstByAccount_AccountNumberOrderByIdDesc(
+            String accountNumber
+    );
 }
