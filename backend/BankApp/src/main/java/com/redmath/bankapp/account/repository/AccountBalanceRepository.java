@@ -2,7 +2,6 @@ package com.redmath.bankapp.account.repository;
 
 
 import com.redmath.bankapp.account.entity.AccountBalance;
-import com.redmath.bankapp.account.entity.AccountBalance;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
