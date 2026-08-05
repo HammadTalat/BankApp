@@ -1,5 +1,6 @@
 export const ROUTES = {
     HOME: "/",
+    COMPONENTS: "/components",
     APPLICATION_STATUS: "/application-status",
 
     ADMIN_HOME: "/admin",
