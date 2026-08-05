@@ -117,7 +117,7 @@ public class AdminAccountService {
             String accountNumber
     ) {
         return accountBalanceRepository
-                .findFirstByAccount_AccountNumberOrderByIdDesc(
+                .findLatestBalance(
                         accountNumber
                 )
                 .orElseThrow(() -> new ResourceNotFoundException(
