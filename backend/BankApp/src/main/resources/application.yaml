@@ -3,6 +3,7 @@ spring:
     name: BankApp
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
+    enabled: true
   datasource:
     url: jdbc:postgresql://localhost:5432/banking_db
     username: postgres

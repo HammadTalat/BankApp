@@ -9,11 +9,13 @@ import com.redmath.bankapp.account.repository.BankAccountRepository;
 import com.redmath.bankapp.tempconfig.security.UserPrincipal;
 import com.redmath.bankapp.transaction.dto.TransferRequest;
 import com.redmath.bankapp.transaction.exception.InsufficientBalanceException;
+import com.redmath.bankapp.transaction.repository.AccountTransactionRepository;
 import com.redmath.bankapp.transaction.service.TransactionService;
 import com.redmath.bankapp.user.entity.AppUser;
 import com.redmath.bankapp.user.entity.ApprovalStatus;
 import com.redmath.bankapp.user.entity.Role;
 import com.redmath.bankapp.user.repository.AppUserRepository;
+import net.bytebuddy.utility.dispatcher.JavaDispatcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -44,59 +46,62 @@ class TransactionServiceConcurrencyTest {
     @Autowired
     private AppUserRepository userRepository;
 
+    @Autowired
+    private AccountTransactionRepository transactionRepository;
 
-    private  AppUser user1;
-    private  AppUser user2;
-    private final String senderAcc = "PK1000000001";
-    private final String receiverAcc = "PK2000000002";
-    private BankAccount senderAccount;
-    private BankAccount receiverAccount;
-    private AccountBalance senderBalance;
-    private AccountBalance receiverBalance;
+
+    private UserPrincipal userPrincipal1;
+    private UserPrincipal userPrincipal2;
 
     @BeforeEach
     void setUpDatabase() {
 
         // 1. Clean up existing test data
+        transactionRepository.deleteAllInBatch();
         balanceRepository.deleteAllInBatch();
         accountRepository.deleteAllInBatch();
         userRepository.deleteAllInBatch();
 
 
         // 2. Create Users
-        user1 = new AppUser();
+        AppUser user1 = new AppUser();
         user1.setApprovalStatus(ApprovalStatus.APPROVED);
         user1.setAddress("123 park");
         user1.setRole(Role.ACCOUNT_HOLDER);
         user1.setName("Test User 1");
         user1.setEmail("testuser1@redmath.com");
 
-        user2 = new AppUser();
+        AppUser user2 = new AppUser();
         user2.setApprovalStatus(ApprovalStatus.APPROVED);
         user2.setAddress("123 park");
         user2.setRole(Role.ACCOUNT_HOLDER);
         user2.setName("Test User 2");
         user2.setEmail("testuser2@redmath.com");
 
+        userRepository.saveAndFlush(user1);
+        userRepository.saveAndFlush(user2);
+
+        userPrincipal1 = new UserPrincipal(user1.getId(), user1.getName(), user1.getEmail(), Collections.emptyList());
+        userPrincipal2 = new UserPrincipal(user2.getId(), user2.getName(), user2.getEmail(), Collections.emptyList());
+
+
         // 3. Create Accounts
-        senderAccount = new BankAccount();
+        BankAccount senderAccount = new BankAccount();
+        String senderAcc = "PK1000000001";
         senderAccount.setAccountNumber(senderAcc);
         senderAccount.setUser(user1);
         senderAccount.setStatus(AccountStatus.ACTIVE);
 
-        receiverAccount = new BankAccount();
+        BankAccount receiverAccount = new BankAccount();
+        String receiverAcc = "PK2000000002";
         receiverAccount.setAccountNumber(receiverAcc);
         receiverAccount.setUser(user2);
         receiverAccount.setStatus(AccountStatus.ACTIVE);
 
 
-        // 4. Save users
-        AppUser senderUser = userRepository.save(user1);
-        AppUser receiverUser = userRepository.save(user2);
-
         // 5. Save bank accounts
-        BankAccount senderBankAccount = accountRepository.save(senderAccount);
-        BankAccount receiverBankAccount = accountRepository.save(receiverAccount);
+        BankAccount senderBankAccount = accountRepository.saveAndFlush(senderAccount);
+        BankAccount receiverBankAccount = accountRepository.saveAndFlush(receiverAccount);
 
         // 6. Set up starting balances ($1,000.00 for sender, $500.00 for receiver)
         AccountBalance initialSenderBalance = new AccountBalance(
@@ -111,8 +116,8 @@ class TransactionServiceConcurrencyTest {
         );
 
         // 7. Persist starting state to DB so concurrent threads can read it
-        balanceRepository.save(initialSenderBalance);
-        balanceRepository.save(initialReceiverBalance);
+        balanceRepository.saveAndFlush(initialSenderBalance);
+        balanceRepository.saveAndFlush(initialReceiverBalance);
     }
 
 
@@ -125,7 +130,6 @@ class TransactionServiceConcurrencyTest {
         String senderAcc = "PK1000000001"; // Initial Balance: $1,000.00
         String receiverAcc = "PK2000000002"; // Initial Balance: $500.00
 
-        UserPrincipal userPrincipal = new UserPrincipal(1L, "john@bank.com", "PASS", Collections.emptyList());
         TransferRequest request = new TransferRequest(senderAcc, receiverAcc, transferAmount, "Concurrent Transfer");
 
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
@@ -142,9 +146,10 @@ class TransactionServiceConcurrencyTest {
                 readyLatch.countDown(); // Signal thread is ready
                 try {
                     startLatch.await(); // Wait for green light
-                    transactionService.executeTransfer(userPrincipal, request);
+                    transactionService.executeTransfer(userPrincipal1, request);
                     successCount.incrementAndGet();
                 } catch (Exception e) {
+                    e.printStackTrace();
                     failureCount.incrementAndGet();
                 } finally {
                     finishLatch.countDown();
@@ -176,7 +181,6 @@ class TransactionServiceConcurrencyTest {
         String senderAcc = "PK1000000001";
         String receiverAcc = "PK2000000002";
 
-        UserPrincipal userPrincipal = new UserPrincipal(1L, "john@bank.com", "PASS", Collections.emptyList());
         TransferRequest request = new TransferRequest(senderAcc, receiverAcc, transferAmount, "Overdraft Attempt");
 
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
@@ -190,9 +194,10 @@ class TransactionServiceConcurrencyTest {
             executor.submit(() -> {
                 try {
                     startLatch.await();
-                    transactionService.executeTransfer(userPrincipal, request);
+                    transactionService.executeTransfer(userPrincipal1, request);
                     successCount.incrementAndGet();
                 } catch (Throwable t) {
+                    t.printStackTrace();
                     exceptions.add(t);
                 } finally {
                     finishLatch.countDown();
@@ -225,8 +230,6 @@ class TransactionServiceConcurrencyTest {
         TransferRequest req1 = new TransferRequest(senderAcc, receiverAcc, transferAmount, "Overdraft Attempt");
         TransferRequest req2 = new TransferRequest(receiverAcc, senderAcc, transferAmount, "Overdraft Attempt");
 
-        UserPrincipal userPrincipal1 = new UserPrincipal(user1.getId(), user1.getName(), user1.getEmail(), Collections.emptyList());
-        UserPrincipal userPrincipal2 = new UserPrincipal(user2.getId(), user2.getName(), user1.getEmail(), Collections.emptyList());
 
         Future<?> future1 = executor.submit(() -> {
             startLatch.await();

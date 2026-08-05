@@ -14,7 +14,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.data.domain.PageRequest;
@@ -77,6 +76,7 @@ class TransactionControllerTest {
     class LookupAccountTests {
 
         @Test
+        @WithMockUser
         @DisplayName("Should return 200 OK and response body when account is found")
         void lookupAccount_Success() throws Exception {
             String accountId = "PK1000000001";
@@ -96,6 +96,7 @@ class TransactionControllerTest {
         }
 
         @Test
+        @WithMockUser
         @DisplayName("Should return 400 Bad Request when accountID query param is missing or blank")
         void lookupAccount_MissingParam_Returns400() throws Exception {
             mockMvc.perform(get("/api/v1/transaction/lookup")
@@ -107,6 +108,7 @@ class TransactionControllerTest {
         }
 
         @Test
+        @WithMockUser
         @DisplayName("Should propagate AccountNotFoundException when account does not exist")
         void lookupAccount_NotFound_ThrowsException() throws Exception {
             String accountId = "NON_EXISTENT";
@@ -198,6 +200,7 @@ class TransactionControllerTest {
     class GetUserTransactionsTests {
 
         @Test
+        @WithMockUser
         @DisplayName("Should return 200 OK when user is authenticated and paginated transactions are returned")
         void getUserTransactions_Authenticated_Success() throws Exception {
             UserTransactionsResponse mockResponse = new UserTransactionsResponse(Collections.emptyList(), 0, 10, 0L, true);

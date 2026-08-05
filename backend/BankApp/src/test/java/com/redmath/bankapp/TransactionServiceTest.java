@@ -130,13 +130,13 @@ class TransactionServiceTest {
         @DisplayName("Should throw AccountNotFoundException when sender account does not exist")
         void executeTransfer_SenderAccountNotFound_ThrowsException() {
             TransferRequest request = new TransferRequest("INVALID_SENDER", RECEIVER_ACC, new BigDecimal("100.00"), "Transfer");
-            given(accountRepository.findById("INVALID_SENDER")).willReturn(Optional.empty());
+            given(accountRepository.findByIdForUpdate("INVALID_SENDER")).willReturn(Optional.empty());
 
             assertThatThrownBy(() -> transactionService.executeTransfer(userPrincipal, request))
                     .isInstanceOf(AccountNotFoundException.class)
-                    .hasMessage("Sender account not found");
+                    .hasMessage("Account not found: INVALID_SENDER");
 
-            verify(accountRepository, times(1)).findById("INVALID_SENDER");
+            verify(accountRepository, times(1)).findByIdForUpdate("INVALID_SENDER");
             verifyNoMoreInteractions(accountRepository);
             verifyNoInteractions(balanceRepository, transactionRepository);
         }
@@ -146,15 +146,13 @@ class TransactionServiceTest {
         void executeTransfer_ReceiverAccountNotFound_ThrowsException() {
             TransferRequest request = new TransferRequest(SENDER_ACC, "INVALID_RECEIVER", new BigDecimal("100.00"), "Transfer");
 
-            given(accountRepository.findById(SENDER_ACC)).willReturn(Optional.of(senderAccount));
-            given(accountRepository.findById("INVALID_RECEIVER")).willReturn(Optional.empty());
+            given(accountRepository.findByIdForUpdate("INVALID_RECEIVER")).willReturn(Optional.empty());
 
             assertThatThrownBy(() -> transactionService.executeTransfer(userPrincipal, request))
                     .isInstanceOf(AccountNotFoundException.class)
-                    .hasMessage("Receiver account not found");
+                    .hasMessage("Account not found: INVALID_RECEIVER");
 
-            verify(accountRepository, times(1)).findById(SENDER_ACC);
-            verify(accountRepository, times(1)).findById("INVALID_RECEIVER");
+            verify(accountRepository, times(1)).findByIdForUpdate("INVALID_RECEIVER");
             verifyNoInteractions(balanceRepository, transactionRepository);
         }
 
@@ -163,8 +161,8 @@ class TransactionServiceTest {
         void executeTransfer_SenderBalanceMissing_ThrowsException() {
             TransferRequest request = new TransferRequest(SENDER_ACC, RECEIVER_ACC, new BigDecimal("100.00"), "Transfer");
 
-            given(accountRepository.findById(SENDER_ACC)).willReturn(Optional.of(senderAccount));
-            given(accountRepository.findById(RECEIVER_ACC)).willReturn(Optional.of(receiverAccount));
+            given(accountRepository.findByIdForUpdate(SENDER_ACC)).willReturn(Optional.of(senderAccount));
+            given(accountRepository.findByIdForUpdate(RECEIVER_ACC)).willReturn(Optional.of(receiverAccount));
             given(balanceRepository.findLatestBalanceForUpdate(SENDER_ACC)).willReturn(Optional.empty());
 
             assertThatThrownBy(() -> transactionService.executeTransfer(userPrincipal, request))
@@ -180,8 +178,8 @@ class TransactionServiceTest {
         void executeTransfer_ReceiverBalanceMissing_ThrowsException() {
             TransferRequest request = new TransferRequest(SENDER_ACC, RECEIVER_ACC, new BigDecimal("100.00"), "Transfer");
 
-            given(accountRepository.findById(SENDER_ACC)).willReturn(Optional.of(senderAccount));
-            given(accountRepository.findById(RECEIVER_ACC)).willReturn(Optional.of(receiverAccount));
+            given(accountRepository.findByIdForUpdate(SENDER_ACC)).willReturn(Optional.of(senderAccount));
+            given(accountRepository.findByIdForUpdate(RECEIVER_ACC)).willReturn(Optional.of(receiverAccount));
             given(balanceRepository.findLatestBalanceForUpdate(SENDER_ACC)).willReturn(Optional.of(senderBalance));
             given(balanceRepository.findLatestBalanceForUpdate(RECEIVER_ACC)).willReturn(Optional.empty());
 
@@ -205,8 +203,8 @@ class TransactionServiceTest {
             BigDecimal transferAmount = new BigDecimal("1000.01"); // Balance is 1000.00
             TransferRequest request = new TransferRequest(SENDER_ACC, RECEIVER_ACC, transferAmount, "Overdraft Attempt");
 
-            given(accountRepository.findById(SENDER_ACC)).willReturn(Optional.of(senderAccount));
-            given(accountRepository.findById(RECEIVER_ACC)).willReturn(Optional.of(receiverAccount));
+            given(accountRepository.findByIdForUpdate(SENDER_ACC)).willReturn(Optional.of(senderAccount));
+            given(accountRepository.findByIdForUpdate(RECEIVER_ACC)).willReturn(Optional.of(receiverAccount));
             given(balanceRepository.findLatestBalanceForUpdate(SENDER_ACC)).willReturn(Optional.of(senderBalance));
 
             assertThatThrownBy(() -> transactionService.executeTransfer(userPrincipal, request))
@@ -224,8 +222,8 @@ class TransactionServiceTest {
             BigDecimal transferAmount = new BigDecimal("1000.00"); // Exact balance
             TransferRequest request = new TransferRequest(SENDER_ACC, RECEIVER_ACC, transferAmount, "Clear Account");
 
-            given(accountRepository.findById(SENDER_ACC)).willReturn(Optional.of(senderAccount));
-            given(accountRepository.findById(RECEIVER_ACC)).willReturn(Optional.of(receiverAccount));
+            given(accountRepository.findByIdForUpdate(SENDER_ACC)).willReturn(Optional.of(senderAccount));
+            given(accountRepository.findByIdForUpdate(RECEIVER_ACC)).willReturn(Optional.of(receiverAccount));
             given(balanceRepository.findLatestBalanceForUpdate(SENDER_ACC)).willReturn(Optional.of(senderBalance));
             given(balanceRepository.findLatestBalanceForUpdate(RECEIVER_ACC)).willReturn(Optional.of(receiverBalance));
 
@@ -258,8 +256,8 @@ class TransactionServiceTest {
             String description = "Rent Payment";
             TransferRequest request = new TransferRequest(SENDER_ACC, RECEIVER_ACC, transferAmount, description);
 
-            given(accountRepository.findById(SENDER_ACC)).willReturn(Optional.of(senderAccount));
-            given(accountRepository.findById(RECEIVER_ACC)).willReturn(Optional.of(receiverAccount));
+            given(accountRepository.findByIdForUpdate(SENDER_ACC)).willReturn(Optional.of(senderAccount));
+            given(accountRepository.findByIdForUpdate(RECEIVER_ACC)).willReturn(Optional.of(receiverAccount));
             given(balanceRepository.findLatestBalanceForUpdate(SENDER_ACC)).willReturn(Optional.of(senderBalance));
             given(balanceRepository.findLatestBalanceForUpdate(RECEIVER_ACC)).willReturn(Optional.of(receiverBalance));
 
