@@ -4,7 +4,10 @@ import {
 } from "react-router";
 
 import ApplicationStatusPage from "../features/application-status/pages/ApplicationStatusPage";
+import AccountsPage from "../features/admin/accounts/pages/AccountsPage";
 import AdminDashboardPage from "../features/admin/dashboard/pages/AdminDashboardPage";
+import PendingUsersPage from "../features/admin/users/pages/PendingUsersPage";
+import AdminLayout from "../layouts/AdminLayout";
 import NotFoundPage from "../routes/NotFoundPage";
 import { ROUTES } from "../routes/routePaths";
 import ComponentShowcasePage from "./ComponentShowcasePage";
@@ -30,8 +33,23 @@ function AppRoutes() {
 
             <Route
                 path={ROUTES.ADMIN_HOME}
-                element={<AdminDashboardPage />}
-            />
+                element={<AdminLayout />}
+            >
+                <Route
+                    index
+                    element={<AdminDashboardPage />}
+                />
+
+                <Route
+                    path="pending-users"
+                    element={<PendingUsersPage />}
+                />
+
+                <Route
+                    path="accounts"
+                    element={<AccountsPage />}
+                />
+            </Route>
 
             <Route
                 path="*"
