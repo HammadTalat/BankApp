@@ -1,6 +1,5 @@
 package com.redmath.bankapp.transaction.entity;
 
-import com.redmath.bankapp.account.entity.BalanceIndicator;
 import com.redmath.bankapp.account.entity.BankAccount;
 import com.redmath.bankapp.transaction.enums.TransactionIndicator;
 import jakarta.persistence.*;

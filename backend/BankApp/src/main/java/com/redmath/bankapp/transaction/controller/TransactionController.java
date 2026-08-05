@@ -1,7 +1,10 @@
 package com.redmath.bankapp.transaction.controller;
 
 import com.redmath.bankapp.tempconfig.security.UserPrincipal;
-import com.redmath.bankapp.transaction.dto.*;
+import com.redmath.bankapp.transaction.dto.AccountLookupResponse;
+import com.redmath.bankapp.transaction.dto.TransferRequest;
+import com.redmath.bankapp.transaction.dto.TransferResponse;
+import com.redmath.bankapp.transaction.dto.UserTransactionsResponse;
 import com.redmath.bankapp.transaction.service.TransactionService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -32,13 +35,18 @@ public class TransactionController {
     }
 
     @PostMapping("/transfer")
-    public ResponseEntity<TransferResponse> executeTransfer(@AuthenticationPrincipal UserPrincipal user, @Valid TransferRequest request) throws AccountNotFoundException {
+    public ResponseEntity<TransferResponse> executeTransfer(@AuthenticationPrincipal UserPrincipal user, @Valid @RequestBody TransferRequest request) throws AccountNotFoundException {
         TransferResponse response = transactionService.executeTransfer(user, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PostMapping("/get-transactions")
+    @GetMapping("/get-transactions")
     public ResponseEntity<UserTransactionsResponse> getUserTransactions(@AuthenticationPrincipal UserPrincipal user, @PageableDefault(page = 0, size = 10) Pageable pageable) throws AccountNotFoundException {
+
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // 401 instead of 500
+        }
+
         UserTransactionsResponse response = transactionService.getUserTransactions(user, pageable);
         return ResponseEntity.ok(response);
     }

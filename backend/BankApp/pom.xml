@@ -111,6 +111,12 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
 
     </dependencies>
 
@@ -148,26 +154,21 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.15</version>
                 <executions>
-                    <!-- Attach the runtime agent before tests run -->
                     <execution>
-                        <id>prepare-agent</id>
+                        <id>prepare</id>
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
                     </execution>
-
-                    <!-- Generate report after tests finish -->
                     <execution>
-                        <id>generate-report</id>
-                        <phase>test</phase>
+                        <id>report</id>
+                        <phase>prepare-package</phase>
                         <goals>
                             <goal>report</goal>
                         </goals>
                     </execution>
-
-                    <!-- (Optional) Fail build if coverage drops below 80% -->
                     <execution>
-                        <id>check-coverage</id>
+                        <id>check</id>
                         <goals>
                             <goal>check</goal>
                         </goals>

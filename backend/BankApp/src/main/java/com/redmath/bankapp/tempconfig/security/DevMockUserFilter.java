@@ -23,10 +23,10 @@ public class DevMockUserFilter extends OncePerRequestFilter {
 
         // 1. Create your mock principal (adjust ID, name, email, and roles as needed)
         UserPrincipal mockUser = new UserPrincipal(
-                101L,
-                "admin",
-                "admin@bank.com",
-                List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
+                3L,
+                "John Doe Sender",
+                "sender@redmath.com",
+                List.of(new SimpleGrantedAuthority("ROLE_ACCOUNT_HOLDER"))
         );
 
         // 2. Wrap it in a Spring Security Authentication token
