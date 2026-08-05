@@ -10,12 +10,14 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import javax.security.auth.login.AccountNotFoundException;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/v1/transaction/")
@@ -41,13 +43,20 @@ public class TransactionController {
     }
 
     @GetMapping("/get-transactions")
-    public ResponseEntity<UserTransactionsResponse> getUserTransactions(@AuthenticationPrincipal UserPrincipal user, @PageableDefault(page = 0, size = 10) Pageable pageable) throws AccountNotFoundException {
+    public ResponseEntity<UserTransactionsResponse> getUserTransactions(
+            @AuthenticationPrincipal UserPrincipal user,
+            @RequestParam(value = "startDate", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(value = "endDate", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @PageableDefault(page = 0, size = 10) Pageable pageable)
+            throws AccountNotFoundException {
 
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // 401 instead of 500
         }
 
-        UserTransactionsResponse response = transactionService.getUserTransactions(user, pageable);
+        UserTransactionsResponse response = transactionService.getUserTransactions(user,startDate, endDate, pageable);
         return ResponseEntity.ok(response);
     }
 
