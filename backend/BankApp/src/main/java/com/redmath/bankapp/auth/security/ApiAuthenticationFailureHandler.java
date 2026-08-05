@@ -34,10 +34,22 @@ public class ApiAuthenticationFailureHandler
       throws IOException, ServletException {
 
     String message;
+    String errorCode = null;
+    String redirectPath = null;
+    String email = null;
+    String name = null;
 
     if (exception instanceof DisabledException) {
 
       message = "Your account is awaiting administrator approval.";
+
+    } else if (exception instanceof IncompleteProfileOAuth2Exception incompleteException) {
+
+      message = incompleteException.getMessage();
+      errorCode = incompleteException.getError().getErrorCode();
+      redirectPath = "/complete-profile";
+      email = incompleteException.getEmail();
+      name = incompleteException.getName();
 
     } else if (exception instanceof OAuth2AuthenticationException oauth2Exception) {
 
@@ -50,8 +62,10 @@ public class ApiAuthenticationFailureHandler
           case "access_denied" -> "Google sign-in was cancelled or denied.";
           case "invalid_request" -> "Google sign-in request was invalid.";
           case "server_error" -> "Google sign-in service is temporarily unavailable.";
+          case "account_not_approved" -> "Your account is awaiting administrator approval.";
           default -> "Google sign-in failed.";
         };
+        errorCode = oauth2Exception.getError().getErrorCode();
       } else {
         message = "Google sign-in failed.";
       }
@@ -85,6 +99,22 @@ public class ApiAuthenticationFailureHandler
     body.put("message", message);
 
     body.put("path", request.getRequestURI());
+
+    if (errorCode != null) {
+      body.put("errorCode", errorCode);
+    }
+
+    if (redirectPath != null) {
+      body.put("redirectPath", redirectPath);
+    }
+
+    if (email != null) {
+      body.put("email", email);
+    }
+
+    if (name != null) {
+      body.put("name", name);
+    }
 
     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 

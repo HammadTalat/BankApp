@@ -2,6 +2,7 @@ package com.redmath.bankapp.auth.security;
 
 import com.redmath.bankapp.auth.dto.response.AuthResponse;
 import com.redmath.bankapp.user.entity.AppUser;
+import com.redmath.bankapp.user.entity.ApprovalStatus;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -37,6 +38,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     AppUser appUser = oauthUserResolver.resolve(oauth2User);
     String accessToken = apiSecurityService.generateToken(appUser);
+    String redirectPath = needsProfileCompletion(appUser) ? "/complete-profile" : null;
 
     AuthResponse authResponse = new AuthResponse(
         accessToken,
@@ -44,7 +46,8 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         ApiSecurityService.TOKEN_EXPIRATION_SECONDS,
         appUser.getEmail(),
         appUser.getName(),
-        appUser.getRole().name()
+        appUser.getRole().name(),
+        redirectPath
     );
 
     response.setStatus(HttpServletResponse.SC_OK);
@@ -53,6 +56,16 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     objectMapper.writeValue(response.getOutputStream(), authResponse);
 
+  }
+
+  private boolean needsProfileCompletion(AppUser appUser) {
+    if (appUser.getApprovalStatus() != ApprovalStatus.PENDING) {
+      return false;
+    }
+
+    String address = appUser.getAddress();
+    return address == null || address.isBlank()
+        || "Not provided".equalsIgnoreCase(address.trim());
   }
 
 }

@@ -12,7 +12,9 @@ public record AuthResponse(
 
     String name,
 
-    String role
+    String role,
+
+    String redirectPath
 
 ) {
 }

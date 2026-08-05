@@ -43,7 +43,8 @@ public class ApiAuthenticationSuccessHandler
         ApiSecurityService.TOKEN_EXPIRATION_SECONDS,
         appUser.getEmail(),
         appUser.getName(),
-        appUser.getRole().name()
+        appUser.getRole().name(),
+        null
     );
 
     response.setStatus(HttpServletResponse.SC_OK);

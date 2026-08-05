@@ -1,5 +1,6 @@
 package com.redmath.bankapp.auth.security;
 
+import com.redmath.bankapp.auth.security.IncompleteProfileOAuth2Exception;
 import com.redmath.bankapp.user.entity.AppUser;
 import com.redmath.bankapp.user.entity.ApprovalStatus;
 import com.redmath.bankapp.user.entity.Role;
@@ -25,6 +26,10 @@ public class OAuthUserResolver {
         .orElseGet(() -> createGoogleUser(oauth2User));
 
     if (appUser.getApprovalStatus() == ApprovalStatus.PENDING) {
+      if (isProfileIncomplete(appUser)) {
+        return appUser;
+      }
+
       throw new OAuth2AuthenticationException(
           new OAuth2Error("account_not_approved"),
           "Your account is awaiting administrator approval."
@@ -42,12 +47,18 @@ public class OAuthUserResolver {
     AppUser appUser = AppUser.builder()
         .name(name)
         .email(email)
-        .address("")
+        .address("Not provided")
         .role(Role.ACCOUNT_HOLDER)
         .approvalStatus(ApprovalStatus.PENDING)
         .build();
 
     return appUserRepository.save(appUser);
+  }
+
+  private boolean isProfileIncomplete(AppUser appUser) {
+    String address = appUser.getAddress();
+    return address == null || address.isBlank()
+        || "Not provided".equalsIgnoreCase(address.trim());
   }
 
   private String extractEmail(Map<String, Object> attributes) {

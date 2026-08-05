@@ -4,6 +4,7 @@ import com.redmath.bankapp.auth.security.ApiSecurityService;
 import com.redmath.bankapp.auth.security.ApiAuthenticationFailureHandler;
 import com.redmath.bankapp.auth.security.ApiAuthenticationSuccessHandler;
 import com.redmath.bankapp.auth.security.OAuth2SuccessHandler;
+import com.redmath.bankapp.auth.security.PendingProfileAccessManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -15,8 +16,10 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
+
 import tools.jackson.databind.ObjectMapper;
 
 @Configuration
@@ -27,17 +30,20 @@ public class SecurityConfig {
   private final ApiAuthenticationFailureHandler authenticationFailureHandler;
   private final OAuth2SuccessHandler oAuth2SuccessHandler;
   private final ApiSecurityService apiSecurityService;
+  private final PendingProfileAccessManager pendingProfileAccessManager;
 
   public SecurityConfig(
       ApiAuthenticationSuccessHandler apiAuthenticationSuccessHandler,
       ApiAuthenticationFailureHandler authenticationFailureHandler,
       OAuth2SuccessHandler oAuth2SuccessHandler,
-      ApiSecurityService apiSecurityService) {
+      ApiSecurityService apiSecurityService,
+      PendingProfileAccessManager pendingProfileAccessManager) {
 
     this.apiAuthenticationSuccessHandler = apiAuthenticationSuccessHandler;
     this.authenticationFailureHandler = authenticationFailureHandler;
     this.oAuth2SuccessHandler = oAuth2SuccessHandler;
     this.apiSecurityService = apiSecurityService;
+    this.pendingProfileAccessManager = pendingProfileAccessManager;
   }
 
   @Bean
@@ -61,7 +67,7 @@ public class SecurityConfig {
   public ObjectMapper objectMapper() {
     return new ObjectMapper();
   }
-
+  
   @Bean
   SecurityFilterChain securityFilterChain(HttpSecurity http)
       throws Exception {
@@ -105,9 +111,14 @@ public class SecurityConfig {
 
             ).permitAll()
 
-            .anyRequest()
-
-            .authenticated()
+            .anyRequest().access((authentication, context) ->
+                new AuthorizationDecision(
+                    pendingProfileAccessManager.hasAccess(
+                        context.getRequest(),
+                        authentication.get()
+                    )
+                )
+            )
 
         )
 

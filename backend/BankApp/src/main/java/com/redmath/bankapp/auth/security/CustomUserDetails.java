@@ -52,7 +52,7 @@ public class CustomUserDetails implements UserDetails {
 
   @Override
   public boolean isEnabled() {
-    return appUser.getApprovalStatus() == ApprovalStatus.APPROVED;
+    return true;
   }
 
 }
