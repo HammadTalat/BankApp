@@ -1,6 +1,7 @@
 package com.redmath.bankapp;
 
 import com.redmath.bankapp.account.entity.AccountStatus;
+import com.redmath.bankapp.tempconfig.security.UserPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import com.redmath.bankapp.transaction.controller.TransactionController;
@@ -27,6 +28,8 @@ import tools.jackson.databind.ObjectMapper;
 
 import javax.security.auth.login.AccountNotFoundException;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collections;
 
@@ -211,7 +214,7 @@ class TransactionControllerTest {
         void getUserTransactions_Authenticated_Success() throws Exception {
             UserTransactionsResponse mockResponse = new UserTransactionsResponse(Collections.emptyList(), 0, 10, 0L, true);
 
-            given(transactionService.getUserTransactions(any(Jwt.class), any(Pageable.class)))
+            given(transactionService.getUserTransactions(any(Jwt.class), nullable(LocalDate.class), nullable(LocalDate.class), any(Pageable.class)))
                     .willReturn(mockResponse);
 
             mockMvc.perform(get("/api/v1/transaction/get-transactions")
@@ -221,7 +224,10 @@ class TransactionControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.totalElements").value(0));
 
-            verify(transactionService).getUserTransactions(any(Jwt.class), eq(PageRequest.of(0, 10)));
+            verify(transactionService).getUserTransactions(any(Jwt.class),
+                    nullable(LocalDate.class),
+                    nullable(LocalDate.class),
+                    eq(PageRequest.of(0, 10)));
         }
 
         @Test
@@ -233,5 +239,50 @@ class TransactionControllerTest {
 
             verifyNoInteractions(transactionService);
         }
+
+
+        @Test
+        @DisplayName("GET /get-transactions - Should return 200 OK with valid date range parameters")
+        void getUserTransactions_WithDateFilters_Returns200() throws Exception {
+            LocalDate startDate = LocalDate.of(2026, 8, 1);
+            LocalDate endDate = LocalDate.of(2026, 8, 4);
+            UserTransactionsResponse mockResponse = new UserTransactionsResponse(Collections.emptyList(), 0, 10, 0L, true);
+
+            when(transactionService.getUserTransactions(
+                    eq(mockJwt),
+                    eq(startDate),
+                    eq(endDate),
+                    any(Pageable.class)
+            )).thenReturn(mockResponse);
+
+            mockMvc.perform(get("/api/v1/transaction/get-transactions")
+                            .with(jwt().jwt(mockJwt))
+                            .with(csrf())
+                            .param("startDate", "2026-08-01")
+                            .param("endDate", "2026-08-04")
+                            .param("page", "0")
+                            .param("size", "10")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk());
+
+            verify(transactionService).getUserTransactions(
+                    any(Jwt.class),
+                    eq(startDate),
+                    eq(endDate),
+                    any(Pageable.class)
+            );
+        }
+    }
+
+    @Test
+    @DisplayName("GET /get-transactions - Should return 400 Bad Request on invalid date format")
+    void getUserTransactions_InvalidDateFormat_Returns400() throws Exception {
+        mockMvc.perform(get("/api/v1/transaction/get-transactions")
+                        .with(jwt().jwt(mockJwt))
+                        .with(csrf())
+                        .param("startDate", "01-08-2026") // Invalid ISO format
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+    }
     }
 }

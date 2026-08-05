@@ -29,7 +29,9 @@ import org.springframework.security.oauth2.jwt.Jwt;
 
 import javax.security.auth.login.AccountNotFoundException;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.UUID;
 
 @Slf4j
@@ -42,7 +44,7 @@ public class TransactionService {
 
     private final AccountTransactionRepository transactionRepository;
 
-    public TransactionService(BankAccountRepository accountRepository, AccountTransactionRepository  transactionRepository, AccountBalanceRepository balanceRepository) {
+    public TransactionService(BankAccountRepository accountRepository, AccountTransactionRepository transactionRepository, AccountBalanceRepository balanceRepository) {
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
         this.balanceRepository = balanceRepository;
@@ -61,7 +63,7 @@ public class TransactionService {
 
 
     @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
-        public TransferResponse executeTransfer(Jwt jwt, TransferRequest request) throws AccountNotFoundException {
+    public TransferResponse executeTransfer(Jwt jwt, TransferRequest request) throws AccountNotFoundException {
         log.info("Processing transfer of {} from {} to {}",
                 request.amount(), request.senderAccountNumber(), request.receiverAccountNumber());
 
@@ -151,15 +153,21 @@ public class TransactionService {
 
 
     @Transactional(readOnly = true)
-        public UserTransactionsResponse getUserTransactions(Jwt jwt, Pageable pageable) throws AccountNotFoundException {
-                Long userId = extractUserId(jwt);
-                log.debug("Fetching transaction history for user ID: {}", userId);
+    public UserTransactionsResponse getUserTransactions(Jwt jwt,
+                                                        LocalDate startDate,
+                                                        LocalDate endDate,
+                                                        Pageable pageable) throws AccountNotFoundException {
+        Long userId = extractUserId(jwt);
+        log.debug("Fetching transaction history for user ID: {}", userId);
 
-                BankAccount account = accountRepository.findByUser_Id(userId)
+        LocalDateTime start = (startDate != null) ? startDate.atStartOfDay() : null;
+        LocalDateTime end = (endDate != null) ? endDate.atTime(LocalTime.MAX) : null;
+
+        BankAccount account = accountRepository.findByUser_Id(userId)
                 .orElseThrow(() -> new AccountNotFoundException("No account linked to the current user"));
 
-        Page<AccountTransaction> transactionsPage = transactionRepository
-                .findByAccountNumber(account.getAccountNumber(), pageable);
+        Page<AccountTransaction> transactionsPage = transactionRepository.findByAccountNumberAndDateRange(
+                account.getAccountNumber(), start, end, pageable);
 
         Page<TransactionResponse> dtoPage = transactionsPage.map(TransactionResponse::fromEntity);
 
@@ -167,23 +175,23 @@ public class TransactionService {
     }
 
 
-        private void validateAccountOwnership(BankAccount account, Long userId) {
-                if (!account.getUser().getId().equals(userId)) {
+    private void validateAccountOwnership(BankAccount account, Long userId) {
+        if (!account.getUser().getId().equals(userId)) {
             log.error("Security violation: User {} attempted operation on unowned account {}",
-                                        userId, account.getAccountNumber());
+                    userId, account.getAccountNumber());
             throw new UnauthorizedAccessException("You are not authorized to execute transactions for this account");
         }
     }
 
-        private Long extractUserId(Jwt jwt) {
-                Object userIdClaim = jwt.getClaims().get("userId");
+    private Long extractUserId(Jwt jwt) {
+        Object userIdClaim = jwt.getClaims().get("userId");
 
-                if (userIdClaim instanceof Number number) {
-                        return number.longValue();
-                }
-
-                throw new IllegalStateException("JWT does not contain a valid userId claim");
+        if (userIdClaim instanceof Number number) {
+            return number.longValue();
         }
+
+        throw new IllegalStateException("JWT does not contain a valid userId claim");
+    }
 
     private void validateAccountActive(BankAccount account, String context) {
         if (account.getStatus() != AccountStatus.ACTIVE) {
@@ -209,7 +217,6 @@ public class TransactionService {
         tx.setTransactionDate(LocalDateTime.now());
         return tx;
     }
-
 
 
 }
