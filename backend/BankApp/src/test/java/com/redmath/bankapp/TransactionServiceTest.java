@@ -21,6 +21,7 @@ import com.redmath.bankapp.transaction.service.TransactionService;
 import com.redmath.bankapp.user.entity.AppUser;
 import com.redmath.bankapp.user.entity.ApprovalStatus;
 import com.redmath.bankapp.user.entity.Role;
+import jakarta.transaction.UserTransaction;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -31,8 +32,15 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -113,6 +121,30 @@ class TransactionServiceTest {
     @Nested
     @DisplayName("1. Validation & Precondition Tests")
     class PreconditionTests {
+
+        @Test
+        void getUserTransactions_ConvertsLocalDateToLocalDateTimeBoundary() throws Exception {
+            LocalDate startDate = LocalDate.of(2026, 8, 1);
+            LocalDate endDate = LocalDate.of(2026, 8, 4);
+            Pageable pageable = PageRequest.of(0, 10);
+
+            LocalDateTime expectedStart = startDate.atStartOfDay();
+            LocalDateTime expectedEnd = endDate.atTime(LocalTime.MAX);
+
+            given(accountRepository.findByUser_Id(userPrincipal.getId())).willReturn(Optional.of(senderAccount));
+
+            Page<AccountTransaction> emptyPage = new PageImpl<>(Collections.emptyList());
+
+            when(transactionRepository.findByAccountNumberAndDateRange(
+                    eq("PK1000000001"), eq(expectedStart), eq(expectedEnd), eq(pageable)
+            )).thenReturn(emptyPage);
+
+            transactionService.getUserTransactions(userPrincipal, startDate, endDate, pageable);
+
+            verify(transactionRepository).findByAccountNumberAndDateRange(
+                    eq("PK1000000001"), eq(expectedStart), eq(expectedEnd), eq(pageable)
+            );
+        }
 
         @Test
         @DisplayName("Should throw BusinessRuleException when sender and receiver account numbers match (Case-Insensitive)")

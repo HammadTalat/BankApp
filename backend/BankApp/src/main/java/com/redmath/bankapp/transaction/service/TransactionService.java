@@ -29,7 +29,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.security.auth.login.AccountNotFoundException;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.UUID;
 
 @Slf4j
@@ -42,7 +44,7 @@ public class TransactionService {
 
     private final AccountTransactionRepository transactionRepository;
 
-    public TransactionService(BankAccountRepository accountRepository, AccountTransactionRepository  transactionRepository, AccountBalanceRepository balanceRepository) {
+    public TransactionService(BankAccountRepository accountRepository, AccountTransactionRepository transactionRepository, AccountBalanceRepository balanceRepository) {
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
         this.balanceRepository = balanceRepository;
@@ -153,14 +155,22 @@ public class TransactionService {
 
 
     @Transactional(readOnly = true)
-    public UserTransactionsResponse getUserTransactions(UserPrincipal userPrincipal, Pageable pageable) throws AccountNotFoundException {
+    public UserTransactionsResponse getUserTransactions(
+            UserPrincipal userPrincipal,
+            LocalDate startDate,
+            LocalDate endDate,
+            Pageable pageable) throws AccountNotFoundException {
+
         log.debug("Fetching transaction history for user ID: {}", userPrincipal.getId());
+
+        LocalDateTime start = (startDate != null) ? startDate.atStartOfDay() : null;
+        LocalDateTime end = (endDate != null) ? endDate.atTime(LocalTime.MAX) : null;
 
         BankAccount account = accountRepository.findByUser_Id(userPrincipal.getId())
                 .orElseThrow(() -> new AccountNotFoundException("No account linked to the current user"));
 
-        Page<AccountTransaction> transactionsPage = transactionRepository
-                .findByAccountNumber(account.getAccountNumber(), pageable);
+        Page<AccountTransaction> transactionsPage = transactionRepository.findByAccountNumberAndDateRange(
+                account.getAccountNumber(), start, end, pageable);
 
         Page<TransactionResponse> dtoPage = transactionsPage.map(TransactionResponse::fromEntity);
 
@@ -200,7 +210,6 @@ public class TransactionService {
         tx.setTransactionDate(LocalDateTime.now());
         return tx;
     }
-
 
 
 }
