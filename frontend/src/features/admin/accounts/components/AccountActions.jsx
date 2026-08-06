@@ -5,8 +5,6 @@ function AccountActions({
     accountStatus,
     onViewTransactions,
     onEditHolder,
-    onCreditAccount,
-    onDebitAccount,
     onCloseAccount,
 }) {
     const isClosed = accountStatus === "CLOSED";
@@ -32,22 +30,6 @@ function AccountActions({
                     Edit Holder
                 </Button>
                 <Button
-                    variant="secondary"
-                    onClick={onCreditAccount}
-                    disabled={isClosed}
-                    className="w-full sm:w-auto"
-                >
-                    Credit Account
-                </Button>
-                <Button
-                    variant="secondary"
-                    onClick={onDebitAccount}
-                    disabled={isClosed}
-                    className="w-full sm:w-auto"
-                >
-                    Debit Account
-                </Button>
-                <Button
                     variant="danger"
                     onClick={onCloseAccount}
                     disabled={isClosed}
@@ -59,7 +41,7 @@ function AccountActions({
 
             {isClosed && (
                 <p className="mt-4 text-sm leading-6 text-brand-muted">
-                    This account is closed. Transactions and further account-status changes are unavailable.
+                    This account is closed. Its transaction history remains available, but further account-status changes are unavailable.
                 </p>
             )}
         </Card>

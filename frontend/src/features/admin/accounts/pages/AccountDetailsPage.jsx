@@ -11,13 +11,20 @@ import EmptyState from "../../../../shared/components/feedback/EmptyState";
 import Button from "../../../../shared/components/ui/Button";
 import Card from "../../../../shared/components/ui/Card";
 import PageHeader from "../../../../shared/components/ui/PageHeader";
-import { ROUTES } from "../../../../routes/routePaths";
+import {
+    getAdminAccountTransactionsPath,
+    ROUTES,
+} from "../../../../routes/routePaths";
 import AccountActions from "../components/AccountActions";
 import AccountDetailsCards from "../components/AccountDetailsCards";
 import CloseAccountModal from "../components/CloseAccountModal";
 import EditAccountHolderModal from "../components/EditAccountHolderModal";
 
-function AccountDetailsContent({ account, updateAccount }) {
+function AccountDetailsContent({
+    account,
+    updateAccount,
+    onViewTransactions,
+}) {
     const [activeModal, setActiveModal] = useState(null);
     const [feedback, setFeedback] = useState(null);
 
@@ -51,23 +58,6 @@ function AccountDetailsContent({ account, updateAccount }) {
         });
     }
 
-    function showDeferredAction(action) {
-        const actionMessages = {
-            transactions:
-                "The reusable account-transactions page will be added in Step 4.",
-            credit:
-                "Credit Account is ready visually, but the backend does not yet expose an admin credit endpoint.",
-            debit:
-                "Debit Account is ready visually, but the backend does not yet expose an admin debit endpoint.",
-        };
-
-        setFeedback({
-            type: "info",
-            title: "Action coming next",
-            message: actionMessages[action],
-        });
-    }
-
     return (
         <section className="space-y-7">
             <PageHeader
@@ -88,10 +78,8 @@ function AccountDetailsContent({ account, updateAccount }) {
 
             <AccountActions
                 accountStatus={account.accountStatus}
-                onViewTransactions={() => showDeferredAction("transactions")}
+                onViewTransactions={onViewTransactions}
                 onEditHolder={() => setActiveModal("edit")}
-                onCreditAccount={() => showDeferredAction("credit")}
-                onDebitAccount={() => showDeferredAction("debit")}
                 onCloseAccount={() => setActiveModal("close")}
             />
 
@@ -153,6 +141,9 @@ function AccountDetailsPage() {
         <AccountDetailsContent
             account={account}
             updateAccount={updateAccount}
+            onViewTransactions={() =>
+                navigate(getAdminAccountTransactionsPath(account.accountNumber))
+            }
         />
     );
 }

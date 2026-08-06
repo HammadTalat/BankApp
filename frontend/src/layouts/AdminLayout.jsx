@@ -3,6 +3,7 @@ import { Outlet } from "react-router";
 
 import AdminHeader from "../shared/components/navigation/AdminHeader";
 import AdminSidebar from "../shared/components/navigation/AdminSidebar";
+import { adminProfileMock } from "../features/admin/profile/mocks/adminProfileMock";
 
 function AdminLayout() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -35,6 +36,7 @@ function AdminLayout() {
                 <AdminHeader
                     onOpenSidebar={openSidebar}
                     isSidebarOpen={sidebarOpen}
+                    adminProfile={adminProfileMock}
                 />
 
                 <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">

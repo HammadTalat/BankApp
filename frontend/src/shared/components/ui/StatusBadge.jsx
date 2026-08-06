@@ -10,7 +10,7 @@ const statusClasses = {
 
 const fallbackClasses = "bg-slate-100 text-slate-600";
 
-function StatusBadge({ status }) {
+function StatusBadge({ status, className = "" }) {
     const normalizedStatus = String(status ?? "")
         .trim()
         .toUpperCase();
@@ -19,7 +19,7 @@ function StatusBadge({ status }) {
 
     return (
         <span
-            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${colorClasses}`}
+            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${colorClasses} ${className}`}
         >
             {label}
         </span>

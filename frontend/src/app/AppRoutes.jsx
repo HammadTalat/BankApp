@@ -6,6 +6,7 @@ import {
 import ApplicationStatusPage from "../features/application-status/pages/ApplicationStatusPage";
 import AdminAccountsLayout from "../features/admin/accounts/layout/AdminAccountsLayout";
 import AccountDetailsPage from "../features/admin/accounts/pages/AccountDetailsPage";
+import AccountTransactionsPage from "../features/admin/accounts/pages/AccountTransactionsPage";
 import AccountsPage from "../features/admin/accounts/pages/AccountsPage";
 import AdminDashboardPage from "../features/admin/dashboard/pages/AdminDashboardPage";
 import PendingUsersPage from "../features/admin/users/pages/PendingUsersPage";
@@ -83,6 +84,11 @@ function AppRoutes() {
                     <Route
                         path=":accountNumber"
                         element={<AccountDetailsPage />}
+                    />
+
+                    <Route
+                        path=":accountNumber/transactions"
+                        element={<AccountTransactionsPage />}
                     />
                 </Route>
             </Route>
