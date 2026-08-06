@@ -6,6 +6,7 @@ import com.redmath.bankapp.account.entity.BalanceIndicator;
 import com.redmath.bankapp.account.entity.BankAccount;
 import com.redmath.bankapp.account.repository.AccountBalanceRepository;
 import com.redmath.bankapp.account.repository.BankAccountRepository;
+import com.redmath.bankapp.tempconfig.security.UserPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import com.redmath.bankapp.transaction.dto.TransferRequest;
 import com.redmath.bankapp.transaction.dto.TransferResponse;
@@ -73,6 +74,7 @@ class TransactionServiceTest {
     @Captor
     private ArgumentCaptor<AccountTransaction> transactionCaptor;
 
+    private UserPrincipal userPrincipal;
     private Jwt jwt;
     private BankAccount senderAccount;
     private BankAccount receiverAccount;
@@ -167,7 +169,7 @@ class TransactionServiceTest {
                     eq("PK1000000001"), eq(expectedStart), eq(expectedEnd), eq(pageable)
             )).thenReturn(emptyPage);
 
-            transactionService.getUserTransactions(userPrincipal, startDate, endDate, pageable);
+            transactionService.getUserTransactions(jwt, startDate, endDate, pageable);
 
             verify(transactionRepository).findByAccountNumberAndDateRange(
                     eq("PK1000000001"), eq(expectedStart), eq(expectedEnd), eq(pageable)
