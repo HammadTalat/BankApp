@@ -46,9 +46,10 @@ public interface AccountTransactionRepository extends JpaRepository<AccountTrans
             "WHERE t.account.accountNumber = :accountNumber " +
             "AND t.transactionDate BETWEEN :startDate AND :endDate " +
             "ORDER BY t.transactionDate DESC")
-    List<AccountTransaction> findByAccountNumberAndDateRange(
+    Page<AccountTransaction> findByAccountNumberAndDateRange(
             @Param("accountNumber") String accountNumber,
             @Param("startDate") LocalDateTime startDate,
-            @Param("endDate") LocalDateTime endDate
+            @Param("endDate") LocalDateTime endDate,
+            Pageable pageable
     );
 }

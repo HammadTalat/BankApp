@@ -8,4 +8,7 @@ export const ROUTES = {
     ADMIN_ACCOUNTS: "/admin/accounts",
 
     ACCOUNT_HOME: "/account",
+    ACCOUNT_TRANSFERS: "/account/transfers",
+    ACCOUNT_TRANSACTIONS: "/account/transactions",
+    ACCOUNT_PROFILE: "/account/profile",
 };
