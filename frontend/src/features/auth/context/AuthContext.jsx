@@ -12,6 +12,7 @@ import * as authApi from "../api/authApi";
 // eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext(null);
 
+
 function toUser(response, profile = null) {
     return {
         email: profile?.email || response.email,
@@ -19,12 +20,15 @@ function toUser(response, profile = null) {
         role: profile?.role || response.role,
         address: profile?.address,
         approvalStatus: profile?.approvalStatus,
-        needsProfileCompletion: response.redirectPath === "/complete-profile"
+        needsProfileCompletion: response?.redirectPath === "/complete-profile"
             || Boolean(profile && (!profile.address || profile.address === "Not provided")),
     };
 }
 
-export function AuthProvider({ children }) {
+export function AuthProvider({children}) {
+    const [loading, setLoading] = useState(true);
+
+
     const [user, setUser] = useState(null);
     const [isInitializing, setIsInitializing] = useState(true);
 
@@ -39,6 +43,7 @@ export function AuthProvider({ children }) {
     const refreshProfile = useCallback(async () => {
         const profile = await authApi.getCurrentUser();
         setUser(toUser(null, profile));
+        setLoading(false);
         return profile;
     }, []);
 
@@ -61,7 +66,9 @@ export function AuthProvider({ children }) {
                 setIsInitializing(false);
             }
         });
-        return () => { isActive = false; };
+        return () => {
+            isActive = false;
+        };
     }, [refreshProfile]);
 
     const signIn = useCallback(async (credentials) => {

@@ -14,6 +14,10 @@ import { ROUTES } from "../routes/routePaths";
 import ComponentShowcasePage from "./ComponentShowcasePage";
 import HomePage from "./HomePage";
 import AuthFlowTestPage from "./temp/AuthFlowTestPage";
+import TransactionsPage from "../features/transactions/pages/TransactionsPage.jsx";
+import TransferPage from "../features/transfers/pages/TransferPage.jsx";
+import ProfilePage from "../features/proifle/pages/ProfilePage.jsx";
+import DashboardPage from "../features/dashboard/pages/DashboardPage.jsx";
 
 function AppRoutes() {
     return (
@@ -26,6 +30,16 @@ function AppRoutes() {
             <Route path={ROUTES.LOGIN} element={<LoginPage />} />
             <Route path={ROUTES.SIGNUP} element={<SignupPage />} />
             <Route path={ROUTES.COMPLETE_GOOGLE_PROFILE} element={<CompleteGoogleProfilePage />} />
+
+            {/*Transaction*/}
+            <Route path={ROUTES.ACCOUNT_TRANSACTIONS} element={<TransactionsPage />} />
+            <Route path={ROUTES.ACCOUNT_TRANSFERS} element={<TransferPage />} />
+
+            {/*Profile */}
+            <Route path={ROUTES.ACCOUNT_PROFILE} element={<ProfilePage />} />
+
+            {/*Dashboard*/}
+            <Route path={ROUTES.ACCOUNT_HOME} element={<DashboardPage />} />
 
             <Route
                 path={ROUTES.COMPONENTS}
