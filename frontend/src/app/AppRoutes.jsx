@@ -7,6 +7,10 @@ import ApplicationStatusPage from "../features/application-status/pages/Applicat
 import AccountsPage from "../features/admin/accounts/pages/AccountsPage";
 import AdminDashboardPage from "../features/admin/dashboard/pages/AdminDashboardPage";
 import PendingUsersPage from "../features/admin/users/pages/PendingUsersPage";
+import DashboardPage from "../features/dashboard/pages/DashboardPage";
+import ProfilePage from "../features/proifle/pages/ProfilePage";
+import TransactionsPage from "../features/transactions/pages/TransactionsPage";
+import TransferPage from "../features/transfers/pages/TransferPage";
 import AdminLayout from "../layouts/AdminLayout";
 import NotFoundPage from "../routes/NotFoundPage";
 import { ROUTES } from "../routes/routePaths";
@@ -29,6 +33,26 @@ function AppRoutes() {
             <Route
                 path={ROUTES.APPLICATION_STATUS}
                 element={<ApplicationStatusPage />}
+            />
+
+            <Route
+                path={ROUTES.ACCOUNT_HOME}
+                element={<DashboardPage />}
+            />
+
+            <Route
+                path={ROUTES.ACCOUNT_TRANSFERS}
+                element={<TransferPage />}
+            />
+
+            <Route
+                path={ROUTES.ACCOUNT_TRANSACTIONS}
+                element={<TransactionsPage />}
+            />
+
+            <Route
+                path={ROUTES.ACCOUNT_PROFILE}
+                element={<ProfilePage />}
             />
 
             <Route
