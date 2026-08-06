@@ -53,7 +53,7 @@ class AccountBalanceControllerTest {
     @DisplayName("GET /balance - Should return 200 OK and BalanceResponse JSON when authenticated")
     void getBalance_Authenticated_Returns200AndBalance() throws Exception {
         BalanceResponse balanceResponse = new BalanceResponse(new BigDecimal("1500.50"));
-        given(accountBalanceService.getBalance(any(UserPrincipal.class))).willReturn(balanceResponse);
+        given(accountBalanceService.getBalance(any(Jwt.class))).willReturn(balanceResponse);
 
         mockMvc.perform(get("/api/v1/account/balance")
                         .with(user(userPrincipal))
@@ -61,13 +61,13 @@ class AccountBalanceControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.amount").value(1500.50));
 
-        verify(accountBalanceService).getBalance(any(UserPrincipal.class));
+        verify(accountBalanceService).getBalance(any(Jwt.class));
     }
 
     @Test
     @DisplayName("GET /balance - Should return 404 Not Found when AccountNotFoundException is thrown")
     void getBalance_AccountNotFound_Returns404() throws Exception {
-        given(accountBalanceService.getBalance(any(UserPrincipal.class)))
+        given(accountBalanceService.getBalance(any(Jwt.class)))
                 .willThrow(new AccountNotFoundException("No bank account found for user ID: 1"));
 
         mockMvc.perform(get("/api/v1/account/balance")
@@ -75,13 +75,13 @@ class AccountBalanceControllerTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
 
-        verify(accountBalanceService).getBalance(any(UserPrincipal.class));
+        verify(accountBalanceService).getBalance(any(Jwt.class));
     }
 
     @Test
     @DisplayName("GET /balance - Should return 404 Not Found when BalanceNotFoundException is thrown")
     void getBalance_BalanceNotFound_Returns404() throws Exception {
-        given(accountBalanceService.getBalance(any(UserPrincipal.class)))
+        given(accountBalanceService.getBalance(any(Jwt.class)))
                 .willThrow(new BalanceNotFoundException("Balance record not found for account: ACC123456"));
 
         mockMvc.perform(get("/api/v1/account/balance")
@@ -89,7 +89,7 @@ class AccountBalanceControllerTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
 
-        verify(accountBalanceService).getBalance(any(UserPrincipal.class));
+        verify(accountBalanceService).getBalance(any(Jwt.class));
     }
 
     @Test

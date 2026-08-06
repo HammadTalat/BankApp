@@ -7,6 +7,7 @@ import com.redmath.bankapp.account.repository.AccountBalanceRepository;
 import com.redmath.bankapp.account.repository.BankAccountRepository;
 import com.redmath.bankapp.tempconfig.security.UserPrincipal;
 import com.redmath.bankapp.transaction.exception.BalanceNotFoundException;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,12 +27,12 @@ public class AccountBalanceService {
     }
 
     @Transactional(readOnly = true)
-    public BalanceResponse getBalance(UserPrincipal user) throws AccountNotFoundException {
+    public BalanceResponse getBalance(Jwt user) throws AccountNotFoundException {
         if (user == null || user.getId() == null) {
             throw new IllegalArgumentException("User principal and ID must not be null");
         }
 
-        BankAccount bankAccount = bankAccountRepository.findByUser_Id(user.getId())
+        BankAccount bankAccount = bankAccountRepository.findByUser_Id(extractUserId(user))
                 .orElseThrow(() -> new AccountNotFoundException("No bank account found for user ID: " + user.getId()));
 
         AccountBalance accountBalance = accountBalanceRepository.findLatestBalance(bankAccount.getAccountNumber())
@@ -40,5 +41,15 @@ public class AccountBalanceService {
         BigDecimal amount = accountBalance.getAmount() != null ? accountBalance.getAmount() : BigDecimal.ZERO;
 
         return new BalanceResponse(amount);
+    }
+
+    private Long extractUserId(Jwt jwt) {
+        Object userIdClaim = jwt.getClaims().get("userId");
+
+        if (userIdClaim instanceof Number number) {
+            return number.longValue();
+        }
+
+        throw new IllegalStateException("JWT does not contain a valid userId claim");
     }
 }
