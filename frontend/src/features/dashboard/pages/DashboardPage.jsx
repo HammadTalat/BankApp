@@ -3,18 +3,45 @@ import { Link, useNavigate } from "react-router";
 import { ROUTES } from "../../../routes/routePaths.js";
 import { httpClient } from "../../../api/httpClient.js";
 
+// PRODUCTION BEST PRACTICE NOTE:
+// 1. JWT Tokens should be handled via HttpOnly Cookies sent automatically by the browser with `credentials: 'include'`.
+// 2. User info (name, account number) should be provided by an Auth Context / central store or fetched via a GET /user/me endpoint.
+
 export const DashboardPage = () => {
+    const navigate = useNavigate();
+
+    // UI & State Management
     const [copied, setCopied] = useState(false);
     const [transactions, setTransactions] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loadingTransactions, setLoadingTransactions] = useState(true);
 
-    // Balance states
+    // Balance state
     const [balance, setBalance] = useState("25500.00");
     const [refreshingBalance, setRefreshingBalance] = useState(false);
 
-    const navigate = useNavigate();
+    /* ========================================================================
+       1. PRODUCTION AUTH & USER STATE (Commented out until Auth integration)
+       ========================================================================
+       In a production app, user details shouldn't be hardcoded. You would
+       consume user data from an Auth Context or an authenticated profile endpoint.
 
-    const accountNumber = "5839 2017 4638 2915";
+       const { user, logout } = useAuth(); // Custom hook accessing Auth Context
+
+       OR fetch user data on mount:
+       const [userData, setUserData] = useState(null);
+       useEffect(() => {
+           httpClient.get("/api/v1/user/me")
+               .then((data) => setUserData(data))
+               .catch((err) => console.error("Failed to fetch user profile", err));
+       }, []);
+    */
+
+    // HARDCODED FALLBACK USER DATA (Temporary for UI development)
+    const userData = {
+        name: "Ali Khan",
+        accountNumber: "5839 2017 4638 2915",
+        status: "ACTIVE"
+    };
 
     // Fetch account balance from backend
     const fetchBalance = () => {
@@ -22,7 +49,6 @@ export const DashboardPage = () => {
         httpClient
             .get("/api/v1/account/balance")
             .then((data) => {
-                // BalanceResponse JSON contains { "amount": 25500.00 }
                 if (data?.amount !== undefined) {
                     setBalance(data.amount);
                 }
@@ -33,31 +59,57 @@ export const DashboardPage = () => {
             .finally(() => setRefreshingBalance(false));
     };
 
+    // Fetch recent transactions on mount
     useEffect(() => {
-        // Fetch recent transactions
+        let isMounted = true; // Cleanup flag to prevent memory leaks on unmount
+
         httpClient
             .get("/api/v1/transaction/get-transactions?page=0&size=5")
             .then((data) => {
-                if (data?.transactions) {
+                if (isMounted && data?.transactions) {
                     setTransactions(data.transactions);
                 }
             })
             .catch((err) => {
-                console.error("Failed to load transactions:", err);
+                if (isMounted) console.error("Failed to load transactions:", err);
             })
-            .finally(() => setLoading(false));
+            .finally(() => {
+                if (isMounted) setLoadingTransactions(false);
+            });
 
-        // Initial balance fetch
         fetchBalance();
+
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
     const handleCopyAccount = () => {
-        navigator.clipboard.writeText(accountNumber.replace(/\s+/g, ""));
+        if (!userData?.accountNumber) return;
+
+        const cleanAccountNumber = userData.accountNumber.replace(/\s+/g, "");
+        navigator.clipboard.writeText(cleanAccountNumber);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
 
     const handleLogout = () => {
+        /* ========================================================================
+           2. PRODUCTION LOGOUT LOGIC (Commented out until Auth integration)
+           ========================================================================
+           Instead of deleting local-storage tokens manually, call the backend
+           logout endpoint to clear the HttpOnly session cookie, clear in-memory state,
+           and redirect.
+
+           httpClient.post("/api/v1/auth/logout")
+               .then(() => {
+                   // Clear Auth Context / state here if using a provider
+                   navigate(ROUTES.HOME);
+               })
+               .catch((err) => console.error("Logout failed:", err));
+        */
+
+        // TEMPORARY LOGOUT FALLBACK
         localStorage.removeItem("ACCESS_TOKEN");
         navigate(ROUTES.HOME);
     };
@@ -121,7 +173,7 @@ export const DashboardPage = () => {
                         Account Dashboard
                     </h2>
                     <p className="text-gray-500 text-sm mt-1">
-                        Welcome back, Ali
+                        Welcome back, {userData.name}
                     </p>
                 </div>
 
@@ -134,7 +186,6 @@ export const DashboardPage = () => {
                                 <p className="text-blue-100 text-sm font-medium">
                                     Available Balance
                                 </p>
-                                {/* Balance Refresh Button */}
                                 <button
                                     onClick={fetchBalance}
                                     disabled={refreshingBalance}
@@ -193,17 +244,17 @@ export const DashboardPage = () => {
                                 Account number
                             </p>
                             <p className="text-xl font-bold text-gray-900 mt-2 tracking-wide">
-                                {accountNumber}
+                                {userData.accountNumber}
                             </p>
 
                             <div className="mt-4">
                                 <span className="inline-block bg-emerald-50 text-emerald-600 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                                    ACTIVE
+                                    {userData.status}
                                 </span>
                             </div>
 
                             <p className="text-sm font-medium text-gray-700 mt-4">
-                                Ali Khan
+                                {userData.name}
                             </p>
                         </div>
 
@@ -224,7 +275,7 @@ export const DashboardPage = () => {
                         Recent transactions
                     </h3>
 
-                    {loading ? (
+                    {loadingTransactions ? (
                         <p className="text-sm text-gray-500 py-4">Loading transactions...</p>
                     ) : transactions.length === 0 ? (
                         <p className="text-sm text-gray-500 py-4">No recent transactions found.</p>
