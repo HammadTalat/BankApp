@@ -7,11 +7,6 @@ import {
 } from "react";
 
 import * as authApi from "../api/authApi";
-import {
-    clearAuthSession,
-    removeLegacyToken,
-    saveAuthSession,
-} from "../utils/authStorage";
 
 // The hook consumes this context from a separate module.
 // eslint-disable-next-line react-refresh/only-export-components
@@ -37,18 +32,13 @@ export function AuthProvider({ children }) {
         try {
             await authApi.logout();
         } finally {
-            clearAuthSession();
             setUser(null);
         }
     }, []);
 
     const refreshProfile = useCallback(async () => {
         const profile = await authApi.getCurrentUser();
-        setUser((currentUser) => {
-            const nextUser = toUser(currentUser || {}, profile);
-            saveAuthSession(nextUser);
-            return nextUser;
-        });
+        setUser(toUser(null, profile));
         return profile;
     }, []);
 
@@ -56,18 +46,21 @@ export function AuthProvider({ children }) {
         let isActive = true;
 
         async function restoreSession() {
-            removeLegacyToken();
-
             try {
                 await refreshProfile();
             } catch {
-                if (isActive) clearAuthSession();
+                if (isActive) setUser(null);
             } finally {
                 if (isActive) setIsInitializing(false);
             }
         }
 
-        restoreSession();
+        restoreSession().catch(() => {
+            if (isActive) {
+                setUser(null);
+                setIsInitializing(false);
+            }
+        });
         return () => { isActive = false; };
     }, [refreshProfile]);
 
@@ -75,7 +68,6 @@ export function AuthProvider({ children }) {
         await authApi.login(credentials);
         const profile = await authApi.getCurrentUser();
         const nextUser = toUser({}, profile);
-        saveAuthSession(nextUser);
         setUser(nextUser);
         return nextUser;
     }, []);
@@ -84,11 +76,10 @@ export function AuthProvider({ children }) {
 
     const finishProfile = useCallback(async (address) => {
         const profile = await authApi.completeProfile(address);
-        setUser((currentUser) => {
-            const nextUser = { ...toUser(currentUser || {}, profile), needsProfileCompletion: false };
-            saveAuthSession(nextUser);
-            return nextUser;
-        });
+        setUser((currentUser) => ({
+            ...toUser(currentUser || {}, profile),
+            needsProfileCompletion: false,
+        }));
         return profile;
     }, []);
 
