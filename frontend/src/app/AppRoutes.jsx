@@ -75,13 +75,13 @@ function AppRoutes() {
                     index
                     element={<AdminDashboardPage />}
                 />
-            <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
+            {/*<Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>*/}
                 <Route path={ROUTES.ADMIN_HOME} element={<AdminDashboardPage />} />
-            </Route>
+            {/*</Route>*/}
 
-            <Route element={<ProtectedRoute />}>
-                <Route path={ROUTES.AUTH_TEST} element={<AuthFlowTestPage />} />
-            </Route>
+                {/*<Route element={<ProtectedRoute />}>*/}
+                {/*    <Route path={ROUTES.AUTH_TEST} element={<AuthFlowTestPage />} />*/}
+                {/*</Route>*/}
 
                 <Route
                     path="pending-users"
