@@ -1,73 +1,82 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { ROUTES } from "../../../routes/routePaths.js";
 import { httpClient } from "../../../api/httpClient.js";
+
+// PRODUCTION BEST PRACTICE NOTE:
+// 1. JWT Tokens should be handled via HttpOnly Cookies sent automatically by the browser with `credentials: 'include'`.
+// 2. Profile details should be fetched from a dedicated self-service user endpoint (e.g., GET /api/v1/users/me or Auth Context)
+//    rather than calling administrative endpoints (/api/v1/admin/users/:id) from a client application.
+
 export const ProfilePage = () => {
     const navigate = useNavigate();
 
-    // User details state
-    const [userId] = useState("1"); // Replace with actual logged-in user ID or context state
-    const [name, setName] = useState("Ali Khan");
-    const [email, setEmail] = useState("ali.khan@example.com");
-    const [address, setAddress] = useState("123 Main Street, Lahore, Pakistan");
-    const [approvalStatus, setApprovalStatus] = useState("APPROVED");
-
-    // UI state
+    // UI & State Management
     const [isLoading, setIsLoading] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-    const [message, setMessage] = useState({ type: "", text: "" });
+
+    // HARDCODED FALLBACK USER DATA (Temporary for UI development)
+    const [profile, setProfile] = useState({
+        name: "Ali Khan",
+        email: "ali.khan@example.com",
+        address: "123 Main Street, Lahore, Pakistan",
+        approvalStatus: "APPROVED",
+        accountNumber: "5839 2017 4638 2915",
+    });
 
     // Fetch user details on component mount
     useEffect(() => {
+        let isMounted = true;
         setIsLoading(true);
-        httpClient
-            .get(`/api/v1/admin/users/${userId}`)
-            .then((data) => {
-                if (data) {
-                    setName(data.name || "");
-                    setEmail(data.email || "");
-                    setAddress(data.address || "");
-                    setApprovalStatus(data.approvalStatus || "APPROVED");
-                }
-            })
-            .catch((err) => {
-                console.error("Failed to load user profile:", err);
-            })
-            .finally(() => setIsLoading(false));
-    }, [userId]);
+
+        /* ========================================================================
+           PRODUCTION API CALL (Commented out until Auth & User endpoints are ready)
+           ========================================================================
+           httpClient
+               .get("/api/v1/users/me")
+               .then((data) => {
+                   if (isMounted && data) {
+                       setProfile({
+                           name: data.name || "",
+                           email: data.email || "",
+                           address: data.address || "",
+                           approvalStatus: data.approvalStatus || "APPROVED",
+                           accountNumber: data.accountNumber || "N/A",
+                       });
+                   }
+               })
+               .catch((err) => {
+                   if (isMounted) console.error("Failed to load user profile:", err);
+               })
+               .finally(() => {
+                   if (isMounted) setIsLoading(false);
+               });
+        */
+
+        // TEMPORARY DELAY TO SIMULATE API LOADING
+        const timer = setTimeout(() => {
+            if (isMounted) setIsLoading(false);
+        }, 300);
+
+        return () => {
+            isMounted = false;
+            clearTimeout(timer);
+        };
+    }, []);
 
     const handleLogout = () => {
+        /* ========================================================================
+           PRODUCTION LOGOUT LOGIC (Commented out until Auth integration)
+           ========================================================================
+           httpClient.post("/api/v1/auth/logout")
+               .then(() => {
+                   navigate(ROUTES.HOME);
+               })
+               .catch((err) => console.error("Logout failed:", err));
+        */
+
+        // TEMPORARY LOGOUT FALLBACK
         localStorage.removeItem("ACCESS_TOKEN");
         navigate(ROUTES.HOME);
-    };
-
-    const handleSaveProfile = async (e) => {
-        e.preventDefault();
-        setIsSaving(true);
-        setMessage({ type: "", text: "" });
-
-        try {
-            const updatedUser = await httpClient.patch(`/api/v1/admin/users/${userId}`, {
-                name: name.trim(),
-                email: email.trim(),
-                address: address.trim(),
-            });
-
-            if (updatedUser) {
-                setName(updatedUser.name);
-                setEmail(updatedUser.email);
-                setAddress(updatedUser.address);
-            }
-
-            setMessage({ type: "success", text: "Profile details updated successfully." });
-        } catch (err) {
-            setMessage({
-                type: "error",
-                text: err.message || "Failed to update profile details.",
-            });
-        } finally {
-            setIsSaving(false);
-        }
     };
 
     return (
@@ -127,28 +136,16 @@ export const ProfilePage = () => {
                     {/* Page Header */}
                     <h2 className="text-3xl font-bold text-gray-900">Profile</h2>
                     <p className="text-gray-500 text-sm mt-1">
-                        View and update your account information.
+                        View your registered personal and account information.
                     </p>
 
-                    {/* Profile Information Card */}
+                    {/* Read-Only Profile Card */}
                     <div className="mt-8 bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
                         {isLoading ? (
                             <p className="text-xs text-gray-400 py-4">Loading profile information...</p>
                         ) : (
-                            <form onSubmit={handleSaveProfile} className="space-y-6">
-                                {message.text && (
-                                    <div
-                                        className={`p-4 rounded-xl text-xs font-medium ${
-                                            message.type === "success"
-                                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                                : "bg-red-50 text-red-600 border border-red-200"
-                                        }`}
-                                    >
-                                        {message.text}
-                                    </div>
-                                )}
-
-                                {/* Account Status Indicator */}
+                            <div className="space-y-6">
+                                {/* Account Status Badge */}
                                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
                                     <div>
                                         <p className="text-xs font-bold text-gray-800">Account Status</p>
@@ -157,62 +154,50 @@ export const ProfilePage = () => {
                                         </p>
                                     </div>
                                     <span className="inline-block bg-emerald-50 text-emerald-600 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                                        {approvalStatus}
+                                        {profile.approvalStatus}
                                     </span>
                                 </div>
 
                                 {/* Full Name Field */}
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-800 mb-2">
+                                <div className="pb-4 border-b border-gray-100">
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
                                         Full Name
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                        required
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 text-gray-800"
-                                    />
+                                    </p>
+                                    <p className="text-sm font-semibold text-gray-900">
+                                        {profile.name}
+                                    </p>
                                 </div>
 
-                                {/* Email Field */}
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-800 mb-2">
+                                {/* Email Address Field */}
+                                <div className="pb-4 border-b border-gray-100">
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
                                         Email Address
-                                    </label>
-                                    <input
-                                        type="email"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        required
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 text-gray-800"
-                                    />
+                                    </p>
+                                    <p className="text-sm font-semibold text-gray-900">
+                                        {profile.email}
+                                    </p>
+                                </div>
+
+                                {/* Account Number Field */}
+                                <div className="pb-4 border-b border-gray-100">
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                                        Account Number
+                                    </p>
+                                    <p className="text-sm font-semibold text-gray-900 tracking-wide">
+                                        {profile.accountNumber}
+                                    </p>
                                 </div>
 
                                 {/* Residential Address Field */}
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-800 mb-2">
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
                                         Residential Address
-                                    </label>
-                                    <textarea
-                                        rows={3}
-                                        value={address}
-                                        onChange={(e) => setAddress(e.target.value)}
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 text-gray-800 resize-none"
-                                    />
+                                    </p>
+                                    <p className="text-sm font-semibold text-gray-900 leading-relaxed">
+                                        {profile.address}
+                                    </p>
                                 </div>
-
-                                {/* Submit Button */}
-                                <div className="pt-2">
-                                    <button
-                                        type="submit"
-                                        disabled={isSaving}
-                                        className="w-full bg-[#2563EB] hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-3.5 px-4 rounded-xl text-sm transition-colors shadow-sm"
-                                    >
-                                        {isSaving ? "Saving..." : "Save Changes"}
-                                    </button>
-                                </div>
-                            </form>
+                            </div>
                         )}
                     </div>
                 </div>

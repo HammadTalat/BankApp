@@ -28,7 +28,7 @@ export const TransactionsPage = () => {
         setError("");
 
         httpClient
-            .get("/api/v1/transaction/get-transactions?page=0&size=20")
+            .get("/transaction/get-transactions?page=0&size=20")
             .then((data) => {
                 if (data?.transactions) {
                     setTransactions(data.transactions);
