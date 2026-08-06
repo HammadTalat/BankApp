@@ -6,7 +6,7 @@ import com.redmath.bankapp.account.entity.BalanceIndicator;
 import com.redmath.bankapp.account.entity.BankAccount;
 import com.redmath.bankapp.account.repository.AccountBalanceRepository;
 import com.redmath.bankapp.account.repository.BankAccountRepository;
-import com.redmath.bankapp.tempconfig.security.UserPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import com.redmath.bankapp.transaction.dto.TransferRequest;
 import com.redmath.bankapp.transaction.dto.TransferResponse;
 import com.redmath.bankapp.transaction.entity.*;
@@ -73,7 +73,7 @@ class TransactionServiceTest {
     @Captor
     private ArgumentCaptor<AccountTransaction> transactionCaptor;
 
-    private UserPrincipal userPrincipal;
+    private Jwt jwt;
     private BankAccount senderAccount;
     private BankAccount receiverAccount;
     private AccountBalance senderBalance;
@@ -85,7 +85,11 @@ class TransactionServiceTest {
 
     @BeforeEach
     void setUp() {
-        userPrincipal = new UserPrincipal(USER_ID, "Test User", "test@redmath.com", Collections.emptyList());
+        jwt = Jwt.withTokenValue("mock-token")
+                .header("alg", "none")
+                .claim("userId", USER_ID)
+                .claim("sub", "test@redmath.com")
+                .build();
 
         AppUser user1 = new AppUser();
         user1.setId(1L);
@@ -122,6 +126,30 @@ class TransactionServiceTest {
     @DisplayName("1. Validation & Precondition Tests")
     class PreconditionTests {
 
+//        @Test
+//        void getUserTransactions_ConvertsLocalDateToLocalDateTimeBoundary() throws Exception {
+//            LocalDate startDate = LocalDate.of(2026, 8, 1);
+//            LocalDate endDate = LocalDate.of(2026, 8, 4);
+//            Pageable pageable = PageRequest.of(0, 10);
+//
+//            LocalDateTime expectedStart = startDate.atStartOfDay();
+//            LocalDateTime expectedEnd = endDate.atTime(LocalTime.MAX);
+//
+//            given(accountRepository.findByUser_Id(userPrincipal.getId())).willReturn(Optional.of(senderAccount));
+//
+//            Page<AccountTransaction> emptyPage = new PageImpl<>(Collections.emptyList());
+//
+//            when(transactionRepository.findByAccountNumberAndDateRange(
+//                    eq("PK1000000001"), eq(expectedStart), eq(expectedEnd), eq(pageable)
+//            )).thenReturn(emptyPage);
+//
+//            transactionService.getUserTransactions(userPrincipal, startDate, endDate, pageable);
+//
+//            verify(transactionRepository).findByAccountNumberAndDateRange(
+//                    eq("PK1000000001"), eq(expectedStart), eq(expectedEnd), eq(pageable)
+//            );
+//        }
+
         @Test
         void getUserTransactions_ConvertsLocalDateToLocalDateTimeBoundary() throws Exception {
             LocalDate startDate = LocalDate.of(2026, 8, 1);
@@ -151,7 +179,7 @@ class TransactionServiceTest {
         void executeTransfer_SelfTransfer_ThrowsException() {
             TransferRequest request = new TransferRequest(SENDER_ACC, SENDER_ACC.toLowerCase(), new BigDecimal("100.00"), "Self Transfer");
 
-            assertThatThrownBy(() -> transactionService.executeTransfer(userPrincipal, request))
+            assertThatThrownBy(() -> transactionService.executeTransfer(jwt, request))
                     .isInstanceOf(BusinessRuleException.class)
                     .hasMessage("Sender and receiver accounts cannot be the same");
 
@@ -164,7 +192,7 @@ class TransactionServiceTest {
             TransferRequest request = new TransferRequest("INVALID_SENDER", RECEIVER_ACC, new BigDecimal("100.00"), "Transfer");
             given(accountRepository.findByIdForUpdate("INVALID_SENDER")).willReturn(Optional.empty());
 
-            assertThatThrownBy(() -> transactionService.executeTransfer(userPrincipal, request))
+            assertThatThrownBy(() -> transactionService.executeTransfer(jwt, request))
                     .isInstanceOf(AccountNotFoundException.class)
                     .hasMessage("Account not found: INVALID_SENDER");
 
@@ -180,7 +208,7 @@ class TransactionServiceTest {
 
             given(accountRepository.findByIdForUpdate("INVALID_RECEIVER")).willReturn(Optional.empty());
 
-            assertThatThrownBy(() -> transactionService.executeTransfer(userPrincipal, request))
+            assertThatThrownBy(() -> transactionService.executeTransfer(jwt, request))
                     .isInstanceOf(AccountNotFoundException.class)
                     .hasMessage("Account not found: INVALID_RECEIVER");
 
@@ -197,7 +225,7 @@ class TransactionServiceTest {
             given(accountRepository.findByIdForUpdate(RECEIVER_ACC)).willReturn(Optional.of(receiverAccount));
             given(balanceRepository.findLatestBalanceForUpdate(SENDER_ACC)).willReturn(Optional.empty());
 
-            assertThatThrownBy(() -> transactionService.executeTransfer(userPrincipal, request))
+            assertThatThrownBy(() -> transactionService.executeTransfer(jwt, request))
                     .isInstanceOf(BusinessRuleException.class)
                     .hasMessage("Sender balance record missing");
 
@@ -215,7 +243,7 @@ class TransactionServiceTest {
             given(balanceRepository.findLatestBalanceForUpdate(SENDER_ACC)).willReturn(Optional.of(senderBalance));
             given(balanceRepository.findLatestBalanceForUpdate(RECEIVER_ACC)).willReturn(Optional.empty());
 
-            assertThatThrownBy(() -> transactionService.executeTransfer(userPrincipal, request))
+            assertThatThrownBy(() -> transactionService.executeTransfer(jwt, request))
                     .isInstanceOf(BusinessRuleException.class)
                     .hasMessage("Receiver balance record missing");
 
@@ -239,7 +267,7 @@ class TransactionServiceTest {
             given(accountRepository.findByIdForUpdate(RECEIVER_ACC)).willReturn(Optional.of(receiverAccount));
             given(balanceRepository.findLatestBalanceForUpdate(SENDER_ACC)).willReturn(Optional.of(senderBalance));
 
-            assertThatThrownBy(() -> transactionService.executeTransfer(userPrincipal, request))
+            assertThatThrownBy(() -> transactionService.executeTransfer(jwt, request))
                     .isInstanceOf(InsufficientBalanceException.class)
                     .hasMessage("Insufficient balance to perform this transfer");
 
@@ -259,7 +287,7 @@ class TransactionServiceTest {
             given(balanceRepository.findLatestBalanceForUpdate(SENDER_ACC)).willReturn(Optional.of(senderBalance));
             given(balanceRepository.findLatestBalanceForUpdate(RECEIVER_ACC)).willReturn(Optional.of(receiverBalance));
 
-            TransferResponse response = transactionService.executeTransfer(userPrincipal, request);
+            TransferResponse response = transactionService.executeTransfer(jwt, request);
 
             assertThat(response).isNotNull();
             assertThat(response.status()).isEqualTo(OperationStatus.COMPLETED);
@@ -294,7 +322,7 @@ class TransactionServiceTest {
             given(balanceRepository.findLatestBalanceForUpdate(RECEIVER_ACC)).willReturn(Optional.of(receiverBalance));
 
             // Execute
-            TransferResponse response = transactionService.executeTransfer(userPrincipal, request);
+            TransferResponse response = transactionService.executeTransfer(jwt, request);
 
             // 1. Assert Response Integrity (Field-by-Field for PITest)
             assertThat(response).isNotNull();

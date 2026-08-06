@@ -3,6 +3,7 @@ package com.redmath.bankapp;
 import com.redmath.bankapp.account.controller.AccountBalanceController;
 import com.redmath.bankapp.account.dto.BalanceResponse;
 import com.redmath.bankapp.account.service.AccountBalanceService;
+import com.redmath.bankapp.auth.security.ApiSecurityService;
 import com.redmath.bankapp.tempconfig.security.UserPrincipal;
 import com.redmath.bankapp.transaction.exception.BalanceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -29,8 +31,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(AccountBalanceController.class)
 class AccountBalanceControllerTest {
 
+    private Jwt mockJwt;
+
     @Autowired
     private MockMvc mockMvc;
+
+    @MockitoBean
+    private ApiSecurityService apiSecurityService;
 
     @MockitoBean
     private AccountBalanceService accountBalanceService;
@@ -90,6 +97,6 @@ class AccountBalanceControllerTest {
     void getBalance_Unauthenticated_Returns401() throws Exception {
         mockMvc.perform(get("/balance")
                         .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().is3xxRedirection());
     }
 }

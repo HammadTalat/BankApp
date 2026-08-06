@@ -9,6 +9,9 @@ import AccountDetailsPage from "../features/admin/accounts/pages/AccountDetailsP
 import AccountTransactionsPage from "../features/admin/accounts/pages/AccountTransactionsPage";
 import AccountsPage from "../features/admin/accounts/pages/AccountsPage";
 import AdminDashboardPage from "../features/admin/dashboard/pages/AdminDashboardPage";
+import LoginPage from "../features/auth/pages/LoginPage";
+import SignupPage from "../features/auth/pages/SignupPage";
+import CompleteGoogleProfilePage from "../features/auth/pages/CompleteGoogleProfilePage";
 import PendingUsersPage from "../features/admin/users/pages/PendingUsersPage";
 import DashboardPage from "../features/dashboard/pages/DashboardPage";
 import ProfilePage from "../features/proifle/pages/ProfilePage";
@@ -16,9 +19,11 @@ import TransactionsPage from "../features/transactions/pages/TransactionsPage";
 import TransferPage from "../features/transfers/pages/TransferPage";
 import AdminLayout from "../layouts/AdminLayout";
 import NotFoundPage from "../routes/NotFoundPage";
+import ProtectedRoute from "../routes/ProtectedRoute";
 import { ROUTES } from "../routes/routePaths";
 import ComponentShowcasePage from "./ComponentShowcasePage";
 import HomePage from "./HomePage";
+import AuthFlowTestPage from "./temp/AuthFlowTestPage";
 
 function AppRoutes() {
     return (
@@ -27,6 +32,10 @@ function AppRoutes() {
                 path={ROUTES.HOME}
                 element={<HomePage />}
             />
+
+            <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+            <Route path={ROUTES.SIGNUP} element={<SignupPage />} />
+            <Route path={ROUTES.COMPLETE_GOOGLE_PROFILE} element={<CompleteGoogleProfilePage />} />
 
             <Route
                 path={ROUTES.COMPONENTS}
@@ -66,6 +75,13 @@ function AppRoutes() {
                     index
                     element={<AdminDashboardPage />}
                 />
+            <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
+                <Route path={ROUTES.ADMIN_HOME} element={<AdminDashboardPage />} />
+            </Route>
+
+            <Route element={<ProtectedRoute />}>
+                <Route path={ROUTES.AUTH_TEST} element={<AuthFlowTestPage />} />
+            </Route>
 
                 <Route
                     path="pending-users"
