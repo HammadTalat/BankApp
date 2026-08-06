@@ -23,7 +23,6 @@ import ProtectedRoute from "../routes/ProtectedRoute";
 import { ROUTES } from "../routes/routePaths";
 import ComponentShowcasePage from "./ComponentShowcasePage";
 import HomePage from "./HomePage";
-import AuthFlowTestPage from "./temp/AuthFlowTestPage";
 
 function AppRoutes() {
     return (
@@ -37,75 +36,96 @@ function AppRoutes() {
             <Route path={ROUTES.SIGNUP} element={<SignupPage />} />
             <Route path={ROUTES.COMPLETE_GOOGLE_PROFILE} element={<CompleteGoogleProfilePage />} />
 
-            <Route
-                path={ROUTES.COMPONENTS}
-                element={<ComponentShowcasePage />}
-            />
+            <Route element={<ProtectedRoute />}>
+                <Route
+                    path={ROUTES.COMPONENTS}
+                    element={<ComponentShowcasePage />}
+                />
+            </Route>
 
             <Route
-                path={ROUTES.APPLICATION_STATUS}
-                element={<ApplicationStatusPage />}
-            />
-
-            <Route
-                path={ROUTES.ACCOUNT_HOME}
-                element={<DashboardPage />}
-            />
-
-            <Route
-                path={ROUTES.ACCOUNT_TRANSFERS}
-                element={<TransferPage />}
-            />
-
-            <Route
-                path={ROUTES.ACCOUNT_TRANSACTIONS}
-                element={<TransactionsPage />}
-            />
-
-            <Route
-                path={ROUTES.ACCOUNT_PROFILE}
-                element={<ProfilePage />}
-            />
-
-            <Route
-                path={ROUTES.ADMIN_HOME}
-                element={<AdminLayout />}
+                element={(
+                    <ProtectedRoute
+                        allowedRoles={["ACCOUNT_HOLDER"]}
+                        allowedApprovalStatuses={["PENDING", "REJECTED"]}
+                    />
+                )}
             >
                 <Route
-                    index
-                    element={<AdminDashboardPage />}
+                    path={ROUTES.APPLICATION_STATUS}
+                    element={<ApplicationStatusPage />}
                 />
-            {/*<Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>*/}
-                <Route path={ROUTES.ADMIN_HOME} element={<AdminDashboardPage />} />
-            {/*</Route>*/}
+            </Route>
 
-                {/*<Route element={<ProtectedRoute />}>*/}
-                {/*    <Route path={ROUTES.AUTH_TEST} element={<AuthFlowTestPage />} />*/}
-                {/*</Route>*/}
+            <Route
+                element={(
+                    <ProtectedRoute
+                        allowedRoles={["ACCOUNT_HOLDER"]}
+                        allowedApprovalStatuses={["APPROVED"]}
+                    />
+                )}
+            >
+                <Route
+                    path={ROUTES.ACCOUNT_HOME}
+                    element={<DashboardPage />}
+                />
 
                 <Route
-                    path="pending-users"
-                    element={<PendingUsersPage />}
+                    path={ROUTES.ACCOUNT_TRANSFERS}
+                    element={<TransferPage />}
                 />
 
                 <Route
-                    path="accounts"
-                    element={<AdminAccountsLayout />}
+                    path={ROUTES.ACCOUNT_TRANSACTIONS}
+                    element={<TransactionsPage />}
+                />
+
+                <Route
+                    path={ROUTES.ACCOUNT_PROFILE}
+                    element={<ProfilePage />}
+                />
+            </Route>
+
+            <Route
+                element={(
+                    <ProtectedRoute
+                        allowedRoles={["ADMIN"]}
+                    />
+                )}
+            >
+                <Route
+                    path={ROUTES.ADMIN_HOME}
+                    element={<AdminLayout />}
                 >
                     <Route
                         index
-                        element={<AccountsPage />}
+                        element={<AdminDashboardPage />}
                     />
 
                     <Route
-                        path=":accountNumber"
-                        element={<AccountDetailsPage />}
+                        path="pending-users"
+                        element={<PendingUsersPage />}
                     />
 
                     <Route
-                        path=":accountNumber/transactions"
-                        element={<AccountTransactionsPage />}
-                    />
+                        path="accounts"
+                        element={<AdminAccountsLayout />}
+                    >
+                        <Route
+                            index
+                            element={<AccountsPage />}
+                        />
+
+                        <Route
+                            path=":accountNumber"
+                            element={<AccountDetailsPage />}
+                        />
+
+                        <Route
+                            path=":accountNumber/transactions"
+                            element={<AccountTransactionsPage />}
+                        />
+                    </Route>
                 </Route>
             </Route>
 

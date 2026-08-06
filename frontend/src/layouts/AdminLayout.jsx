@@ -1,12 +1,17 @@
 import { useState } from "react";
-import { Outlet } from "react-router";
+import { Outlet, useNavigate } from "react-router";
 
+import { useAuth } from "../features/auth/context/useAuth";
 import AdminHeader from "../shared/components/navigation/AdminHeader";
 import AdminSidebar from "../shared/components/navigation/AdminSidebar";
 import { adminProfileMock } from "../features/admin/profile/mocks/adminProfileMock";
+import { ROUTES } from "../routes/routePaths";
 
 function AdminLayout() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [loggingOut, setLoggingOut] = useState(false);
+    const { signOut, user } = useAuth();
+    const navigate = useNavigate();
 
     function openSidebar() {
         setSidebarOpen(true);
@@ -14,6 +19,19 @@ function AdminLayout() {
 
     function closeSidebar() {
         setSidebarOpen(false);
+    }
+
+    async function handleLogout() {
+        if (loggingOut) return;
+
+        setLoggingOut(true);
+
+        try {
+            await signOut();
+        } finally {
+            navigate(ROUTES.LOGIN, { replace: true });
+            setLoggingOut(false);
+        }
     }
 
     return (
@@ -36,7 +54,9 @@ function AdminLayout() {
                 <AdminHeader
                     onOpenSidebar={openSidebar}
                     isSidebarOpen={sidebarOpen}
-                    adminProfile={adminProfileMock}
+                    adminProfile={user || adminProfileMock}
+                    onLogout={handleLogout}
+                    loggingOut={loggingOut}
                 />
 
                 <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">

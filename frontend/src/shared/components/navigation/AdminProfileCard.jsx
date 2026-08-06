@@ -1,4 +1,5 @@
 import {
+    LogOut,
     Mail,
     MapPin,
     ShieldCheck,
@@ -13,6 +14,8 @@ function AdminProfileCard({
     cardRef,
     profile,
     onClose,
+    onLogout,
+    loggingOut = false,
 }) {
     return (
         <div
@@ -92,6 +95,16 @@ function AdminProfileCard({
                     </div>
                     <StatusBadge status={profile.approvalStatus} />
                 </div>
+
+                <button
+                    type="button"
+                    onClick={onLogout}
+                    disabled={loggingOut}
+                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-brand-danger transition hover:border-red-300 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-danger focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                    <LogOut size={18} aria-hidden="true" />
+                    {loggingOut ? "Logging out…" : "Log out"}
+                </button>
             </div>
         </div>
     );

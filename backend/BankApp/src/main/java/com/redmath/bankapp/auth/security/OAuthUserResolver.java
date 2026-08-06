@@ -24,17 +24,6 @@ public class OAuthUserResolver {
     AppUser appUser = appUserRepository.findByEmail(email)
         .orElseGet(() -> createGoogleUser(oauth2User));
 
-    if (appUser.getApprovalStatus() == ApprovalStatus.PENDING) {
-      if (isProfileIncomplete(appUser)) {
-        return appUser;
-      }
-
-      throw new OAuth2AuthenticationException(
-          new OAuth2Error("account_not_approved"),
-          "Your account is awaiting administrator approval."
-      );
-    }
-
     return appUser;
 
   }
@@ -52,12 +41,6 @@ public class OAuthUserResolver {
         .build();
 
     return appUserRepository.save(appUser);
-  }
-
-  private boolean isProfileIncomplete(AppUser appUser) {
-    String address = appUser.getAddress();
-    return address == null || address.isBlank()
-        || "Not provided".equalsIgnoreCase(address.trim());
   }
 
   private String extractEmail(Map<String, Object> attributes) {

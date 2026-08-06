@@ -16,6 +16,8 @@ function AdminHeader({
     onOpenSidebar,
     isSidebarOpen = false,
     adminProfile,
+    onLogout,
+    loggingOut = false,
 }) {
     const [profileOpen, setProfileOpen] = useState(false);
     const profileContainerRef = useRef(null);
@@ -135,6 +137,8 @@ function AdminHeader({
                             cardRef={profileCardRef}
                             profile={profile}
                             onClose={handleCloseProfile}
+                            onLogout={onLogout}
+                            loggingOut={loggingOut}
                         />
                     )}
                 </div>

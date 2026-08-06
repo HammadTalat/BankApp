@@ -1,4 +1,5 @@
 import {
+    useCallback,
     useEffect,
     useState,
 } from "react";
@@ -10,6 +11,8 @@ import Alert from "../../../shared/components/feedback/Alert";
 import LoadingSpinner from "../../../shared/components/feedback/LoadingSpinner";
 import Button from "../../../shared/components/ui/Button";
 import Card from "../../../shared/components/ui/Card";
+import { useAuth } from "../../auth/context/useAuth";
+import { getPostAuthRoute } from "../../../routes/authRouting";
 import { ROUTES } from "../../../routes/routePaths";
 
 const DEFAULT_ERROR_MESSAGE =
@@ -38,45 +41,38 @@ function getFriendlyErrorMessage(error) {
     return DEFAULT_ERROR_MESSAGE;
 }
 
-async function requestApplicationStatus() {
-    const currentUser = {
-        name : "Ali",
-        email : "temp@gmail.com",
-        address: "123 wapda",
-        role : "ACCOUNT_HOLDER",
-        approvalStatus : "PENDING"
-    };
-
-    if (
-        !currentUser ||
-        typeof currentUser !== "object" ||
-        Array.isArray(currentUser)
-    ) {
-        throw new Error(DEFAULT_ERROR_MESSAGE);
-    }
-
-    return currentUser;
-}
-
 function ApplicationStatusPage() {
+    const { user, refreshProfile } = useAuth();
     const navigate = useNavigate();
-    const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState("");
 
     const approvalStatus = normalizeValue(user?.approvalStatus);
-    const role = normalizeValue(user?.role);
+    const postAuthRoute = getPostAuthRoute(user);
+
+    const requestApplicationStatus = useCallback(async () => {
+        const currentUser = await refreshProfile();
+
+        if (
+            !currentUser
+            || typeof currentUser !== "object"
+            || Array.isArray(currentUser)
+        ) {
+            throw new Error(DEFAULT_ERROR_MESSAGE);
+        }
+
+        return currentUser;
+    }, [refreshProfile]);
 
     useEffect(() => {
         let cancelled = false;
 
         async function loadInitialStatus() {
             try {
-                const currentUser = await requestApplicationStatus();
+                await requestApplicationStatus();
 
                 if (!cancelled) {
-                    setUser(currentUser);
                     setError("");
                 }
             } catch (requestError) {
@@ -95,25 +91,13 @@ function ApplicationStatusPage() {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [requestApplicationStatus]);
 
     useEffect(() => {
-        if (role === "ADMIN") {
-            navigate(ROUTES.ADMIN_HOME, {
-                replace: true,
-            });
-            return;
+        if (!loading && user && postAuthRoute !== ROUTES.APPLICATION_STATUS) {
+            navigate(postAuthRoute, { replace: true });
         }
-
-        if (
-            role === "ACCOUNT_HOLDER" &&
-            approvalStatus === "APPROVED"
-        ) {
-            navigate(ROUTES.ACCOUNT_HOME, {
-                replace: true,
-            });
-        }
-    }, [approvalStatus, navigate, role]);
+    }, [loading, navigate, postAuthRoute, user]);
 
     useEffect(() => {
         if (approvalStatus !== "PENDING") {
@@ -124,10 +108,9 @@ function ApplicationStatusPage() {
 
         const intervalId = window.setInterval(async () => {
             try {
-                const currentUser = await requestApplicationStatus();
+                await requestApplicationStatus();
 
                 if (!cancelled) {
-                    setUser(currentUser);
                     setError("");
                 }
             } catch (requestError) {
@@ -141,15 +124,14 @@ function ApplicationStatusPage() {
             cancelled = true;
             window.clearInterval(intervalId);
         };
-    }, [approvalStatus]);
+    }, [approvalStatus, requestApplicationStatus]);
 
     async function handleRefresh() {
         setRefreshing(true);
         setError("");
 
         try {
-            const currentUser = await requestApplicationStatus();
-            setUser(currentUser);
+            await requestApplicationStatus();
         } catch (requestError) {
             setError(getFriendlyErrorMessage(requestError));
         } finally {

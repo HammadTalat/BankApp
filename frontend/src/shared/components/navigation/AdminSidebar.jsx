@@ -103,11 +103,6 @@ function AdminSidebar({
                 })}
             </nav>
 
-            <div className="border-t border-white/10 px-5 py-4">
-                <p className="text-xs leading-5 text-slate-400">
-                    Secure banking administration
-                </p>
-            </div>
         </aside>
     );
 }
