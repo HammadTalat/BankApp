@@ -8,6 +8,7 @@ import { ROUTES } from "../../../routes/routePaths";
 
 function CompleteGoogleProfilePage() {
     const { isAuthenticated, user, finishProfile, signOut } = useAuth();
+    console.log("[CompleteGoogleProfilePage] render", { isAuthenticated, user });
     const [address, setAddress] = useState("");
     const [error, setError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);

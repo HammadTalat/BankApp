@@ -19,7 +19,7 @@ function toUser(response, profile = null) {
         role: profile?.role || response.role,
         address: profile?.address,
         approvalStatus: profile?.approvalStatus,
-        needsProfileCompletion: response.redirectPath === "/complete-profile"
+        needsProfileCompletion: response?.redirectPath === "/complete-profile"
             || Boolean(profile && (!profile.address || profile.address === "Not provided")),
     };
 }

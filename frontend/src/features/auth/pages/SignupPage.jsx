@@ -1,4 +1,4 @@
-import { Landmark } from "lucide-react";
+    import { Landmark } from "lucide-react";
 import { Navigate, useNavigate } from "react-router";
 
 import SignupForm from "../components/SignupForm";
