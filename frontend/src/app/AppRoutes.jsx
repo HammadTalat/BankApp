@@ -4,6 +4,8 @@ import {
 } from "react-router";
 
 import ApplicationStatusPage from "../features/application-status/pages/ApplicationStatusPage";
+import AdminAccountsLayout from "../features/admin/accounts/layout/AdminAccountsLayout";
+import AccountDetailsPage from "../features/admin/accounts/pages/AccountDetailsPage";
 import AccountsPage from "../features/admin/accounts/pages/AccountsPage";
 import AdminDashboardPage from "../features/admin/dashboard/pages/AdminDashboardPage";
 import PendingUsersPage from "../features/admin/users/pages/PendingUsersPage";
@@ -71,8 +73,18 @@ function AppRoutes() {
 
                 <Route
                     path="accounts"
-                    element={<AccountsPage />}
-                />
+                    element={<AdminAccountsLayout />}
+                >
+                    <Route
+                        index
+                        element={<AccountsPage />}
+                    />
+
+                    <Route
+                        path=":accountNumber"
+                        element={<AccountDetailsPage />}
+                    />
+                </Route>
             </Route>
 
             <Route
