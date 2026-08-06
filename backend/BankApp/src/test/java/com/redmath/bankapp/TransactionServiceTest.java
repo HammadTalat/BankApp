@@ -151,6 +151,30 @@ class TransactionServiceTest {
 //        }
 
         @Test
+        void getUserTransactions_ConvertsLocalDateToLocalDateTimeBoundary() throws Exception {
+            LocalDate startDate = LocalDate.of(2026, 8, 1);
+            LocalDate endDate = LocalDate.of(2026, 8, 4);
+            Pageable pageable = PageRequest.of(0, 10);
+
+            LocalDateTime expectedStart = startDate.atStartOfDay();
+            LocalDateTime expectedEnd = endDate.atTime(LocalTime.MAX);
+
+            given(accountRepository.findByUser_Id(userPrincipal.getId())).willReturn(Optional.of(senderAccount));
+
+            Page<AccountTransaction> emptyPage = new PageImpl<>(Collections.emptyList());
+
+            when(transactionRepository.findByAccountNumberAndDateRange(
+                    eq("PK1000000001"), eq(expectedStart), eq(expectedEnd), eq(pageable)
+            )).thenReturn(emptyPage);
+
+            transactionService.getUserTransactions(userPrincipal, startDate, endDate, pageable);
+
+            verify(transactionRepository).findByAccountNumberAndDateRange(
+                    eq("PK1000000001"), eq(expectedStart), eq(expectedEnd), eq(pageable)
+            );
+        }
+
+        @Test
         @DisplayName("Should throw BusinessRuleException when sender and receiver account numbers match (Case-Insensitive)")
         void executeTransfer_SelfTransfer_ThrowsException() {
             TransferRequest request = new TransferRequest(SENDER_ACC, SENDER_ACC.toLowerCase(), new BigDecimal("100.00"), "Self Transfer");
