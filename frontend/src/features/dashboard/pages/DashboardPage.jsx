@@ -2,8 +2,11 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import { ROUTES } from "../../../routes/routePaths.js";
 import { httpClient } from "../../../api/httpClient.js";
+import {useAuth} from "../../auth/context/useAuth.js";
 
 export const DashboardPage = () => {
+    const { user, signOut, loading: authLoading} = useAuth();
+
     const [copied, setCopied] = useState(false);
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -62,6 +65,13 @@ export const DashboardPage = () => {
         navigate(ROUTES.HOME);
     };
 
+    if (authLoading) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
+                <p className="text-gray-500 font-medium">Loading session...</p>
+            </div>
+        );
+    }
     return (
         <div className="flex min-h-screen bg-[#F8FAFC]">
             {/* Sidebar */}
@@ -121,7 +131,7 @@ export const DashboardPage = () => {
                         Account Dashboard
                     </h2>
                     <p className="text-gray-500 text-sm mt-1">
-                        Welcome back, Ali
+                        Welcome back, {user?.name}
                     </p>
                 </div>
 
