@@ -6,9 +6,14 @@ export const ROUTES = {
     ADMIN_HOME: "/admin",
     ADMIN_PENDING_USERS: "/admin/pending-users",
     ADMIN_ACCOUNTS: "/admin/accounts",
+    ADMIN_ACCOUNT_DETAILS: "/admin/accounts/:accountNumber",
 
     ACCOUNT_HOME: "/account",
     ACCOUNT_TRANSFERS: "/account/transfers",
     ACCOUNT_TRANSACTIONS: "/account/transactions",
     ACCOUNT_PROFILE: "/account/profile",
 };
+
+export function getAdminAccountDetailsPath(accountNumber) {
+    return `${ROUTES.ADMIN_ACCOUNTS}/${encodeURIComponent(accountNumber)}`;
+}
