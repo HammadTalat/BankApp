@@ -111,13 +111,15 @@ public class SecurityConfig {
 
         .authorizeHttpRequests(auth -> auth
 
-            .requestMatchers(
+             .requestMatchers(
 
-                "/swagger-ui/**",
+                 "/swagger-ui/**",
 
-                "/v3/api-docs/**"
+                 "/v3/api-docs/**",
 
-            ).permitAll()
+                 "/error"
+
+             ).permitAll()
 
             .requestMatchers(
 
@@ -171,10 +173,10 @@ public class SecurityConfig {
 
         )
 
-        .addFilterBefore(
-            jwtAuthenticationFilter,
-            UsernamePasswordAuthenticationFilter.class
-        );
+         .addFilterBefore(
+             jwtAuthenticationFilter,
+             UsernamePasswordAuthenticationFilter.class
+         );
 
     return http.build();
 

@@ -21,6 +21,7 @@ import com.redmath.bankapp.transaction.service.TransactionService;
 import com.redmath.bankapp.user.entity.AppUser;
 import com.redmath.bankapp.user.entity.ApprovalStatus;
 import com.redmath.bankapp.user.entity.Role;
+import com.redmath.bankapp.tempconfig.security.UserPrincipal;
 import jakarta.transaction.UserTransaction;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -74,6 +75,7 @@ class TransactionServiceTest {
     private ArgumentCaptor<AccountTransaction> transactionCaptor;
 
     private Jwt jwt;
+    private UserPrincipal userPrincipal;
     private BankAccount senderAccount;
     private BankAccount receiverAccount;
     private AccountBalance senderBalance;
@@ -90,6 +92,8 @@ class TransactionServiceTest {
                 .claim("userId", USER_ID)
                 .claim("sub", "test@redmath.com")
                 .build();
+
+        userPrincipal = new UserPrincipal(1L, "testuser1", "testuser1@redmath.com", Collections.emptyList());
 
         AppUser user1 = new AppUser();
         user1.setId(1L);
@@ -159,7 +163,7 @@ class TransactionServiceTest {
             LocalDateTime expectedStart = startDate.atStartOfDay();
             LocalDateTime expectedEnd = endDate.atTime(LocalTime.MAX);
 
-            given(accountRepository.findByUser_Id(userPrincipal.getId())).willReturn(Optional.of(senderAccount));
+            given(accountRepository.findByUser_Id(((Number) jwt.getClaim("userId")).longValue())).willReturn(Optional.of(senderAccount));
 
             Page<AccountTransaction> emptyPage = new PageImpl<>(Collections.emptyList());
 
@@ -167,7 +171,7 @@ class TransactionServiceTest {
                     eq("PK1000000001"), eq(expectedStart), eq(expectedEnd), eq(pageable)
             )).thenReturn(emptyPage);
 
-            transactionService.getUserTransactions(userPrincipal, startDate, endDate, pageable);
+            transactionService.getUserTransactions(jwt, startDate, endDate, pageable);
 
             verify(transactionRepository).findByAccountNumberAndDateRange(
                     eq("PK1000000001"), eq(expectedStart), eq(expectedEnd), eq(pageable)

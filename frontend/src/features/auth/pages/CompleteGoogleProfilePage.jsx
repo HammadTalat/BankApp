@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Landmark, MapPin } from "lucide-react";
-import { Navigate, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 
 import Alert from "../../../shared/components/feedback/Alert";
 import { useAuth } from "../context/useAuth";

@@ -2,6 +2,7 @@ package com.redmath.bankapp.auth.controller;
 
 import com.redmath.bankapp.auth.dto.request.SignupRequest;
 import com.redmath.bankapp.auth.dto.response.SignupResponse;
+import com.redmath.bankapp.auth.exception.DuplicateEmailException;
 import com.redmath.bankapp.auth.security.AuthCookieService;
 import com.redmath.bankapp.auth.service.AuthService;
 import jakarta.validation.Valid;
@@ -23,11 +24,16 @@ public class AuthController {
   public ResponseEntity<SignupResponse> signup(
       @Valid @RequestBody SignupRequest request) {
 
-    SignupResponse response = authService.signup(request);
-
-    return ResponseEntity
-        .status(HttpStatus.CREATED)
-        .body(response);
+    try {
+      SignupResponse response = authService.signup(request);
+      return ResponseEntity
+          .status(HttpStatus.CREATED)
+          .body(response);
+    } catch (DuplicateEmailException ex) {
+      return ResponseEntity
+          .status(HttpStatus.CONFLICT)
+          .body(new SignupResponse(false, ex.getMessage()));
+    }
   }
 
   @PostMapping("/logout")

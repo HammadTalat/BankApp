@@ -1,4 +1,9 @@
 package com.redmath.bankapp.user.dto.request;
 
-public record CompleteProfileRequest(String address) {
+import jakarta.validation.constraints.NotBlank;
+
+public record CompleteProfileRequest(
+    @NotBlank(message = "Address is required.")
+    String address
+) {
 }

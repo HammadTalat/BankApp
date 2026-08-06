@@ -1,8 +1,10 @@
 package com.redmath.bankapp.auth.security;
 
+import lombok.Getter;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
 
+@Getter
 public class IncompleteProfileOAuth2Exception extends OAuth2AuthenticationException {
 
   private final String email;
@@ -16,14 +18,6 @@ public class IncompleteProfileOAuth2Exception extends OAuth2AuthenticationExcept
     super(error, message);
     this.email = email;
     this.name = name;
-  }
-
-  public String getEmail() {
-    return email;
-  }
-
-  public String getName() {
-    return name;
   }
 
 }

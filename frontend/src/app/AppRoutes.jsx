@@ -20,6 +20,7 @@ import TransferPage from "../features/transfers/pages/TransferPage";
 import AdminLayout from "../layouts/AdminLayout";
 import NotFoundPage from "../routes/NotFoundPage";
 import ProtectedRoute from "../routes/ProtectedRoute";
+import PublicRoute from "../routes/PublicRoute";
 import { ROUTES } from "../routes/routePaths";
 import ComponentShowcasePage from "./ComponentShowcasePage";
 import HomePage from "./HomePage";
@@ -32,9 +33,12 @@ function AppRoutes() {
                 element={<HomePage />}
             />
 
-            <Route path={ROUTES.LOGIN} element={<LoginPage />} />
-            <Route path={ROUTES.SIGNUP} element={<SignupPage />} />
-            <Route path={ROUTES.COMPLETE_GOOGLE_PROFILE} element={<CompleteGoogleProfilePage />} />
+            {/* Public-only routes: authenticated users are redirected away */}
+            <Route element={<PublicRoute />}>
+                <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+                <Route path={ROUTES.SIGNUP} element={<SignupPage />} />
+                <Route path={ROUTES.COMPLETE_GOOGLE_PROFILE} element={<CompleteGoogleProfilePage />} />
+            </Route>
 
             <Route element={<ProtectedRoute />}>
                 <Route

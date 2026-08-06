@@ -2,12 +2,12 @@ package com.redmath.bankapp.auth.security;
 
 import com.redmath.bankapp.auth.dto.response.AuthResponse;
 import com.redmath.bankapp.user.entity.AppUser;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -26,10 +26,10 @@ public class ApiAuthenticationSuccessHandler
 
   @Override
   public void onAuthenticationSuccess(
-      HttpServletRequest request,
-      HttpServletResponse response,
+      @NonNull HttpServletRequest request,
+      @NonNull HttpServletResponse response,
       Authentication authentication)
-      throws IOException, ServletException {
+      throws IOException {
 
     CustomUserDetails userDetails =
         (CustomUserDetails) authentication.getPrincipal();

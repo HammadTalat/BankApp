@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -33,10 +34,10 @@ public class ApiAuthenticationFailureHandler
 
   @Override
   public void onAuthenticationFailure(
-      HttpServletRequest request,
-      HttpServletResponse response,
-      AuthenticationException exception)
-      throws IOException, ServletException {
+      @NonNull HttpServletRequest request,
+      @NonNull HttpServletResponse response,
+      @NonNull AuthenticationException exception)
+      throws IOException {
 
     String message;
     String errorCode = null;
@@ -44,53 +45,42 @@ public class ApiAuthenticationFailureHandler
     String email = null;
     String name = null;
 
-    if (exception instanceof DisabledException) {
+    switch (exception) {
+      case DisabledException disabledException ->
+          message = "Your account is awaiting administrator approval.";
+      case IncompleteProfileOAuth2Exception incompleteException -> {
 
-      message = "Your account is awaiting administrator approval.";
-
-    } else if (exception instanceof IncompleteProfileOAuth2Exception incompleteException) {
-
-      message = incompleteException.getMessage();
-      errorCode = incompleteException.getError().getErrorCode();
-      redirectPath = "/complete-profile";
-      email = incompleteException.getEmail();
-      name = incompleteException.getName();
-
-    } else if (exception instanceof OAuth2AuthenticationException oauth2Exception) {
-
-      String description = oauth2Exception.getError().getDescription();
-
-      if (description != null && !description.isBlank()) {
-        message = description;
-      } else if (oauth2Exception.getError().getErrorCode() != null) {
-        message = switch (oauth2Exception.getError().getErrorCode()) {
-          case "access_denied" -> "Google sign-in was cancelled or denied.";
-          case "invalid_request" -> "Google sign-in request was invalid.";
-          case "server_error" -> "Google sign-in service is temporarily unavailable.";
-          case "account_not_approved" -> "Your account is awaiting administrator approval.";
-          default -> "Google sign-in failed.";
-        };
-        errorCode = oauth2Exception.getError().getErrorCode();
-      } else {
-        message = "Google sign-in failed.";
+        message = incompleteException.getMessage();
+        errorCode = incompleteException.getError().getErrorCode();
+        redirectPath = "/complete-profile";
+        email = incompleteException.getEmail();
+        name = incompleteException.getName();
       }
+      case OAuth2AuthenticationException oauth2Exception -> {
 
-    } else if (exception instanceof LockedException) {
+        String description = oauth2Exception.getError().getDescription();
 
-      message = "Your account has been locked.";
-
-    } else if (exception instanceof CredentialsExpiredException) {
-
-      message = "Your credentials have expired.";
-
-    } else if (exception instanceof BadCredentialsException) {
-
-      message = "Invalid email or password.";
-
-    } else {
-
-      message = "Authentication failed.";
-
+        if (description != null && !description.isBlank()) {
+          message = description;
+        } else if (oauth2Exception.getError().getErrorCode() != null) {
+          message = switch (oauth2Exception.getError().getErrorCode()) {
+            case "access_denied" -> "Google sign-in was cancelled or denied.";
+            case "invalid_request" -> "Google sign-in request was invalid.";
+            case "server_error" -> "Google sign-in service is temporarily unavailable.";
+            case "account_not_approved" -> "Your account is awaiting administrator approval.";
+            default -> "Google sign-in failed.";
+          };
+          errorCode = oauth2Exception.getError().getErrorCode();
+        } else {
+          message = "Google sign-in failed.";
+        }
+      }
+      case LockedException lockedException -> message = "Your account has been locked.";
+      case CredentialsExpiredException credentialsExpiredException ->
+          message = "Your credentials have expired.";
+      case BadCredentialsException badCredentialsException ->
+          message = "Invalid email or password.";
+      default -> message = "Authentication failed.";
     }
 
     if (isOAuthRequest(request)) {
