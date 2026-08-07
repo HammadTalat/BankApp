@@ -7,11 +7,7 @@ import com.redmath.bankapp.account.entity.BalanceIndicator;
 import com.redmath.bankapp.account.entity.BankAccount;
 import com.redmath.bankapp.account.repository.AccountBalanceRepository;
 import com.redmath.bankapp.account.repository.BankAccountRepository;
-import com.redmath.bankapp.transaction.dto.AccountLookupResponse;
-import com.redmath.bankapp.transaction.dto.TransactionResponse;
-import com.redmath.bankapp.transaction.dto.TransferRequest;
-import com.redmath.bankapp.transaction.dto.TransferResponse;
-import com.redmath.bankapp.transaction.dto.UserTransactionsResponse;
+import com.redmath.bankapp.transaction.dto.*;
 import com.redmath.bankapp.transaction.exception.BusinessRuleException;
 import com.redmath.bankapp.transaction.exception.InsufficientBalanceException;
 import com.redmath.bankapp.transaction.exception.UnauthorizedAccessException;
@@ -151,6 +147,62 @@ public class TransactionService {
         );
     }
 
+    @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
+    public DepositResponse executeDeposit(Jwt jwt, DepositRequest request) throws AccountNotFoundException {
+        log.info("Processing deposit of {} into account {}", request.amount(), request.accountNumber());
+
+
+        // 1. Lock target parent account (FOR UPDATE on bank_accounts table)
+        BankAccount targetAccount = accountRepository.findByIdForUpdate(request.accountNumber())
+                .orElseThrow(() -> new AccountNotFoundException("Account not found: " + request.accountNumber()));
+
+        // 2. Validate security and state
+        validateAccountOwnership(targetAccount, extractUserId(jwt));
+        validateAccountActive(targetAccount, "Target");
+
+        // 3. Lock and fetch current balance, defaulting to ZERO if this is a newly created account
+        AccountBalance currentBalance = balanceRepository.findLatestBalanceForUpdate(targetAccount.getAccountNumber())
+                .orElseGet(() -> new AccountBalance(
+                        targetAccount,
+                        BigDecimal.ZERO,
+                        BalanceIndicator.CREDIT
+                ));
+
+        // 4. Calculate new balance safely
+        BigDecimal currentAmount = currentBalance.getAmount() != null ? currentBalance.getAmount() : BigDecimal.ZERO;
+        BigDecimal newAmount = currentAmount.add(request.amount());
+
+        // 5. Create immutable balance ledger entry
+        AccountBalance newLedgerEntry = new AccountBalance(
+                targetAccount,
+                newAmount,
+                BalanceIndicator.CREDIT
+        );
+        balanceRepository.save(newLedgerEntry);
+
+        // 6. Generate single audit transaction record
+        String operationId = UUID.randomUUID().toString();
+        AccountTransaction depositTransaction = createDepositLedgerRecord(
+                targetAccount,
+                request.amount(),
+                request.description() != null ? request.description() : "Cash Deposit",
+                operationId
+        );
+        transactionRepository.save(depositTransaction);
+
+        log.info("Deposit successful. Operation ID: {}", operationId);
+
+        return new DepositResponse(
+                operationId,
+                OperationStatus.COMPLETED,
+                request.amount(),
+                targetAccount.getAccountNumber(),
+                newAmount,
+                request.description() != null ? request.description() : "Cash Deposit",
+                LocalDateTime.now()
+        );
+    }
+
 
     @Transactional(readOnly = true)
     public UserTransactionsResponse getUserTransactions(Jwt jwt,
@@ -216,6 +268,22 @@ public class TransactionService {
         tx.setOperationId(operationId);
         tx.setTransactionDate(LocalDateTime.now());
         return tx;
+    }
+
+    private AccountTransaction createDepositLedgerRecord(
+            BankAccount targetAccount,
+            BigDecimal amount,
+            String description,
+            String operationId) {
+
+        return AccountTransaction.builder()
+                .account(targetAccount)
+                .recipientAccount(null) // Null for deposits as there is no secondary counterparty account
+                .amount(amount)
+                .indicator(TransactionIndicator.CREDIT)
+                .description(description != null && !description.isBlank() ? description : "Account Deposit")
+                .operationId(operationId)
+                .build();
     }
 
 
