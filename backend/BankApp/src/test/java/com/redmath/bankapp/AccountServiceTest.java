@@ -1,16 +1,18 @@
 package com.redmath.bankapp;
 
+import com.redmath.bankapp.account.dto.AccountResponse;
 import com.redmath.bankapp.account.dto.BalanceResponse;
 import com.redmath.bankapp.account.entity.AccountBalance;
+import com.redmath.bankapp.account.entity.AccountStatus;
 import com.redmath.bankapp.account.entity.BalanceIndicator;
 import com.redmath.bankapp.account.entity.BankAccount;
 import com.redmath.bankapp.account.repository.AccountBalanceRepository;
 import com.redmath.bankapp.account.repository.BankAccountRepository;
 import com.redmath.bankapp.account.service.AccountService;
 import com.redmath.bankapp.tempconfig.security.UserPrincipal;
-import com.redmath.bankapp.transaction.exception.BalanceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,14 +23,12 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import javax.security.auth.login.AccountNotFoundException;
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AccountServiceTest {
@@ -39,20 +39,27 @@ class AccountServiceTest {
     @Mock
     private AccountBalanceRepository accountBalanceRepository;
 
+    @Mock
+    private Jwt jwt;
+
     @InjectMocks
     private AccountService accountBalanceService;
 
-    private UserPrincipal validUserPrincipal;
+    @InjectMocks
+    private AccountService accountService;
+
     private Jwt validJwtPrincipal;
     private BankAccount bankAccount;
     private AccountBalance accountBalance;
+
+    private final AccountStatus accountStatus = AccountStatus.ACTIVE;
 
     private final Long userId = 1L;
     private final String accountNumber = "ACC123456";
 
     @BeforeEach
     void setUp() {
-        validUserPrincipal = new UserPrincipal(userId, "test@redmath.com", "pass", Collections.emptyList());
+
         validJwtPrincipal = Jwt.withTokenValue("mock-jwt-token-string")
                 .header("alg", "HS256")
                 .header("typ", "JWT")
@@ -144,5 +151,49 @@ class AccountServiceTest {
 
         verify(bankAccountRepository).findByUser_Id(userId);
         verify(accountBalanceRepository).findLatestBalance(accountNumber);
+    }
+
+    @Nested
+    @DisplayName("getAccount Unit Tests")
+    class GetAccountTests {
+
+        @Test
+        @DisplayName("Should return AccountResponse when bank account exists for user")
+        void getAccount_AccountExists_ReturnsAccountResponse() throws Exception {
+            // Arrange
+            BankAccount mockAccount = new BankAccount();
+            mockAccount.setAccountNumber(accountNumber);
+            mockAccount.setStatus(accountStatus);
+
+            given(bankAccountRepository.findByUser_Id(any(Long.class))).willReturn(Optional.of(mockAccount));
+
+            // Act
+            AccountResponse response = accountService.getAccount(jwt);
+
+            // Assert - Explicit property assertions kill return/mapping object mutations
+            assertThat(response).isNotNull();
+            assertThat(response.accountNumber()).isEqualTo(accountNumber); // or response.getAccountNumber()
+            assertThat(response.status()).isEqualTo(accountStatus);       // or response.getStatus()
+
+            // Verify interactions to kill boundary/side-effect mutations
+            verify(bankAccountRepository).findByUser_Id(userId);
+            verifyNoMoreInteractions(bankAccountRepository);
+        }
+
+        @Test
+        @DisplayName("Should throw AccountNotFoundException with exact message when account does not exist")
+        void getAccount_AccountNotFound_ThrowsAccountNotFoundException() {
+            // Arrange
+            given(bankAccountRepository.findByUser_Id(userId)).willReturn(Optional.empty());
+
+            // Act & Assert
+            // Asserting exact class and message kills lambda/exception message mutations
+            assertThatThrownBy(() -> accountService.getAccount(jwt))
+                    .isInstanceOf(AccountNotFoundException.class)
+                    .hasMessage("No bank account found for user");
+
+            verify(bankAccountRepository).findByUser_Id(userId);
+            verifyNoMoreInteractions(bankAccountRepository);
+        }
     }
 }
