@@ -63,6 +63,10 @@ public class TransactionService {
         log.info("Processing transfer of {} from {} to {}",
                 request.amount(), request.senderAccountNumber(), request.receiverAccountNumber());
 
+        if (request.amount() == null || request.amount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessRuleException("Transfer amount must be greater than zero");
+        }
+
         // 1. Prevent self-transfer
         if (request.senderAccountNumber().equalsIgnoreCase(request.receiverAccountNumber())) {
             throw new BusinessRuleException("Sender and receiver accounts cannot be the same");
@@ -86,23 +90,27 @@ public class TransactionService {
         validateAccountActive(senderAccount, "Sender");
         validateAccountActive(receiverAccount, "Receiver");
 
-        // 4. Pessimistically Lock Sender Balance to prevent Race Conditions (Double-Spend)
-        AccountBalance senderBalance = balanceRepository.findLatestBalanceForUpdate(senderAccount.getAccountNumber())
-                .orElseThrow(() -> new BusinessRuleException("Sender balance record missing"));
+        // 4. Lock Sender Balance (Default to ZERO if no record exists)
+        BigDecimal currentSenderAmount = balanceRepository
+                .findLatestBalanceForUpdate(senderAccount.getAccountNumber())
+                .map(AccountBalance::getAmount)
+                .orElse(BigDecimal.ZERO);
 
         // 5. Check funds sufficiency
-        if (senderBalance.getAmount().compareTo(request.amount()) < 0) {
+        if (currentSenderAmount.compareTo(request.amount()) < 0) {
             log.warn("Transfer failed: Insufficient funds in account {}", senderAccount.getAccountNumber());
             throw new InsufficientBalanceException("Insufficient balance to perform this transfer");
         }
 
         // 6. Lock and fetch Receiver Balance
-        AccountBalance receiverBalance = balanceRepository.findLatestBalanceForUpdate(receiverAccount.getAccountNumber())
-                .orElseThrow(() -> new BusinessRuleException("Receiver balance record missing"));
+        BigDecimal currentReceiverAmount = balanceRepository
+                .findLatestBalanceForUpdate(receiverAccount.getAccountNumber())
+                .map(AccountBalance::getAmount)
+                .orElse(BigDecimal.ZERO);
 
         // 7. Update Balances
-        BigDecimal newSenderAmount = senderBalance.getAmount().subtract(request.amount());
-        BigDecimal newReceiverAmount = receiverBalance.getAmount().add(request.amount());
+        BigDecimal newSenderAmount = currentSenderAmount.subtract(request.amount());
+        BigDecimal newReceiverAmount = currentReceiverAmount.add(request.amount());
 
         AccountBalance newSenderLedgerEntry = new AccountBalance(
                 senderAccount,
@@ -151,6 +159,9 @@ public class TransactionService {
     public DepositResponse executeDeposit(Jwt jwt, DepositRequest request) throws AccountNotFoundException {
         log.info("Processing deposit of {} into account {}", request.amount(), request.accountNumber());
 
+        if (request.amount() == null || request.amount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessRuleException("Transfer amount must be greater than zero");
+        }
 
         // 1. Lock target parent account (FOR UPDATE on bank_accounts table)
         BankAccount targetAccount = accountRepository.findByIdForUpdate(request.accountNumber())
