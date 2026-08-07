@@ -125,6 +125,12 @@ export const DashboardPage = () => {
                             Dashboard
                         </Link>
                         <Link
+                            to={ROUTES.ACCOUNT_DEPOSIT}
+                            className="flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                        >
+                            Deposit Money
+                        </Link>
+                        <Link
                             to={ROUTES.ACCOUNT_TRANSFERS}
                             className="flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                         >

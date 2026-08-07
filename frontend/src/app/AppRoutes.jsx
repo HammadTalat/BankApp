@@ -18,6 +18,7 @@ import TransactionsPage from "../features/transactions/pages/TransactionsPage.js
 import TransferPage from "../features/transfers/pages/TransferPage.jsx";
 import ProfilePage from "../features/proifle/pages/ProfilePage.jsx";
 import DashboardPage from "../features/dashboard/pages/DashboardPage.jsx";
+import DepositPage from "../features/deposit/pages/DepositPage.jsx";
 
 function AppRoutes() {
     return (
@@ -40,6 +41,9 @@ function AppRoutes() {
 
             {/*Dashboard*/}
             <Route path={ROUTES.ACCOUNT_HOME} element={<DashboardPage />} />
+
+            {/*Deposit*/}
+            <Route path={ROUTES.ACCOUNT_DEPOSIT} element={<DepositPage />} />
 
             <Route
                 path={ROUTES.COMPONENTS}
