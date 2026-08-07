@@ -7,15 +7,16 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public record AdminAccountDetailsResponse(
-        String accountNumber,
-        AccountStatus accountStatus,
-        Long userId,
-        String holderName,
-        String holderEmail,
-        String holderAddress,
-        ApprovalStatus approvalStatus,
-        BigDecimal balance,
-        BalanceIndicator balanceIndicator,
-        LocalDateTime balanceDate
+    String accountNumber,
+    AccountStatus accountStatus,
+    Long userId,
+    String holderName,
+    String holderEmail,
+    String holderAddress,
+    ApprovalStatus approvalStatus,
+    BigDecimal balance,
+    BalanceIndicator balanceIndicator,
+    LocalDateTime balanceDate
 ) {
+
 }

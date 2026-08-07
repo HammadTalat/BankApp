@@ -36,7 +36,7 @@ public class UserController {
       @Valid @RequestBody CompleteProfileRequest request) {
 
     return ResponseEntity.ok(
-      userProfileService.completeProfile(jwt.getSubject(), request.address())
+        userProfileService.completeProfile(jwt.getSubject(), request.address())
     );
   }
 

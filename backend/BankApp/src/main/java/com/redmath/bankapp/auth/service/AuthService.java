@@ -48,7 +48,7 @@ public class AuthService {
 
     return new SignupResponse(
         true,
-      "Registration submitted successfully. Your account is pending administrator approval."
+        "Registration submitted successfully. Your account is pending administrator approval."
     );
   }
 

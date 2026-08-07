@@ -5,12 +5,15 @@ import com.redmath.bankapp.auth.dto.response.SignupResponse;
 import com.redmath.bankapp.auth.exception.DuplicateEmailException;
 import com.redmath.bankapp.auth.security.AuthCookieService;
 import com.redmath.bankapp.auth.service.AuthService;
-import jakarta.validation.Valid;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/auth")

@@ -9,64 +9,73 @@ import com.redmath.bankapp.admin.service.AdminRejectionService;
 import com.redmath.bankapp.admin.service.AdminUserService;
 import com.redmath.bankapp.user.entity.ApprovalStatus;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/admin/users")
 @RequiredArgsConstructor
 public class AdminUserController {
 
-    private final AdminApprovalService adminApprovalService;
-    private final AdminUserService adminUserService;
-    private final AdminRejectionService adminRejectionService;
+  private final AdminApprovalService adminApprovalService;
+  private final AdminUserService adminUserService;
+  private final AdminRejectionService adminRejectionService;
 
-    @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<AdminUserResponse>> getUsers(
-            @RequestParam ApprovalStatus approvalStatus
-    ) {
-        List<AdminUserResponse> users =
-                adminUserService.getUsersByApprovalStatus(approvalStatus);
+  @GetMapping
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<List<AdminUserResponse>> getUsers(
+      @RequestParam ApprovalStatus approvalStatus
+  ) {
+    List<AdminUserResponse> users =
+        adminUserService.getUsersByApprovalStatus(approvalStatus);
 
-        return ResponseEntity.ok(users);
-    }
-    @GetMapping("/{userId}")
-    public ResponseEntity<AdminUserResponse> getUser(
-            @PathVariable Long userId
-    ) {
-        return ResponseEntity.ok(
-                adminUserService.getUserById(userId)
-        );
-    }
-    @PatchMapping("/{userId}")
-    public ResponseEntity<AdminUserResponse> updateUser(
-            @PathVariable Long userId,
-            @Valid @RequestBody UpdateUserRequest request
-    ) {
-        return ResponseEntity.ok(
-                adminUserService.updateUser(userId, request)
-        );
-    }
+    return ResponseEntity.ok(users);
+  }
 
-    @PostMapping("/{userId}/approve")
-    public ResponseEntity<UserApprovalResponse> approveUser(
-            @PathVariable Long userId
-    ) {
-        return ResponseEntity.ok(
-                adminApprovalService.approveUser(userId)
-        );
-    }
-    @PostMapping("/{userId}/reject")
-    public ResponseEntity<UserRejectionResponse> rejectUser(
-            @PathVariable Long userId
-    ) {
-        return ResponseEntity.ok(
-                adminRejectionService.rejectUser(userId)
-        );
-    }
+  @GetMapping("/{userId}")
+  public ResponseEntity<AdminUserResponse> getUser(
+      @PathVariable Long userId
+  ) {
+    return ResponseEntity.ok(
+        adminUserService.getUserById(userId)
+    );
+  }
+
+  @PatchMapping("/{userId}")
+  public ResponseEntity<AdminUserResponse> updateUser(
+      @PathVariable Long userId,
+      @Valid @RequestBody UpdateUserRequest request
+  ) {
+    return ResponseEntity.ok(
+        adminUserService.updateUser(userId, request)
+    );
+  }
+
+  @PostMapping("/{userId}/approve")
+  public ResponseEntity<UserApprovalResponse> approveUser(
+      @PathVariable Long userId
+  ) {
+    return ResponseEntity.ok(
+        adminApprovalService.approveUser(userId)
+    );
+  }
+
+  @PostMapping("/{userId}/reject")
+  public ResponseEntity<UserRejectionResponse> rejectUser(
+      @PathVariable Long userId
+  ) {
+    return ResponseEntity.ok(
+        adminRejectionService.rejectUser(userId)
+    );
+  }
 }

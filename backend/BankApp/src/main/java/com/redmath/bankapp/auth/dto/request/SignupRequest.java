@@ -25,4 +25,5 @@ public record SignupRequest(
     String password
 
 ) {
+
 }

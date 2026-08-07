@@ -5,8 +5,9 @@ import com.redmath.bankapp.account.entity.AccountStatus;
 import java.math.BigDecimal;
 
 public record AccountClosureResponse(
-        String accountNumber,
-        AccountStatus accountStatus,
-        BigDecimal finalBalance
+    String accountNumber,
+    AccountStatus accountStatus,
+    BigDecimal finalBalance
 ) {
+
 }

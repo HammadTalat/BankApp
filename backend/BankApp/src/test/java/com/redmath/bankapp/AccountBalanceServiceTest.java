@@ -1,5 +1,11 @@
 package com.redmath.bankapp;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+
 import com.redmath.bankapp.account.dto.BalanceResponse;
 import com.redmath.bankapp.account.entity.AccountBalance;
 import com.redmath.bankapp.account.entity.BalanceIndicator;
@@ -7,8 +13,11 @@ import com.redmath.bankapp.account.entity.BankAccount;
 import com.redmath.bankapp.account.repository.AccountBalanceRepository;
 import com.redmath.bankapp.account.repository.BankAccountRepository;
 import com.redmath.bankapp.account.service.AccountBalanceService;
-import com.redmath.bankapp.tempconfig.security.UserPrincipal;
 import com.redmath.bankapp.transaction.exception.BalanceNotFoundException;
+import java.math.BigDecimal;
+import java.util.Map;
+import java.util.Optional;
+import javax.security.auth.login.AccountNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,108 +25,108 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import javax.security.auth.login.AccountNotFoundException;
-import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 @ExtendWith(MockitoExtension.class)
 class AccountBalanceServiceTest {
 
-    @Mock
-    private BankAccountRepository bankAccountRepository;
+  private final Long userId = 1L;
+  private final String accountNumber = "ACC123456";
+  @Mock
+  private BankAccountRepository bankAccountRepository;
+  @Mock
+  private AccountBalanceRepository accountBalanceRepository;
+  @InjectMocks
+  private AccountBalanceService accountBalanceService;
+  private Jwt mockJwt;
+  private BankAccount bankAccount;
+  private AccountBalance accountBalance;
 
-    @Mock
-    private AccountBalanceRepository accountBalanceRepository;
+  @BeforeEach
+  void setUp() {
+    mockJwt = new Jwt(
+        "token",
+        null,
+        null,
+        Map.of("alg", "PS256"),
+        Map.of("sub", "test@redmath.com", "userId", userId)
+    );
 
-    @InjectMocks
-    private AccountBalanceService accountBalanceService;
+    bankAccount = new BankAccount();
+    bankAccount.setAccountNumber(accountNumber);
 
-    private UserPrincipal validUserPrincipal;
-    private BankAccount bankAccount;
-    private AccountBalance accountBalance;
+    accountBalance = new AccountBalance(bankAccount, new BigDecimal("1500.50"),
+        BalanceIndicator.CREDIT);
+  }
 
-    private final Long userId = 1L;
-    private final String accountNumber = "ACC123456";
+  @Test
+  @DisplayName("Should return BalanceResponse when user has valid account and balance")
+  void getBalance_ValidUser_ReturnsBalanceResponse() throws AccountNotFoundException {
+    given(bankAccountRepository.findByUser_Id(userId)).willReturn(Optional.of(bankAccount));
+    given(accountBalanceRepository.findLatestBalance(accountNumber)).willReturn(
+        Optional.of(accountBalance));
 
-    @BeforeEach
-    void setUp() {
-        validUserPrincipal = new UserPrincipal(userId, "test@redmath.com", "pass", Collections.emptyList());
+    BalanceResponse response = accountBalanceService.getBalance(mockJwt);
 
-        bankAccount = new BankAccount();
-        bankAccount.setAccountNumber(accountNumber);
+    assertThat(response).isNotNull();
+    assertThat(response.amount()).isEqualByComparingTo(new BigDecimal("1500.50"));
 
-        accountBalance = new AccountBalance(bankAccount, new BigDecimal("1500.50"), BalanceIndicator.CREDIT);
-    }
+    verify(bankAccountRepository).findByUser_Id(userId);
+    verify(accountBalanceRepository).findLatestBalance(accountNumber);
+  }
 
-    @Test
-    @DisplayName("Should return BalanceResponse when user has valid account and balance")
-    void getBalance_ValidUser_ReturnsBalanceResponse() throws AccountNotFoundException {
-        given(bankAccountRepository.findByUser_Id(userId)).willReturn(Optional.of(bankAccount));
-        given(accountBalanceRepository.findLatestBalance(accountNumber)).willReturn(Optional.of(accountBalance));
+  @Test
+  @DisplayName("Should throw IllegalArgumentException when Jwt is null")
+  void getBalance_NullJwt_ThrowsIllegalArgumentException() {
+    assertThatThrownBy(() -> accountBalanceService.getBalance(null))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Jwt and subject must not be null");
 
-        BalanceResponse response = accountBalanceService.getBalance(validUserPrincipal);
+    verifyNoInteractions(bankAccountRepository, accountBalanceRepository);
+  }
 
-        assertThat(response).isNotNull();
-        assertThat(response.amount()).isEqualByComparingTo(new BigDecimal("1500.50"));
+  @Test
+  @DisplayName("Should throw IllegalStateException when Jwt has no userId claim")
+  void getBalance_MissingUserId_ThrowsIllegalStateException() {
+    Jwt jwtWithoutUserId = new Jwt(
+        "token",
+        null,
+        null,
+        Map.of("alg", "PS256"),
+        Map.of("sub", "test@redmath.com")
+    );
 
-        verify(bankAccountRepository).findByUser_Id(userId);
-        verify(accountBalanceRepository).findLatestBalance(accountNumber);
-    }
+    assertThatThrownBy(() -> accountBalanceService.getBalance(jwtWithoutUserId))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("JWT does not contain a valid userId claim");
 
-    @Test
-    @DisplayName("Should throw IllegalArgumentException when UserPrincipal is null")
-    void getBalance_NullUserPrincipal_ThrowsIllegalArgumentException() {
-        assertThatThrownBy(() -> accountBalanceService.getBalance(null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("User principal and ID must not be null");
+    verifyNoInteractions(bankAccountRepository, accountBalanceRepository);
+  }
 
-        verifyNoInteractions(bankAccountRepository, accountBalanceRepository);
-    }
+  @Test
+  @DisplayName("Should throw AccountNotFoundException when user has no bank account")
+  void getBalance_AccountNotFound_ThrowsAccountNotFoundException() {
+    given(bankAccountRepository.findByUser_Id(userId)).willReturn(Optional.empty());
 
-    @Test
-    @DisplayName("Should throw IllegalArgumentException when UserPrincipal ID is null")
-    void getBalance_NullUserId_ThrowsIllegalArgumentException() {
-        UserPrincipal nullIdUser = new UserPrincipal(null, "test@redmath.com", "pass", Collections.emptyList());
+    assertThatThrownBy(() -> accountBalanceService.getBalance(mockJwt))
+        .isInstanceOf(AccountNotFoundException.class)
+        .hasMessage("No bank account found for user ID: " + userId);
 
-        assertThatThrownBy(() -> accountBalanceService.getBalance(nullIdUser))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("User principal and ID must not be null");
+    verify(bankAccountRepository).findByUser_Id(userId);
+    verifyNoInteractions(accountBalanceRepository);
+  }
 
-        verifyNoInteractions(bankAccountRepository, accountBalanceRepository);
-    }
+  @Test
+  @DisplayName("Should throw BalanceNotFoundException when balance record does not exist")
+  void getBalance_BalanceNotFound_ThrowsBalanceNotFoundException() {
+    given(bankAccountRepository.findByUser_Id(userId)).willReturn(Optional.of(bankAccount));
+    given(accountBalanceRepository.findLatestBalance(accountNumber)).willReturn(Optional.empty());
 
-    @Test
-    @DisplayName("Should throw AccountNotFoundException when user has no bank account")
-    void getBalance_AccountNotFound_ThrowsAccountNotFoundException() {
-        given(bankAccountRepository.findByUser_Id(userId)).willReturn(Optional.empty());
+    assertThatThrownBy(() -> accountBalanceService.getBalance(mockJwt))
+        .isInstanceOf(BalanceNotFoundException.class)
+        .hasMessage("Balance record not found for account: " + accountNumber);
 
-        assertThatThrownBy(() -> accountBalanceService.getBalance(validUserPrincipal))
-                .isInstanceOf(AccountNotFoundException.class)
-                .hasMessage("No bank account found for user ID: " + userId);
-
-        verify(bankAccountRepository).findByUser_Id(userId);
-        verifyNoInteractions(accountBalanceRepository);
-    }
-
-    @Test
-    @DisplayName("Should throw BalanceNotFoundException when balance record does not exist")
-    void getBalance_BalanceNotFound_ThrowsBalanceNotFoundException() {
-        given(bankAccountRepository.findByUser_Id(userId)).willReturn(Optional.of(bankAccount));
-        given(accountBalanceRepository.findLatestBalance(accountNumber)).willReturn(Optional.empty());
-
-        assertThatThrownBy(() -> accountBalanceService.getBalance(validUserPrincipal))
-                .isInstanceOf(BalanceNotFoundException.class)
-                .hasMessage("Balance record not found for account: " + accountNumber);
-
-        verify(bankAccountRepository).findByUser_Id(userId);
-        verify(accountBalanceRepository).findLatestBalance(accountNumber);
-    }
+    verify(bankAccountRepository).findByUser_Id(userId);
+    verify(accountBalanceRepository).findLatestBalance(accountNumber);
+  }
 }

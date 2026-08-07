@@ -16,4 +16,5 @@ public record UserProfileResponse(
     ApprovalStatus approvalStatus
 
 ) {
+
 }

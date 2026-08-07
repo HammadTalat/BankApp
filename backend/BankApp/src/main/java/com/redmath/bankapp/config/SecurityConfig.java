@@ -1,9 +1,9 @@
 package com.redmath.bankapp.config;
 
-import com.redmath.bankapp.auth.security.ApiSecurityService;
-import com.redmath.bankapp.auth.security.JwtAuthenticationFilter;
 import com.redmath.bankapp.auth.security.ApiAuthenticationFailureHandler;
 import com.redmath.bankapp.auth.security.ApiAuthenticationSuccessHandler;
+import com.redmath.bankapp.auth.security.ApiSecurityService;
+import com.redmath.bankapp.auth.security.JwtAuthenticationFilter;
 import com.redmath.bankapp.auth.security.OAuth2SuccessHandler;
 import com.redmath.bankapp.auth.security.PendingProfileAccessManager;
 import java.util.List;
@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -19,22 +20,17 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
 import tools.jackson.databind.ObjectMapper;
 
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
-
-  @Value("${app.frontend-url:http://localhost:5173}")
-  private String frontendUrl;
 
   private final ApiAuthenticationSuccessHandler apiAuthenticationSuccessHandler;
   private final ApiAuthenticationFailureHandler authenticationFailureHandler;
@@ -42,6 +38,8 @@ public class SecurityConfig {
   private final ApiSecurityService apiSecurityService;
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
   private final PendingProfileAccessManager pendingProfileAccessManager;
+  @Value("${app.frontend-url:http://localhost:5173}")
+  private String frontendUrl;
 
   public SecurityConfig(
       ApiAuthenticationSuccessHandler apiAuthenticationSuccessHandler,
@@ -67,10 +65,12 @@ public class SecurityConfig {
     return configuration.getAuthenticationManager();
 
   }
+
   @Bean
   PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
   }
+
   @Bean
   JwtDecoder jwtDecoder() {
     return apiSecurityService.jwtDecoder();
@@ -93,7 +93,7 @@ public class SecurityConfig {
     source.registerCorsConfiguration("/**", configuration);
     return source;
   }
-  
+
   @Bean
   SecurityFilterChain securityFilterChain(HttpSecurity http)
       throws Exception {
@@ -111,15 +111,15 @@ public class SecurityConfig {
 
         .authorizeHttpRequests(auth -> auth
 
-             .requestMatchers(
+            .requestMatchers(
 
-                 "/swagger-ui/**",
+                "/swagger-ui/**",
 
-                 "/v3/api-docs/**",
+                "/v3/api-docs/**",
 
-                 "/error"
+                "/error"
 
-             ).permitAll()
+            ).permitAll()
 
             .requestMatchers(
 
@@ -135,9 +135,9 @@ public class SecurityConfig {
 
                 "/api/v1/auth/signup",
 
-              "/api/v1/auth/login",
+                "/api/v1/auth/login",
 
-              "/api/v1/auth/logout"
+                "/api/v1/auth/logout"
 
             ).permitAll()
 
@@ -173,10 +173,10 @@ public class SecurityConfig {
 
         )
 
-         .addFilterBefore(
-             jwtAuthenticationFilter,
-             UsernamePasswordAuthenticationFilter.class
-         );
+        .addFilterBefore(
+            jwtAuthenticationFilter,
+            UsernamePasswordAuthenticationFilter.class
+        );
 
     return http.build();
 

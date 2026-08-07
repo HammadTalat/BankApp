@@ -14,14 +14,13 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-
 import java.util.Objects;
 
 @Entity
 @Table(name = "bank_account")
 @Getter
 @Setter
-public class BankAccount {
+public final class BankAccount {
 
     @Id
     @Column(

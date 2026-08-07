@@ -15,41 +15,41 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AdminDashboardService {
 
-    private final AppUserRepository appUserRepository;
-    private final BankAccountRepository bankAccountRepository;
+  private final AppUserRepository appUserRepository;
+  private final BankAccountRepository bankAccountRepository;
 
-    @Transactional(readOnly = true)
-    public AdminDashboardResponse getDashboardSummary() {
-        long pendingUsers = countUsers(ApprovalStatus.PENDING);
-        long approvedUsers = countUsers(ApprovalStatus.APPROVED);
-        long rejectedUsers = countUsers(ApprovalStatus.REJECTED);
+  @Transactional(readOnly = true)
+  public AdminDashboardResponse getDashboardSummary() {
+    long pendingUsers = countUsers(ApprovalStatus.PENDING);
+    long approvedUsers = countUsers(ApprovalStatus.APPROVED);
+    long rejectedUsers = countUsers(ApprovalStatus.REJECTED);
 
-        long totalAccounts = bankAccountRepository.count();
+    long totalAccounts = bankAccountRepository.count();
 
-        long activeAccounts =
-                bankAccountRepository.countByStatus(
-                        AccountStatus.ACTIVE
-                );
-
-        long closedAccounts =
-                bankAccountRepository.countByStatus(
-                        AccountStatus.CLOSED
-                );
-
-        return new AdminDashboardResponse(
-                pendingUsers,
-                approvedUsers,
-                rejectedUsers,
-                totalAccounts,
-                activeAccounts,
-                closedAccounts
+    long activeAccounts =
+        bankAccountRepository.countByStatus(
+            AccountStatus.ACTIVE
         );
-    }
 
-    private long countUsers(ApprovalStatus approvalStatus) {
-        return appUserRepository.countByRoleAndApprovalStatus(
-                Role.ACCOUNT_HOLDER,
-                approvalStatus
+    long closedAccounts =
+        bankAccountRepository.countByStatus(
+            AccountStatus.CLOSED
         );
-    }
+
+    return new AdminDashboardResponse(
+        pendingUsers,
+        approvedUsers,
+        rejectedUsers,
+        totalAccounts,
+        activeAccounts,
+        closedAccounts
+    );
+  }
+
+  private long countUsers(ApprovalStatus approvalStatus) {
+    return appUserRepository.countByRoleAndApprovalStatus(
+        Role.ACCOUNT_HOLDER,
+        approvalStatus
+    );
+  }
 }

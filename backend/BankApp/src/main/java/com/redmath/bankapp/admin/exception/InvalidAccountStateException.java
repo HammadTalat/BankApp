@@ -1,7 +1,8 @@
 package com.redmath.bankapp.admin.exception;
 
 public class InvalidAccountStateException extends RuntimeException {
-    public InvalidAccountStateException(String message) {
-        super(message);
-    }
+
+  public InvalidAccountStateException(String message) {
+    super(message);
+  }
 }

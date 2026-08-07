@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
   <title>BankApp Login Success</title>
   <style>
     :root {
@@ -14,7 +14,11 @@
       --accent: #22c55e;
       --accent-2: #38bdf8;
     }
-    * { box-sizing: border-box; }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       min-height: 100vh;
@@ -24,6 +28,7 @@
       font-family: Arial, Helvetica, sans-serif;
       color: var(--text);
     }
+
     .card {
       width: min(720px, calc(100vw - 32px));
       background: rgba(17, 24, 39, 0.92);
@@ -32,14 +37,29 @@
       padding: 32px;
       box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
     }
-    h1 { margin: 0 0 10px; font-size: 32px; }
-    p { margin: 0 0 18px; color: var(--muted); line-height: 1.6; }
-    .status { color: var(--accent); font-weight: 700; }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 32px;
+    }
+
+    p {
+      margin: 0 0 18px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .status {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
     .grid {
       display: grid;
       gap: 12px;
       margin-top: 20px;
     }
+
     .row {
       display: grid;
       grid-template-columns: 150px 1fr;
@@ -50,22 +70,26 @@
       border: 1px solid rgba(148, 163, 184, 0.16);
       overflow: hidden;
     }
+
     .label {
       color: var(--accent-2);
       font-weight: 700;
       white-space: nowrap;
     }
+
     .value {
       word-break: break-word;
       overflow-wrap: anywhere;
       font-size: 14px;
     }
+
     .actions {
       display: flex;
       gap: 12px;
       flex-wrap: wrap;
       margin-top: 22px;
     }
+
     button, a {
       border: 0;
       border-radius: 999px;
@@ -74,15 +98,18 @@
       text-decoration: none;
       cursor: pointer;
     }
+
     button {
       background: var(--accent);
       color: #052e16;
     }
+
     a {
       background: rgba(56, 189, 248, 0.12);
       color: #7dd3fc;
       border: 1px solid rgba(56, 189, 248, 0.28);
     }
+
     .small {
       margin-top: 16px;
       font-size: 12px;
@@ -91,64 +118,85 @@
   </style>
 </head>
 <body>
-  <main class="card">
-    <h1>Login successful</h1>
-    <p class="status">Google authentication completed. Your JWT and profile details are available below.</p>
+<main class="card">
+  <h1>Login successful</h1>
+  <p class="status">Google authentication completed. Your JWT and profile details are available
+    below.</p>
 
-    <div class="grid">
-      <div class="row"><div class="label">Email</div><div class="value" id="email"></div></div>
-      <div class="row"><div class="label">Name</div><div class="value" id="name"></div></div>
-      <div class="row"><div class="label">Role</div><div class="value" id="role"></div></div>
-      <div class="row"><div class="label">Token Type</div><div class="value" id="tokenType"></div></div>
-      <div class="row"><div class="label">Expires In</div><div class="value" id="expiresIn"></div></div>
-      <div class="row"><div class="label">Access Token</div><div class="value" id="accessToken"></div></div>
+  <div class="grid">
+    <div class="row">
+      <div class="label">Email</div>
+      <div class="value" id="email"></div>
     </div>
-
-    <div class="actions">
-      <button id="copyToken">Copy Token</button>
-      <a href="/">Go Home</a>
+    <div class="row">
+      <div class="label">Name</div>
+      <div class="value" id="name"></div>
     </div>
+    <div class="row">
+      <div class="label">Role</div>
+      <div class="value" id="role"></div>
+    </div>
+    <div class="row">
+      <div class="label">Token Type</div>
+      <div class="value" id="tokenType"></div>
+    </div>
+    <div class="row">
+      <div class="label">Expires In</div>
+      <div class="value" id="expiresIn"></div>
+    </div>
+    <div class="row">
+      <div class="label">Access Token</div>
+      <div class="value" id="accessToken"></div>
+    </div>
+  </div>
 
-    <div class="small">This page is a stable landing page after OAuth login. Refreshing it will not restart Google sign-in.</div>
-  </main>
+  <div class="actions">
+    <button id="copyToken">Copy Token</button>
+    <a href="/">Go Home</a>
+  </div>
 
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const values = {
-      email: params.get('email') || '',
-      name: params.get('name') || '',
-      role: params.get('role') || '',
-      tokenType: params.get('tokenType') || '',
-      expiresIn: params.get('expiresIn') || '',
-      accessToken: params.get('accessToken') || ''
-    };
+  <div class="small">This page is a stable landing page after OAuth login. Refreshing it will not
+    restart Google sign-in.
+  </div>
+</main>
 
-    localStorage.setItem('bankapp_access_token', values.accessToken);
-    localStorage.setItem('bankapp_token_type', values.tokenType);
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const values = {
+    email: params.get('email') || '',
+    name: params.get('name') || '',
+    role: params.get('role') || '',
+    tokenType: params.get('tokenType') || '',
+    expiresIn: params.get('expiresIn') || '',
+    accessToken: params.get('accessToken') || ''
+  };
 
-    // Replace the callback URL so refresh/back does not revisit the OAuth callback.
-    history.replaceState(null, '', '/oauth2/success.html');
-    history.pushState({ bankappSuccess: true }, '', '/oauth2/success.html');
+  localStorage.setItem('bankapp_access_token', values.accessToken);
+  localStorage.setItem('bankapp_token_type', values.tokenType);
 
-    window.addEventListener('popstate', () => {
-      history.pushState({ bankappSuccess: true }, '', '/oauth2/success.html');
-    });
+  // Replace the callback URL so refresh/back does not revisit the OAuth callback.
+  history.replaceState(null, '', '/oauth2/success.html');
+  history.pushState({bankappSuccess: true}, '', '/oauth2/success.html');
 
-    document.getElementById('email').textContent = values.email;
-    document.getElementById('name').textContent = values.name;
-    document.getElementById('role').textContent = values.role;
-    document.getElementById('tokenType').textContent = values.tokenType;
-    document.getElementById('expiresIn').textContent = values.expiresIn + ' seconds';
-    document.getElementById('accessToken').textContent = values.accessToken;
+  window.addEventListener('popstate', () => {
+    history.pushState({bankappSuccess: true}, '', '/oauth2/success.html');
+  });
 
-    document.getElementById('copyToken').addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(values.accessToken);
-        alert('Token copied to clipboard');
-      } catch (error) {
-        alert('Could not copy token');
-      }
-    });
-  </script>
+  document.getElementById('email').textContent = values.email;
+  document.getElementById('name').textContent = values.name;
+  document.getElementById('role').textContent = values.role;
+  document.getElementById('tokenType').textContent = values.tokenType;
+  document.getElementById('expiresIn').textContent = values.expiresIn + ' seconds';
+  document.getElementById('accessToken').textContent = values.accessToken;
+
+  document.getElementById('copyToken').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(values.accessToken);
+      alert('Token copied to clipboard');
+    } catch (error) {
+      alert('Could not copy token');
+    }
+  });
+</script>
 </body>
 </html>

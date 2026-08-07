@@ -2,14 +2,13 @@ package com.redmath.bankapp.account.entity;
 
 
 import jakarta.persistence.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
 @Table(name = "account_balance")
-public class AccountBalance {
+public final class AccountBalance {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

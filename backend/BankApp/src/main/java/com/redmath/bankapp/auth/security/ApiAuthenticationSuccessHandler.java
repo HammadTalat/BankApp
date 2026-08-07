@@ -34,6 +34,10 @@ public class ApiAuthenticationSuccessHandler
     CustomUserDetails userDetails =
         (CustomUserDetails) authentication.getPrincipal();
 
+    if (userDetails == null || userDetails.getAppUser() == null) {
+        throw new IllegalStateException("Authenticated user details are missing");
+    }
+
     AppUser appUser = userDetails.getAppUser();
 
     String accessToken =

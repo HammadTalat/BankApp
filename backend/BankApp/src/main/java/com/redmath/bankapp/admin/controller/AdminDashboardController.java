@@ -16,14 +16,14 @@ import org.springframework.web.bind.annotation.RestController;
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminDashboardController {
 
-    private final AdminDashboardService adminDashboardService;
+  private final AdminDashboardService adminDashboardService;
 
-    @GetMapping
-    public ResponseEntity<AdminDashboardResponse>
-    getDashboardSummary() {
+  @GetMapping
+  public ResponseEntity<AdminDashboardResponse>
+  getDashboardSummary() {
 
-        return ResponseEntity.ok(
-                adminDashboardService.getDashboardSummary()
-        );
-    }
+    return ResponseEntity.ok(
+        adminDashboardService.getDashboardSummary()
+    );
+  }
 }

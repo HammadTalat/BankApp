@@ -12,211 +12,221 @@ import com.redmath.bankapp.transaction.dto.TransactionResponse;
 import com.redmath.bankapp.transaction.dto.TransferRequest;
 import com.redmath.bankapp.transaction.dto.TransferResponse;
 import com.redmath.bankapp.transaction.dto.UserTransactionsResponse;
-import com.redmath.bankapp.transaction.exception.BusinessRuleException;
-import com.redmath.bankapp.transaction.exception.InsufficientBalanceException;
-import com.redmath.bankapp.transaction.exception.UnauthorizedAccessException;
 import com.redmath.bankapp.transaction.entity.AccountTransaction;
 import com.redmath.bankapp.transaction.enums.OperationStatus;
 import com.redmath.bankapp.transaction.enums.TransactionIndicator;
+import com.redmath.bankapp.transaction.exception.BusinessRuleException;
+import com.redmath.bankapp.transaction.exception.InsufficientBalanceException;
+import com.redmath.bankapp.transaction.exception.UnauthorizedAccessException;
 import com.redmath.bankapp.transaction.repository.AccountTransactionRepository;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.security.oauth2.jwt.Jwt;
-
-import javax.security.auth.login.AccountNotFoundException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.UUID;
+import javax.security.auth.login.AccountNotFoundException;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
 public class TransactionService {
 
-    private final BankAccountRepository accountRepository;
+  private final BankAccountRepository accountRepository;
 
-    private final AccountBalanceRepository balanceRepository;
+  private final AccountBalanceRepository balanceRepository;
 
-    private final AccountTransactionRepository transactionRepository;
+  private final AccountTransactionRepository transactionRepository;
 
-    public TransactionService(BankAccountRepository accountRepository, AccountTransactionRepository transactionRepository, AccountBalanceRepository balanceRepository) {
-        this.accountRepository = accountRepository;
-        this.transactionRepository = transactionRepository;
-        this.balanceRepository = balanceRepository;
+  public TransactionService(BankAccountRepository accountRepository,
+      AccountTransactionRepository transactionRepository,
+      AccountBalanceRepository balanceRepository) {
+    this.accountRepository = accountRepository;
+    this.transactionRepository = transactionRepository;
+    this.balanceRepository = balanceRepository;
+  }
+
+
+  @Transactional(readOnly = true)
+  public AccountLookupResponse lookupAccount(String accountID) throws AccountNotFoundException {
+    log.debug("Initiating account lookup for account identifier: {}", accountID);
+
+    BankAccount account = accountRepository.findById(accountID)
+        .orElseThrow(
+            () -> new AccountNotFoundException("Account not found with identifier: " + accountID));
+
+    return AccountLookupResponse.fromEntity(account);
+  }
+
+
+  @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
+  public TransferResponse executeTransfer(Jwt jwt, TransferRequest request)
+      throws AccountNotFoundException {
+    log.info("Processing transfer of {} from {} to {}",
+        request.amount(), request.senderAccountNumber(), request.receiverAccountNumber());
+
+    // 1. Prevent self-transfer
+    if (request.senderAccountNumber().equalsIgnoreCase(request.receiverAccountNumber())) {
+      throw new BusinessRuleException("Sender and receiver accounts cannot be the same");
     }
 
+    // 2. Lock accounts in deterministic order to prevent DB deadlocks
+    boolean senderFirst =
+        request.senderAccountNumber().compareTo(request.receiverAccountNumber()) < 0;
+    String firstAcc = senderFirst ? request.senderAccountNumber() : request.receiverAccountNumber();
+    String secondAcc =
+        senderFirst ? request.receiverAccountNumber() : request.senderAccountNumber();
 
-    @Transactional(readOnly = true)
-    public AccountLookupResponse lookupAccount(String accountID) throws AccountNotFoundException {
-        log.debug("Initiating account lookup for account identifier: {}", accountID);
+    // Lock both parent accounts first (FOR UPDATE on bank_accounts table)
+    BankAccount firstAccount = accountRepository.findByIdForUpdate(firstAcc)
+        .orElseThrow(() -> new AccountNotFoundException("Account not found: " + firstAcc));
+    BankAccount secondAccount = accountRepository.findByIdForUpdate(secondAcc)
+        .orElseThrow(() -> new AccountNotFoundException("Account not found: " + secondAcc));
 
-        BankAccount account = accountRepository.findById(accountID)
-                .orElseThrow(() -> new AccountNotFoundException("Account not found with identifier: " + accountID));
+    BankAccount senderAccount = senderFirst ? firstAccount : secondAccount;
+    BankAccount receiverAccount = senderFirst ? secondAccount : firstAccount;
 
-        return AccountLookupResponse.fromEntity(account);
+    validateAccountOwnership(senderAccount, extractUserId(jwt));
+    validateAccountActive(senderAccount, "Sender");
+    validateAccountActive(receiverAccount, "Receiver");
+
+    // 4. Pessimistically Lock Sender Balance to prevent Race Conditions (Double-Spend)
+    AccountBalance senderBalance = balanceRepository.findLatestBalanceForUpdate(
+            senderAccount.getAccountNumber())
+        .orElseThrow(() -> new BusinessRuleException("Sender balance record missing"));
+
+    // 5. Check funds sufficiency
+    if (senderBalance.getAmount().compareTo(request.amount()) < 0) {
+      log.warn("Transfer failed: Insufficient funds in account {}",
+          senderAccount.getAccountNumber());
+      throw new InsufficientBalanceException("Insufficient balance to perform this transfer");
     }
 
+    // 6. Lock and fetch Receiver Balance
+    AccountBalance receiverBalance = balanceRepository.findLatestBalanceForUpdate(
+            receiverAccount.getAccountNumber())
+        .orElseThrow(() -> new BusinessRuleException("Receiver balance record missing"));
 
-    @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
-    public TransferResponse executeTransfer(Jwt jwt, TransferRequest request) throws AccountNotFoundException {
-        log.info("Processing transfer of {} from {} to {}",
-                request.amount(), request.senderAccountNumber(), request.receiverAccountNumber());
+    // 7. Update Balances
+    BigDecimal newSenderAmount = senderBalance.getAmount().subtract(request.amount());
+    BigDecimal newReceiverAmount = receiverBalance.getAmount().add(request.amount());
 
-        // 1. Prevent self-transfer
-        if (request.senderAccountNumber().equalsIgnoreCase(request.receiverAccountNumber())) {
-            throw new BusinessRuleException("Sender and receiver accounts cannot be the same");
-        }
+    AccountBalance newSenderLedgerEntry = new AccountBalance(
+        senderAccount,
+        newSenderAmount,
+        BalanceIndicator.DEBIT
+    );
 
-        // 2. Lock accounts in deterministic order to prevent DB deadlocks
-        boolean senderFirst = request.senderAccountNumber().compareTo(request.receiverAccountNumber()) < 0;
-        String firstAcc = senderFirst ? request.senderAccountNumber() : request.receiverAccountNumber();
-        String secondAcc = senderFirst ? request.receiverAccountNumber() : request.senderAccountNumber();
+    AccountBalance newReceiverLedgerEntry = new AccountBalance(
+        receiverAccount,
+        newReceiverAmount,
+        BalanceIndicator.CREDIT
+    );
 
-        // Lock both parent accounts first (FOR UPDATE on bank_accounts table)
-        BankAccount firstAccount = accountRepository.findByIdForUpdate(firstAcc)
-                .orElseThrow(() -> new AccountNotFoundException("Account not found: " + firstAcc));
-        BankAccount secondAccount = accountRepository.findByIdForUpdate(secondAcc)
-                .orElseThrow(() -> new AccountNotFoundException("Account not found: " + secondAcc));
+    // Inserts new rows into account_balance table
+    balanceRepository.save(newSenderLedgerEntry);
+    balanceRepository.save(newReceiverLedgerEntry);
 
-        BankAccount senderAccount = senderFirst ? firstAccount : secondAccount;
-        BankAccount receiverAccount = senderFirst ? secondAccount : firstAccount;
+    // 8. Generate Audit Ledger Entries (Operation ID connects DEBIT & CREDIT records)
+    String operationId = UUID.randomUUID().toString();
 
-        validateAccountOwnership(senderAccount, extractUserId(jwt));
-        validateAccountActive(senderAccount, "Sender");
-        validateAccountActive(receiverAccount, "Receiver");
+    AccountTransaction debitRecord = createLedgerRecord(
+        senderAccount, receiverAccount, request.amount(),
+        TransactionIndicator.DEBIT, request.description(), operationId);
 
-        // 4. Pessimistically Lock Sender Balance to prevent Race Conditions (Double-Spend)
-        AccountBalance senderBalance = balanceRepository.findLatestBalanceForUpdate(senderAccount.getAccountNumber())
-                .orElseThrow(() -> new BusinessRuleException("Sender balance record missing"));
+    AccountTransaction creditRecord = createLedgerRecord(
+        receiverAccount, senderAccount, request.amount(),
+        TransactionIndicator.CREDIT, request.description(), operationId);
 
-        // 5. Check funds sufficiency
-        if (senderBalance.getAmount().compareTo(request.amount()) < 0) {
-            log.warn("Transfer failed: Insufficient funds in account {}", senderAccount.getAccountNumber());
-            throw new InsufficientBalanceException("Insufficient balance to perform this transfer");
-        }
+    transactionRepository.save(debitRecord);
+    transactionRepository.save(creditRecord);
 
-        // 6. Lock and fetch Receiver Balance
-        AccountBalance receiverBalance = balanceRepository.findLatestBalanceForUpdate(receiverAccount.getAccountNumber())
-                .orElseThrow(() -> new BusinessRuleException("Receiver balance record missing"));
+    log.info("Transfer successful. Operation ID: {}", operationId);
 
-        // 7. Update Balances
-        BigDecimal newSenderAmount = senderBalance.getAmount().subtract(request.amount());
-        BigDecimal newReceiverAmount = receiverBalance.getAmount().add(request.amount());
+    return new TransferResponse(
+        operationId,
+        OperationStatus.COMPLETED,
+        request.amount(),
+        senderAccount.getAccountNumber(),
+        receiverAccount.getAccountNumber(),
+        request.description(),
+        LocalDateTime.now()
+    );
+  }
 
-        AccountBalance newSenderLedgerEntry = new AccountBalance(
-                senderAccount,
-                newSenderAmount,
-                BalanceIndicator.DEBIT
-        );
 
-        AccountBalance newReceiverLedgerEntry = new AccountBalance(
-                receiverAccount,
-                newReceiverAmount,
-                BalanceIndicator.CREDIT
-        );
+  @Transactional(readOnly = true)
+  public UserTransactionsResponse getUserTransactions(Jwt jwt,
+      LocalDate startDate,
+      LocalDate endDate,
+      Pageable pageable) throws AccountNotFoundException {
+    Long userId = extractUserId(jwt);
+    log.debug("Fetching transaction history for user ID: {}", userId);
 
-        // Inserts new rows into account_balance table
-        balanceRepository.save(newSenderLedgerEntry);
-        balanceRepository.save(newReceiverLedgerEntry);
+    LocalDateTime start = (startDate != null) ? startDate.atStartOfDay() : null;
+    LocalDateTime end = (endDate != null) ? endDate.atTime(LocalTime.MAX) : null;
 
-        // 8. Generate Audit Ledger Entries (Operation ID connects DEBIT & CREDIT records)
-        String operationId = UUID.randomUUID().toString();
+    BankAccount account = accountRepository.findByUser_Id(userId)
+        .orElseThrow(() -> new AccountNotFoundException("No account linked to the current user"));
 
-        AccountTransaction debitRecord = createLedgerRecord(
-                senderAccount, receiverAccount, request.amount(),
-                TransactionIndicator.DEBIT, request.description(), operationId);
+    Page<AccountTransaction> transactionsPage = transactionRepository.findByAccountNumberAndDateRange(
+        account.getAccountNumber(), start, end, pageable);
 
-        AccountTransaction creditRecord = createLedgerRecord(
-                receiverAccount, senderAccount, request.amount(),
-                TransactionIndicator.CREDIT, request.description(), operationId);
+    Page<TransactionResponse> dtoPage = transactionsPage.map(TransactionResponse::fromEntity);
 
-        transactionRepository.save(debitRecord);
-        transactionRepository.save(creditRecord);
+    return UserTransactionsResponse.fromPage(dtoPage);
+  }
 
-        log.info("Transfer successful. Operation ID: {}", operationId);
 
-        return new TransferResponse(
-                operationId,
-                OperationStatus.COMPLETED,
-                request.amount(),
-                senderAccount.getAccountNumber(),
-                receiverAccount.getAccountNumber(),
-                request.description(),
-                LocalDateTime.now()
-        );
+  private void validateAccountOwnership(BankAccount account, Long userId) {
+    if (!account.getUser().getId().equals(userId)) {
+      log.error("Security violation: User {} attempted operation on unowned account {}",
+          userId, account.getAccountNumber());
+      throw new UnauthorizedAccessException(
+          "You are not authorized to execute transactions for this account");
+    }
+  }
+
+  private Long extractUserId(Jwt jwt) {
+    Object userIdClaim = jwt.getClaims().get("userId");
+
+    if (userIdClaim instanceof Number number) {
+      return number.longValue();
     }
 
+    throw new IllegalStateException("JWT does not contain a valid userId claim");
+  }
 
-    @Transactional(readOnly = true)
-    public UserTransactionsResponse getUserTransactions(Jwt jwt,
-                                                        LocalDate startDate,
-                                                        LocalDate endDate,
-                                                        Pageable pageable) throws AccountNotFoundException {
-        Long userId = extractUserId(jwt);
-        log.debug("Fetching transaction history for user ID: {}", userId);
-
-        LocalDateTime start = (startDate != null) ? startDate.atStartOfDay() : null;
-        LocalDateTime end = (endDate != null) ? endDate.atTime(LocalTime.MAX) : null;
-
-        BankAccount account = accountRepository.findByUser_Id(userId)
-                .orElseThrow(() -> new AccountNotFoundException("No account linked to the current user"));
-
-        Page<AccountTransaction> transactionsPage = transactionRepository.findByAccountNumberAndDateRange(
-                account.getAccountNumber(), start, end, pageable);
-
-        Page<TransactionResponse> dtoPage = transactionsPage.map(TransactionResponse::fromEntity);
-
-        return UserTransactionsResponse.fromPage(dtoPage);
+  private void validateAccountActive(BankAccount account, String context) {
+    if (account.getStatus() != AccountStatus.ACTIVE) {
+      throw new BusinessRuleException(
+          context + " account is not active (Status: " + account.getStatus() + ")");
     }
+  }
 
+  private AccountTransaction createLedgerRecord(
+      BankAccount primaryAcc,
+      BankAccount counterpartyAcc,
+      BigDecimal amount,
+      TransactionIndicator indicator,
+      String description,
+      String operationId) {
 
-    private void validateAccountOwnership(BankAccount account, Long userId) {
-        if (!account.getUser().getId().equals(userId)) {
-            log.error("Security violation: User {} attempted operation on unowned account {}",
-                    userId, account.getAccountNumber());
-            throw new UnauthorizedAccessException("You are not authorized to execute transactions for this account");
-        }
-    }
-
-    private Long extractUserId(Jwt jwt) {
-        Object userIdClaim = jwt.getClaims().get("userId");
-
-        if (userIdClaim instanceof Number number) {
-            return number.longValue();
-        }
-
-        throw new IllegalStateException("JWT does not contain a valid userId claim");
-    }
-
-    private void validateAccountActive(BankAccount account, String context) {
-        if (account.getStatus() != AccountStatus.ACTIVE) {
-            throw new BusinessRuleException(context + " account is not active (Status: " + account.getStatus() + ")");
-        }
-    }
-
-    private AccountTransaction createLedgerRecord(
-            BankAccount primaryAcc,
-            BankAccount counterpartyAcc,
-            BigDecimal amount,
-            TransactionIndicator indicator,
-            String description,
-            String operationId) {
-
-        AccountTransaction tx = new AccountTransaction();
-        tx.setAccount(primaryAcc);
-        tx.setRecipientAccount(counterpartyAcc);
-        tx.setAmount(amount);
-        tx.setIndicator(indicator);
-        tx.setDescription(description);
-        tx.setOperationId(operationId);
-        tx.setTransactionDate(LocalDateTime.now());
-        return tx;
-    }
+    AccountTransaction tx = new AccountTransaction();
+    tx.setAccount(primaryAcc);
+    tx.setRecipientAccount(counterpartyAcc);
+    tx.setAmount(amount);
+    tx.setIndicator(indicator);
+    tx.setDescription(description);
+    tx.setOperationId(operationId);
+    tx.setTransactionDate(LocalDateTime.now());
+    return tx;
+  }
 
 
 }

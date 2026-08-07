@@ -6,4 +6,5 @@ public record CompleteProfileRequest(
     @NotBlank(message = "Address is required.")
     String address
 ) {
+
 }
