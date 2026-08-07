@@ -55,11 +55,18 @@ export const TransferPage = () => {
         };
     }, []);
 
-    // 2. Debounced recipient lookup with cancelation/race-condition handling
+    // Helper to sanitize account input: remove spaces and slice to max 16 chars
+    const handleRecipientAccountChange = (e) => {
+        const sanitizedValue = e.target.value.replace(/\s+/g, "").slice(0, 16);
+        setRecipientAccount(sanitizedValue);
+    };
+
+    // 2. Debounced recipient lookup - strictly triggers when length === 16
     useEffect(() => {
         const cleanAccount = recipientAccount.trim();
 
-        if (!cleanAccount) {
+        // If less than 16 characters, reset lookup state and do not query
+        if (cleanAccount.length < 16) {
             setRecipient(null);
             setLookupError("");
             return;
@@ -254,9 +261,10 @@ export const TransferPage = () => {
                                     </label>
                                     <input
                                         type="text"
-                                        placeholder="Enter recipient account number"
+                                        maxLength={16}
+                                        placeholder="Enter 20-digit account number"
                                         value={recipientAccount}
-                                        onChange={(e) => setRecipientAccount(e.target.value)}
+                                        onChange={handleRecipientAccountChange}
                                         disabled={isFetchingAccount}
                                         className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 text-gray-800 placeholder-gray-400 disabled:bg-gray-100"
                                     />
