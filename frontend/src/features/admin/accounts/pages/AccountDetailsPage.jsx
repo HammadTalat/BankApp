@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Landmark } from "lucide-react";
 import {
     useNavigate,
@@ -11,6 +11,8 @@ import EmptyState from "../../../../shared/components/feedback/EmptyState";
 import Button from "../../../../shared/components/ui/Button";
 import Card from "../../../../shared/components/ui/Card";
 import PageHeader from "../../../../shared/components/ui/PageHeader";
+import LoadingSpinner from "../../../../shared/components/feedback/LoadingSpinner";
+
 import {
     getAdminAccountTransactionsPath,
     ROUTES,
@@ -19,45 +21,103 @@ import AccountActions from "../components/AccountActions";
 import AccountDetailsCards from "../components/AccountDetailsCards";
 import CloseAccountModal from "../components/CloseAccountModal";
 import EditAccountHolderModal from "../components/EditAccountHolderModal";
+import  {getAdminAccountDetails , closeAdminAccount , updateAccountHolder} from "../api/adminAccountApi.js"
 
 function AccountDetailsContent({
     account,
     updateAccount,
     onViewTransactions,
 }) {
-    const [activeModal, setActiveModal] = useState(null);
-    const [feedback, setFeedback] = useState(null);
+    const [actionLoading, setActionLoading] =
+        useState(false);
 
-    function handleSaveHolder(holder) {
-        updateAccount(account.accountNumber, {
-            holderName: holder.name,
-            holderEmail: holder.email,
-            holderAddress: holder.address,
-        });
-        setActiveModal(null);
-        setFeedback({
-            type: "success",
-            title: "Holder details updated",
-            message: `${holder.name}'s information was saved for this account.`,
-        });
-    }
+    const [actionError, setActionError] =
+        useState("");
 
-    function handleCloseAccount() {
-        if (account.accountStatus !== "ACTIVE" || Number(account.balance) !== 0) {
-            return;
+    const [feedback, setFeedback] =
+        useState(null);
+    const [activeModal,setActiveModal] = useState(null);
+
+    async function handleSaveHolder(holder) {
+        try {
+            setActionLoading(true);
+            setActionError("");
+            setFeedback(null);
+
+            await updateAccountHolder(
+                account.userId,
+                holder,
+            );
+
+            const refreshedAccount =
+                await getAdminAccountDetails(
+                    account.accountNumber,
+                );
+
+            updateAccount(refreshedAccount);
+
+            setActiveModal(null);
+
+            setFeedback({
+                type: "success",
+                title: "Holder details updated",
+                message:
+                    `${refreshedAccount.holderName}'s information was updated successfully.`,
+            });
+        } catch (requestError) {
+            console.error(
+                "Unable to update account holder:",
+                requestError,
+            );
+
+            setActionError(
+                requestError.message
+                || "Unable to update account holder.",
+            );
+        } finally {
+            setActionLoading(false);
         }
-
-        updateAccount(account.accountNumber, {
-            accountStatus: "CLOSED",
-        });
-        setActiveModal(null);
-        setFeedback({
-            type: "success",
-            title: "Account closed",
-            message: "The bank account was closed with a final balance of PKR 0.00.",
-        });
     }
 
+    async function handleCloseAccount() {
+        try {
+            setActionLoading(true);
+            setActionError("");
+            setFeedback(null);
+
+            await closeAdminAccount(
+                account.accountNumber,
+            );
+
+            const refreshedAccount =
+                await getAdminAccountDetails(
+                    account.accountNumber,
+                );
+
+            updateAccount(refreshedAccount);
+
+            setActiveModal(null);
+
+            setFeedback({
+                type: "success",
+                title: "Account closed",
+                message:
+                    "The bank account was closed successfully with a final balance of PKR 0.00.",
+            });
+        } catch (requestError) {
+            console.error(
+                "Unable to close account:",
+                requestError,
+            );
+
+            setActionError(
+                requestError.message
+                || "Unable to close this account.",
+            );
+        } finally {
+            setActionLoading(false);
+        }
+    }
     return (
         <section className="space-y-7">
             <PageHeader
@@ -104,12 +164,74 @@ function AccountDetailsContent({
 
 function AccountDetailsPage() {
     const navigate = useNavigate();
-    const { accounts, updateAccount } = useOutletContext();
     const { accountNumber } = useParams();
-    const account = accounts.find(
-        (account) => account.accountNumber === accountNumber,
-    );
+    const [account, updateAccount] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
+    useEffect(() => {
+        async function loadAccountDetails() {
+            try {
+                setLoading(true);
+                setError("");
+
+                const response =
+                    await getAdminAccountDetails(
+                        accountNumber,
+                    );
+
+                console.log(
+                    "Account details response:",
+                    response,
+                );
+
+                updateAccount(response);
+
+            } catch (requestError) {
+
+                console.error(
+                    "Unable to load account details:",
+                    requestError,
+                );
+
+                setError(
+                    requestError.message
+                    || "Unable to load account details.",
+                );
+
+            } finally {
+
+                setLoading(false);
+
+            }
+        }
+
+        loadAccountDetails();
+
+    }, [accountNumber]);
+
+    if (loading) {
+        return (
+            <div className="flex min-h-72 items-center justify-center">
+
+                <LoadingSpinner
+                    message="Loading account details..."
+                />
+
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <Alert
+                type="error"
+                title="Account could not be loaded"
+            >
+                {error}
+            </Alert>
+        );
+    }
     if (!account) {
         return (
             <section className="space-y-6">

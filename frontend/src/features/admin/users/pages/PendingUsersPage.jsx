@@ -7,7 +7,6 @@ import PageHeader from "../../../../shared/components/ui/PageHeader";
 import TableContainer from "../../../../shared/components/ui/TableContainer";
 import PendingUsersTable from "../components/PendingUsersTable";
 import UserReviewModal from "../components/UserReviewModal";
-import { pendingUsersMock } from "../mocks/pendingUsersMock";
 import {getPendingUsers} from "../api/adminUsersApi.js"
 import {ApproveUser, RejectUser} from "../api/adminUsersApi.js"
 
