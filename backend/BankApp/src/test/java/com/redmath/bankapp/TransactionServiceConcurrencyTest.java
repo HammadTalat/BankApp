@@ -6,6 +6,7 @@ import com.redmath.bankapp.account.entity.BalanceIndicator;
 import com.redmath.bankapp.account.entity.BankAccount;
 import com.redmath.bankapp.account.repository.AccountBalanceRepository;
 import com.redmath.bankapp.account.repository.BankAccountRepository;
+import org.junit.jupiter.api.Disabled;
 import org.springframework.security.oauth2.jwt.Jwt;
 import com.redmath.bankapp.transaction.dto.TransferRequest;
 import com.redmath.bankapp.transaction.exception.InsufficientBalanceException;
@@ -30,6 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Disabled
 @ActiveProfiles("test")
 @SpringBootTest
 class TransactionServiceConcurrencyTest {

@@ -1,7 +1,6 @@
 package com.redmath.bankapp.transaction.controller;
 
 import com.redmath.bankapp.transaction.dto.*;
-import com.redmath.bankapp.transaction.enums.OperationStatus;
 import com.redmath.bankapp.transaction.service.TransactionService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -15,9 +14,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import javax.security.auth.login.AccountNotFoundException;
-import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/v1/transaction")
