@@ -23,6 +23,7 @@ import java.util.Collections;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -56,7 +57,7 @@ class AccountControllerTest {
         given(accountService.getBalance(any(Jwt.class))).willReturn(balanceResponse);
 
         mockMvc.perform(get("/api/v1/account/balance")
-                        .with(user(userPrincipal))
+                        .with(jwt())
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.amount").value(1500.50));
@@ -71,7 +72,7 @@ class AccountControllerTest {
                 .willThrow(new AccountNotFoundException("No bank account found for user ID: 1"));
 
         mockMvc.perform(get("/api/v1/account/balance")
-                        .with(user(userPrincipal))
+                        .with(jwt())
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
 
@@ -85,7 +86,7 @@ class AccountControllerTest {
                 .willThrow(new BalanceNotFoundException("Balance record not found for account: ACC123456"));
 
         mockMvc.perform(get("/api/v1/account/balance")
-                        .with(user(userPrincipal))
+                        .with(jwt())
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
 

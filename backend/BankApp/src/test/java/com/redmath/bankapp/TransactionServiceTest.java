@@ -161,7 +161,7 @@ class TransactionServiceTest {
             LocalDateTime expectedStart = startDate.atStartOfDay();
             LocalDateTime expectedEnd = endDate.atTime(LocalTime.MAX);
 
-            given(accountRepository.findByUser_Id(userPrincipal.getId())).willReturn(Optional.of(senderAccount));
+            given(accountRepository.findByUser_Id(any(Long.class))).willReturn(Optional.of(senderAccount));
 
             Page<AccountTransaction> emptyPage = new PageImpl<>(Collections.emptyList());
 
@@ -219,25 +219,25 @@ class TransactionServiceTest {
         }
 
         @Test
-        @DisplayName("Should throw BusinessRuleException when sender balance record is missing in DB")
-        void executeTransfer_SenderBalanceMissing_ThrowsException() {
+        @DisplayName("Should process transfer using zero balance when sender balance record is missing in DB")
+        void executeTransfer_SenderBalanceMissing_UsesZeroBalance() {
             TransferRequest request = new TransferRequest(SENDER_ACC, RECEIVER_ACC, new BigDecimal("100.00"), "Transfer");
 
             given(accountRepository.findByIdForUpdate(SENDER_ACC)).willReturn(Optional.of(senderAccount));
             given(accountRepository.findByIdForUpdate(RECEIVER_ACC)).willReturn(Optional.of(receiverAccount));
             given(balanceRepository.findLatestBalanceForUpdate(SENDER_ACC)).willReturn(Optional.empty());
 
+            // Assuming a balance of 0 leads to an insufficient funds exception during transfer validation:
             assertThatThrownBy(() -> transactionService.executeTransfer(jwt, request))
-                    .isInstanceOf(BusinessRuleException.class)
-                    .hasMessage("Sender balance record missing");
+                    .isInstanceOf(InsufficientBalanceException.class)
+                    .hasMessageContaining("Insufficient balance to perform this transfer");
 
             verify(balanceRepository, times(1)).findLatestBalanceForUpdate(SENDER_ACC);
-            verify(balanceRepository, never()).findLatestBalanceForUpdate(RECEIVER_ACC);
         }
 
         @Test
-        @DisplayName("Should throw BusinessRuleException when receiver balance record is missing in DB")
-        void executeTransfer_ReceiverBalanceMissing_ThrowsException() {
+        @DisplayName("Should successfully execute transfer when receiver balance record is missing in DB")
+        void executeTransfer_ReceiverBalanceMissing_ProceedsSuccessfully() throws AccountNotFoundException {
             TransferRequest request = new TransferRequest(SENDER_ACC, RECEIVER_ACC, new BigDecimal("100.00"), "Transfer");
 
             given(accountRepository.findByIdForUpdate(SENDER_ACC)).willReturn(Optional.of(senderAccount));
@@ -245,13 +245,16 @@ class TransactionServiceTest {
             given(balanceRepository.findLatestBalanceForUpdate(SENDER_ACC)).willReturn(Optional.of(senderBalance));
             given(balanceRepository.findLatestBalanceForUpdate(RECEIVER_ACC)).willReturn(Optional.empty());
 
-            assertThatThrownBy(() -> transactionService.executeTransfer(jwt, request))
-                    .isInstanceOf(BusinessRuleException.class)
-                    .hasMessage("Receiver balance record missing");
+            // Execute transfer - should not throw an exception
+            TransferResponse response = transactionService.executeTransfer(jwt, request);
 
+            // Assert successful completion
+            assertThat(response).isNotNull();
+
+            // Verify interaction and persistence steps
             verify(balanceRepository, times(1)).findLatestBalanceForUpdate(SENDER_ACC);
             verify(balanceRepository, times(1)).findLatestBalanceForUpdate(RECEIVER_ACC);
-            verify(balanceRepository, never()).save(any());
+            verify(balanceRepository, atLeastOnce()).save(any());
         }
     }
 

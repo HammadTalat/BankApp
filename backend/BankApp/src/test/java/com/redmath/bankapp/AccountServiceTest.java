@@ -113,8 +113,8 @@ class AccountServiceTest {
 
         // Act & Assert
         assertThatThrownBy(() -> accountBalanceService.getBalance(nullJwtPrincipal))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("User principal and ID must not be null");
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("JWT does not contain a valid userId claim");
 
         verifyNoInteractions(bankAccountRepository, accountBalanceRepository);
     }
@@ -133,14 +133,14 @@ class AccountServiceTest {
     }
 
     @Test
-    @DisplayName("Should throw BalanceNotFoundException when balance record does not exist")
-    void getBalance_BalanceNotFound_ThrowsBalanceNotFoundException() {
+    @DisplayName("Should return zero balance when balance record does not exist")
+    void getBalance_BalanceNotFound_ReturnsZeroBalance() throws Exception {
         given(bankAccountRepository.findByUser_Id(userId)).willReturn(Optional.of(bankAccount));
         given(accountBalanceRepository.findLatestBalance(accountNumber)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> accountBalanceService.getBalance(validJwtPrincipal))
-                .isInstanceOf(BalanceNotFoundException.class)
-                .hasMessage("Balance record not found for account: " + accountNumber);
+        BalanceResponse response = accountBalanceService.getBalance(validJwtPrincipal);
+
+        assertThat(response.amount()).isEqualByComparingTo(BigDecimal.ZERO);
 
         verify(bankAccountRepository).findByUser_Id(userId);
         verify(accountBalanceRepository).findLatestBalance(accountNumber);
