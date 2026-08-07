@@ -6,7 +6,7 @@ import com.redmath.bankapp.account.entity.BalanceIndicator;
 import com.redmath.bankapp.account.entity.BankAccount;
 import com.redmath.bankapp.account.repository.AccountBalanceRepository;
 import com.redmath.bankapp.account.repository.BankAccountRepository;
-import com.redmath.bankapp.account.service.AccountBalanceService;
+import com.redmath.bankapp.account.service.AccountService;
 import com.redmath.bankapp.tempconfig.security.UserPrincipal;
 import com.redmath.bankapp.transaction.exception.BalanceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
-class AccountBalanceServiceTest {
+class AccountServiceTest {
 
     @Mock
     private BankAccountRepository bankAccountRepository;
@@ -40,7 +40,7 @@ class AccountBalanceServiceTest {
     private AccountBalanceRepository accountBalanceRepository;
 
     @InjectMocks
-    private AccountBalanceService accountBalanceService;
+    private AccountService accountBalanceService;
 
     private UserPrincipal validUserPrincipal;
     private Jwt validJwtPrincipal;

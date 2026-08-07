@@ -2,22 +2,41 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import { ROUTES } from "../../../routes/routePaths.js";
 import { httpClient } from "../../../api/httpClient.js";
-import {useAuth} from "../../auth/context/useAuth.js";
+import { useAuth } from "../../auth/context/useAuth.js";
 
 export const DashboardPage = () => {
-    const { user, signOut, loading: authLoading} = useAuth();
+    const { user, signOut, loading: authLoading } = useAuth();
 
     const [copied, setCopied] = useState(false);
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Balance states
-    const [balance, setBalance] = useState("25500.00");
+    // Dynamic Account & Balance states
+    const [accountDetails, setAccountDetails] = useState({
+        accountNumber: "",
+        status: "ACTIVE",
+    });
+    const [balance, setBalance] = useState("0.00");
     const [refreshingBalance, setRefreshingBalance] = useState(false);
 
     const navigate = useNavigate();
 
-    const accountNumber = "5839 2017 4638 2915";
+    // Fetch account metadata (accountNumber and status)
+    const fetchAccountDetails = () => {
+        httpClient
+            .get("/api/v1/account")
+            .then((data) => {
+                if (data) {
+                    setAccountDetails({
+                        accountNumber: data.accountNumber || "",
+                        status: data.status || "ACTIVE",
+                    });
+                }
+            })
+            .catch((err) => {
+                console.error("Failed to load account details:", err);
+            });
+    };
 
     // Fetch account balance from backend
     const fetchBalance = () => {
@@ -25,7 +44,6 @@ export const DashboardPage = () => {
         httpClient
             .get("/api/v1/account/balance")
             .then((data) => {
-                // BalanceResponse JSON contains { "amount": 25500.00 }
                 if (data?.amount !== undefined) {
                     setBalance(data.amount);
                 }
@@ -37,6 +55,10 @@ export const DashboardPage = () => {
     };
 
     useEffect(() => {
+        // Fetch account details & initial balance
+        fetchAccountDetails();
+        fetchBalance();
+
         // Fetch recent transactions
         httpClient
             .get("/api/v1/transaction/get-transactions?page=0&size=5")
@@ -49,20 +71,28 @@ export const DashboardPage = () => {
                 console.error("Failed to load transactions:", err);
             })
             .finally(() => setLoading(false));
-
-        // Initial balance fetch
-        fetchBalance();
     }, []);
 
     const handleCopyAccount = () => {
-        navigator.clipboard.writeText(accountNumber.replace(/\s+/g, ""));
+        if (!accountDetails.accountNumber) return;
+        navigator.clipboard.writeText(accountDetails.accountNumber.replace(/\s+/g, ""));
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
 
     const handleLogout = () => {
-        localStorage.removeItem("ACCESS_TOKEN");
-        navigate(ROUTES.HOME);
+        if (signOut) {
+            signOut();
+        } else {
+            localStorage.removeItem("ACCESS_TOKEN");
+            navigate(ROUTES.HOME);
+        }
+    };
+
+    // Format raw account numbers into spaced groups (e.g., 5839 2017 4638 2915) for UI readability
+    const formatAccountNumber = (num) => {
+        if (!num) return "Loading...";
+        return num.replace(/(.{4})/g, "$1 ").trim();
     };
 
     if (authLoading) {
@@ -72,6 +102,7 @@ export const DashboardPage = () => {
             </div>
         );
     }
+
     return (
         <div className="flex min-h-screen bg-[#F8FAFC]">
             {/* Sidebar */}
@@ -131,7 +162,7 @@ export const DashboardPage = () => {
                         Account Dashboard
                     </h2>
                     <p className="text-gray-500 text-sm mt-1">
-                        Welcome back, {user?.name}
+                        Welcome back, {user?.name || "User"}
                     </p>
                 </div>
 
@@ -144,7 +175,6 @@ export const DashboardPage = () => {
                                 <p className="text-blue-100 text-sm font-medium">
                                     Available Balance
                                 </p>
-                                {/* Balance Refresh Button */}
                                 <button
                                     onClick={fetchBalance}
                                     disabled={refreshingBalance}
@@ -203,24 +233,31 @@ export const DashboardPage = () => {
                                 Account number
                             </p>
                             <p className="text-xl font-bold text-gray-900 mt-2 tracking-wide">
-                                {accountNumber}
+                                {formatAccountNumber(accountDetails.accountNumber)}
                             </p>
 
                             <div className="mt-4">
-                                <span className="inline-block bg-emerald-50 text-emerald-600 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                                    ACTIVE
+                                <span
+                                    className={`inline-block text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider ${
+                                        accountDetails.status === "ACTIVE"
+                                            ? "bg-emerald-50 text-emerald-600"
+                                            : "bg-red-50 text-red-600"
+                                    }`}
+                                >
+                                    {accountDetails.status}
                                 </span>
                             </div>
 
                             <p className="text-sm font-medium text-gray-700 mt-4">
-                                Ali Khan
+                                {user?.name || "Account Holder"}
                             </p>
                         </div>
 
                         <div className="mt-6">
                             <button
                                 onClick={handleCopyAccount}
-                                className="w-full bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 py-2.5 px-4 rounded-lg text-xs font-semibold transition-colors text-center"
+                                disabled={!accountDetails.accountNumber}
+                                className="w-full bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 py-2.5 px-4 rounded-lg text-xs font-semibold transition-colors text-center disabled:opacity-50"
                             >
                                 {copied ? "Copied!" : "Copy account number"}
                             </button>
