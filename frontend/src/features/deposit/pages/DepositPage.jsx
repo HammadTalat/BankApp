@@ -12,6 +12,7 @@ export const DepositPage = () => {
     const [accountNumber, setAccountNumber] = useState("");
     const [fetchingAccount, setFetchingAccount] = useState(true);
     const [amount, setAmount] = useState("");
+    const [description, setDescription] = useState("Initial Deposit");
 
     // Status & UI state
     const [submitting, setSubmitting] = useState(false);
@@ -57,9 +58,11 @@ export const DepositPage = () => {
         setSubmitting(true);
 
         try {
-            const response = await httpClient.post("/api/v1/transactions/deposit", {
+            // Target backend deposit endpoint with full payload schema
+            const response = await httpClient.post("/api/v1/transaction/deposit", {
                 accountNumber: accountNumber,
                 amount: parsedAmount,
+                description: description.trim() || "Deposit"
             });
 
             setSuccessMessage(
@@ -224,8 +227,8 @@ export const DepositPage = () => {
                                 <input
                                     id="amount"
                                     type="number"
-                                    step="0.01"
-                                    min="1"
+                                    step="any"
+                                    min="0.01"
                                     value={amount}
                                     onChange={(e) => setAmount(e.target.value)}
                                     placeholder="0.00"
@@ -234,6 +237,22 @@ export const DepositPage = () => {
                                     required
                                 />
                             </div>
+                        </div>
+
+                        {/* Description */}
+                        <div>
+                            <label htmlFor="description" className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+                                Transaction Description
+                            </label>
+                            <input
+                                id="description"
+                                type="text"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="e.g., Initial Deposit, Monthly Savings"
+                                disabled={fetchingAccount || !accountNumber}
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all disabled:opacity-50"
+                            />
                         </div>
 
                         {/* Preset Buttons */}
