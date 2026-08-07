@@ -6,6 +6,11 @@ import { httpClient } from "../../../api/httpClient.js";
 export const TransferPage = () => {
     const navigate = useNavigate();
 
+    // Sender state
+    const [senderAccount, setSenderAccount] = useState("");
+    const [isFetchingAccount, setIsFetchingAccount] = useState(true);
+    const [accountError, setAccountError] = useState("");
+
     // Form inputs
     const [recipientAccount, setRecipientAccount] = useState("");
     const [amount, setAmount] = useState("");
@@ -16,20 +21,57 @@ export const TransferPage = () => {
     const [isSearching, setIsSearching] = useState(false);
     const [lookupError, setLookupError] = useState("");
 
-    // Transfer action state
+    // Transfer submission state
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [transferError, setTransferError] = useState("");
     const [transferSuccess, setTransferSuccess] = useState(false);
 
-    // Debounce lookup when recipient account number changes
+    // 1. Fetch current logged-in user's account details
+    useEffect(() => {
+        let isMounted = true;
+        setIsFetchingAccount(true);
+
+        httpClient
+            .get("/api/v1/account")
+            .then((data) => {
+                if (!isMounted) return;
+                if (data?.accountNumber) {
+                    setSenderAccount(data.accountNumber);
+                } else {
+                    setAccountError("Could not retrieve your account information.");
+                }
+            })
+            .catch((err) => {
+                if (isMounted) {
+                    setAccountError(err.message || "Failed to load account details.");
+                }
+            })
+            .finally(() => {
+                if (isMounted) setIsFetchingAccount(false);
+            });
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    // 2. Debounced recipient lookup with cancelation/race-condition handling
     useEffect(() => {
         const cleanAccount = recipientAccount.trim();
+
         if (!cleanAccount) {
             setRecipient(null);
             setLookupError("");
             return;
         }
 
+        if (cleanAccount === senderAccount) {
+            setRecipient(null);
+            setLookupError("You cannot transfer money to your own account.");
+            return;
+        }
+
+        let isCancelled = false;
         const timeoutId = setTimeout(() => {
             setIsSearching(true);
             setLookupError("");
@@ -38,26 +80,41 @@ export const TransferPage = () => {
             httpClient
                 .get(`/api/v1/transaction/lookup?accountID=${encodeURIComponent(cleanAccount)}`)
                 .then((data) => {
-                    if (data?.accountHolderName) {
+                    if (isCancelled) return;
+
+                    if (data?.accountNumber && data?.status === "ACTIVE") {
                         setRecipient(data);
+                    } else if (data?.status === "CLOSED") {
+                        setLookupError("This account is currently closed.");
                     } else {
                         setLookupError("Account not found.");
                     }
                 })
                 .catch((err) => {
-                    setLookupError(err.message || "Could not verify recipient.");
+                    if (!isCancelled) {
+                        setLookupError(err.message || "Could not verify recipient account.");
+                    }
                 })
                 .finally(() => {
-                    setIsSearching(false);
+                    if (!isCancelled) setIsSearching(false);
                 });
         }, 500);
 
-        return () => clearTimeout(timeoutId);
-    }, [recipientAccount]);
+        return () => {
+            isCancelled = true;
+            clearTimeout(timeoutId);
+        };
+    }, [recipientAccount, senderAccount]);
 
-    const handleLogout = () => {
-        localStorage.removeItem("ACCESS_TOKEN");
-        navigate(ROUTES.HOME);
+    const handleLogout = async () => {
+        try {
+            await httpClient.post("/api/v1/auth/logout");
+        } catch {
+            // Proceed with local cleanup regardless of network status
+        } finally {
+            localStorage.removeItem("ACCESS_TOKEN");
+            navigate(ROUTES.HOME);
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -65,17 +122,26 @@ export const TransferPage = () => {
         setTransferError("");
 
         const parsedAmount = parseFloat(amount);
-        if (isNaN(parsedAmount) || parsedAmount <= 0) {
-            setTransferError("Please enter a valid amount.");
+        if (isNaN(parsedAmount) || parsedAmount < 0.01) {
+            setTransferError("Minimum transfer amount is PKR 0.01.");
+            return;
+        }
+
+        if (!recipient) {
+            setTransferError("Please enter a valid recipient account.");
+            return;
+        }
+
+        if (!senderAccount) {
+            setTransferError("Sender account details are missing. Please refresh.");
             return;
         }
 
         setIsSubmitting(true);
 
         try {
-            // Note: Replace 'senderAccountNumber' with the actual logged-in user's account number or retrieve it dynamically
             await httpClient.post("/api/v1/transaction/transfer", {
-                senderAccountNumber: "5839201746382915",
+                senderAccountNumber: senderAccount,
                 receiverAccountNumber: recipientAccount.trim(),
                 amount: parsedAmount,
                 description: description.trim(),
@@ -94,16 +160,14 @@ export const TransferPage = () => {
 
     return (
         <div className="flex min-h-screen bg-[#F8FAFC]">
-            {/* Dark Blue Sidebar */}
+            {/* Sidebar */}
             <aside className="w-64 bg-[#0F2942] flex flex-col justify-between py-8 px-6 text-white shrink-0">
                 <div>
-                    {/* Header */}
                     <div className="mb-10">
                         <h1 className="text-xl font-bold tracking-tight text-white">NexaBank</h1>
                         <p className="text-xs text-gray-400 mt-0.5">Personal Banking</p>
                     </div>
 
-                    {/* Navigation */}
                     <nav className="space-y-2">
                         <Link
                             to={ROUTES.ACCOUNT_HOME}
@@ -138,7 +202,6 @@ export const TransferPage = () => {
                     </nav>
                 </div>
 
-                {/* Logout Button */}
                 <div>
                     <button
                         onClick={handleLogout}
@@ -157,7 +220,12 @@ export const TransferPage = () => {
                         Verify the recipient, enter the amount, then review before sending.
                     </p>
 
-                    {/* Form Card */}
+                    {accountError && (
+                        <div className="mt-4 bg-red-50 border border-red-200 text-red-600 p-4 rounded-xl text-sm font-medium">
+                            {accountError}
+                        </div>
+                    )}
+
                     <div className="mt-8 bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
                         {transferSuccess ? (
                             <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 p-4 rounded-xl text-center font-medium">
@@ -171,6 +239,14 @@ export const TransferPage = () => {
                                     </div>
                                 )}
 
+                                {/* Sender Account Banner */}
+                                {senderAccount && (
+                                    <div className="bg-gray-50 border border-gray-200 p-3.5 rounded-xl text-xs text-gray-600 flex justify-between items-center">
+                                        <span>Transferring from account:</span>
+                                        <span className="font-mono font-bold text-gray-800">{senderAccount}</span>
+                                    </div>
+                                )}
+
                                 {/* Recipient Account Input */}
                                 <div>
                                     <label className="block text-xs font-bold text-gray-800 mb-2">
@@ -178,14 +254,15 @@ export const TransferPage = () => {
                                     </label>
                                     <input
                                         type="text"
-                                        placeholder="Enter 16-digit account number"
+                                        placeholder="Enter recipient account number"
                                         value={recipientAccount}
                                         onChange={(e) => setRecipientAccount(e.target.value)}
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 text-gray-800 placeholder-gray-400"
+                                        disabled={isFetchingAccount}
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 text-gray-800 placeholder-gray-400 disabled:bg-gray-100"
                                     />
                                 </div>
 
-                                {/* Verified Recipient Card */}
+                                {/* Lookup Feedback */}
                                 {isSearching && (
                                     <div className="bg-[#EEF9F5] p-5 rounded-2xl text-xs text-emerald-600 font-medium">
                                         Verifying account details...
@@ -204,8 +281,7 @@ export const TransferPage = () => {
                                             {recipient.accountHolderName}
                                         </p>
                                         <p className="text-xs text-gray-500 mt-1">
-                                            Account ending in{" "}
-                                            {recipient.accountNumber?.slice(-4) || recipientAccount.slice(-4)}
+                                            Account: {recipient.accountNumber}
                                         </p>
                                     </div>
                                 )}
@@ -218,6 +294,7 @@ export const TransferPage = () => {
                                     <input
                                         type="number"
                                         step="0.01"
+                                        min="0.01"
                                         placeholder="PKR 0.00"
                                         value={amount}
                                         onChange={(e) => setAmount(e.target.value)}
@@ -228,10 +305,11 @@ export const TransferPage = () => {
                                 {/* Description Input */}
                                 <div>
                                     <label className="block text-xs font-bold text-gray-800 mb-2">
-                                        Description
+                                        Description <span className="font-normal text-gray-400">(Optional)</span>
                                     </label>
                                     <input
                                         type="text"
+                                        maxLength={255}
                                         placeholder="What is this transfer for?"
                                         value={description}
                                         onChange={(e) => setDescription(e.target.value)}
@@ -242,10 +320,10 @@ export const TransferPage = () => {
                                 {/* Submit Button */}
                                 <button
                                     type="submit"
-                                    disabled={isSubmitting || !recipient}
-                                    className="w-full bg-[#2563EB] hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-3.5 px-4 rounded-xl text-sm transition-colors shadow-sm"
+                                    disabled={isSubmitting || !recipient || isFetchingAccount || !senderAccount}
+                                    className="w-full bg-[#2563EB] hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-3.5 px-4 rounded-xl text-sm transition-colors shadow-sm cursor-pointer disabled:cursor-not-allowed"
                                 >
-                                    {isSubmitting ? "Processing..." : "Review Transfer"}
+                                    {isSubmitting ? "Processing..." : "Submit Transfer"}
                                 </button>
                             </form>
                         )}
