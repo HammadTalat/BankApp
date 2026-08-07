@@ -7,11 +7,7 @@ import com.redmath.bankapp.account.entity.BalanceIndicator;
 import com.redmath.bankapp.account.entity.BankAccount;
 import com.redmath.bankapp.account.repository.AccountBalanceRepository;
 import com.redmath.bankapp.account.repository.BankAccountRepository;
-import com.redmath.bankapp.transaction.dto.AccountLookupResponse;
-import com.redmath.bankapp.transaction.dto.TransactionResponse;
-import com.redmath.bankapp.transaction.dto.TransferRequest;
-import com.redmath.bankapp.transaction.dto.TransferResponse;
-import com.redmath.bankapp.transaction.dto.UserTransactionsResponse;
+import com.redmath.bankapp.transaction.dto.*;
 import com.redmath.bankapp.transaction.exception.BusinessRuleException;
 import com.redmath.bankapp.transaction.exception.InsufficientBalanceException;
 import com.redmath.bankapp.transaction.exception.UnauthorizedAccessException;
@@ -67,6 +63,10 @@ public class TransactionService {
         log.info("Processing transfer of {} from {} to {}",
                 request.amount(), request.senderAccountNumber(), request.receiverAccountNumber());
 
+        if (request.amount() == null || request.amount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessRuleException("Transfer amount must be greater than zero");
+        }
+
         // 1. Prevent self-transfer
         if (request.senderAccountNumber().equalsIgnoreCase(request.receiverAccountNumber())) {
             throw new BusinessRuleException("Sender and receiver accounts cannot be the same");
@@ -90,23 +90,27 @@ public class TransactionService {
         validateAccountActive(senderAccount, "Sender");
         validateAccountActive(receiverAccount, "Receiver");
 
-        // 4. Pessimistically Lock Sender Balance to prevent Race Conditions (Double-Spend)
-        AccountBalance senderBalance = balanceRepository.findLatestBalanceForUpdate(senderAccount.getAccountNumber())
-                .orElseThrow(() -> new BusinessRuleException("Sender balance record missing"));
+        // 4. Lock Sender Balance (Default to ZERO if no record exists)
+        BigDecimal currentSenderAmount = balanceRepository
+                .findLatestBalanceForUpdate(senderAccount.getAccountNumber())
+                .map(AccountBalance::getAmount)
+                .orElse(BigDecimal.ZERO);
 
         // 5. Check funds sufficiency
-        if (senderBalance.getAmount().compareTo(request.amount()) < 0) {
+        if (currentSenderAmount.compareTo(request.amount()) < 0) {
             log.warn("Transfer failed: Insufficient funds in account {}", senderAccount.getAccountNumber());
             throw new InsufficientBalanceException("Insufficient balance to perform this transfer");
         }
 
         // 6. Lock and fetch Receiver Balance
-        AccountBalance receiverBalance = balanceRepository.findLatestBalanceForUpdate(receiverAccount.getAccountNumber())
-                .orElseThrow(() -> new BusinessRuleException("Receiver balance record missing"));
+        BigDecimal currentReceiverAmount = balanceRepository
+                .findLatestBalanceForUpdate(receiverAccount.getAccountNumber())
+                .map(AccountBalance::getAmount)
+                .orElse(BigDecimal.ZERO);
 
         // 7. Update Balances
-        BigDecimal newSenderAmount = senderBalance.getAmount().subtract(request.amount());
-        BigDecimal newReceiverAmount = receiverBalance.getAmount().add(request.amount());
+        BigDecimal newSenderAmount = currentSenderAmount.subtract(request.amount());
+        BigDecimal newReceiverAmount = currentReceiverAmount.add(request.amount());
 
         AccountBalance newSenderLedgerEntry = new AccountBalance(
                 senderAccount,
@@ -151,6 +155,65 @@ public class TransactionService {
         );
     }
 
+    @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
+    public DepositResponse executeDeposit(Jwt jwt, DepositRequest request) throws AccountNotFoundException {
+        log.info("Processing deposit of {} into account {}", request.amount(), request.accountNumber());
+
+        if (request.amount() == null || request.amount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessRuleException("Transfer amount must be greater than zero");
+        }
+
+        // 1. Lock target parent account (FOR UPDATE on bank_accounts table)
+        BankAccount targetAccount = accountRepository.findByIdForUpdate(request.accountNumber())
+                .orElseThrow(() -> new AccountNotFoundException("Account not found: " + request.accountNumber()));
+
+        // 2. Validate security and state
+        validateAccountOwnership(targetAccount, extractUserId(jwt));
+        validateAccountActive(targetAccount, "Target");
+
+        // 3. Lock and fetch current balance, defaulting to ZERO if this is a newly created account
+        AccountBalance currentBalance = balanceRepository.findLatestBalanceForUpdate(targetAccount.getAccountNumber())
+                .orElseGet(() -> new AccountBalance(
+                        targetAccount,
+                        BigDecimal.ZERO,
+                        BalanceIndicator.CREDIT
+                ));
+
+        // 4. Calculate new balance safely
+        BigDecimal currentAmount = currentBalance.getAmount() != null ? currentBalance.getAmount() : BigDecimal.ZERO;
+        BigDecimal newAmount = currentAmount.add(request.amount());
+
+        // 5. Create immutable balance ledger entry
+        AccountBalance newLedgerEntry = new AccountBalance(
+                targetAccount,
+                newAmount,
+                BalanceIndicator.CREDIT
+        );
+        balanceRepository.save(newLedgerEntry);
+
+        // 6. Generate single audit transaction record
+        String operationId = UUID.randomUUID().toString();
+        AccountTransaction depositTransaction = createDepositLedgerRecord(
+                targetAccount,
+                request.amount(),
+                request.description() != null ? request.description() : "Cash Deposit",
+                operationId
+        );
+        transactionRepository.save(depositTransaction);
+
+        log.info("Deposit successful. Operation ID: {}", operationId);
+
+        return new DepositResponse(
+                operationId,
+                OperationStatus.COMPLETED,
+                request.amount(),
+                targetAccount.getAccountNumber(),
+                newAmount,
+                request.description() != null ? request.description() : "Cash Deposit",
+                LocalDateTime.now()
+        );
+    }
+
 
     @Transactional(readOnly = true)
     public UserTransactionsResponse getUserTransactions(Jwt jwt,
@@ -160,8 +223,13 @@ public class TransactionService {
         Long userId = extractUserId(jwt);
         log.debug("Fetching transaction history for user ID: {}", userId);
 
-        LocalDateTime start = (startDate != null) ? startDate.atStartOfDay() : null;
-        LocalDateTime end = (endDate != null) ? endDate.atTime(LocalTime.MAX) : null;
+        // Default endDate to today if null
+        LocalDate effectiveEndDate = (endDate != null) ? endDate : LocalDate.now();
+        // Default startDate to 15 days before effectiveEndDate if null
+        LocalDate effectiveStartDate = (startDate != null) ? startDate : effectiveEndDate.minusDays(30);
+
+        LocalDateTime start = effectiveStartDate.atStartOfDay();
+        LocalDateTime end = effectiveEndDate.atTime(LocalTime.MAX);
 
         BankAccount account = accountRepository.findByUser_Id(userId)
                 .orElseThrow(() -> new AccountNotFoundException("No account linked to the current user"));
@@ -216,6 +284,22 @@ public class TransactionService {
         tx.setOperationId(operationId);
         tx.setTransactionDate(LocalDateTime.now());
         return tx;
+    }
+
+    private AccountTransaction createDepositLedgerRecord(
+            BankAccount targetAccount,
+            BigDecimal amount,
+            String description,
+            String operationId) {
+
+        return AccountTransaction.builder()
+                .account(targetAccount)
+                .recipientAccount(null) // Null for deposits as there is no secondary counterparty account
+                .amount(amount)
+                .indicator(TransactionIndicator.CREDIT)
+                .description(description != null && !description.isBlank() ? description : "Account Deposit")
+                .operationId(operationId)
+                .build();
     }
 
 

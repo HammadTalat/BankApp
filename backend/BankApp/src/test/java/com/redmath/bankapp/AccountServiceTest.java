@@ -6,7 +6,7 @@ import com.redmath.bankapp.account.entity.BalanceIndicator;
 import com.redmath.bankapp.account.entity.BankAccount;
 import com.redmath.bankapp.account.repository.AccountBalanceRepository;
 import com.redmath.bankapp.account.repository.BankAccountRepository;
-import com.redmath.bankapp.account.service.AccountBalanceService;
+import com.redmath.bankapp.account.service.AccountService;
 import com.redmath.bankapp.tempconfig.security.UserPrincipal;
 import com.redmath.bankapp.transaction.exception.BalanceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,9 +16,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 import javax.security.auth.login.AccountNotFoundException;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Optional;
 
@@ -29,7 +31,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
-class AccountBalanceServiceTest {
+class AccountServiceTest {
 
     @Mock
     private BankAccountRepository bankAccountRepository;
@@ -38,9 +40,10 @@ class AccountBalanceServiceTest {
     private AccountBalanceRepository accountBalanceRepository;
 
     @InjectMocks
-    private AccountBalanceService accountBalanceService;
+    private AccountService accountBalanceService;
 
     private UserPrincipal validUserPrincipal;
+    private Jwt validJwtPrincipal;
     private BankAccount bankAccount;
     private AccountBalance accountBalance;
 
@@ -50,6 +53,17 @@ class AccountBalanceServiceTest {
     @BeforeEach
     void setUp() {
         validUserPrincipal = new UserPrincipal(userId, "test@redmath.com", "pass", Collections.emptyList());
+        validJwtPrincipal = Jwt.withTokenValue("mock-jwt-token-string")
+                .header("alg", "HS256")
+                .header("typ", "JWT")
+                .subject(String.valueOf(userId))
+                .issuer("http://localhost:8080")
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plusSeconds(3600))
+                .claim("userId", userId)
+                .claim("email", "test@redmath.com")
+                .build();
+
 
         bankAccount = new BankAccount();
         bankAccount.setAccountNumber(accountNumber);
@@ -63,7 +77,7 @@ class AccountBalanceServiceTest {
         given(bankAccountRepository.findByUser_Id(userId)).willReturn(Optional.of(bankAccount));
         given(accountBalanceRepository.findLatestBalance(accountNumber)).willReturn(Optional.of(accountBalance));
 
-        BalanceResponse response = accountBalanceService.getBalance(validUserPrincipal);
+        BalanceResponse response = accountBalanceService.getBalance(validJwtPrincipal);
 
         assertThat(response).isNotNull();
         assertThat(response.amount()).isEqualByComparingTo(new BigDecimal("1500.50"));
@@ -83,11 +97,22 @@ class AccountBalanceServiceTest {
     }
 
     @Test
-    @DisplayName("Should throw IllegalArgumentException when UserPrincipal ID is null")
+    @DisplayName("Should throw IllegalArgumentException when JWT userId claim is null")
     void getBalance_NullUserId_ThrowsIllegalArgumentException() {
-        UserPrincipal nullIdUser = new UserPrincipal(null, "test@redmath.com", "pass", Collections.emptyList());
+        // Arrange
+        Jwt nullJwtPrincipal = Jwt.withTokenValue("mock-jwt-token-string")
+                .header("alg", "HS256")
+                .header("typ", "JWT")
+                .subject(null) // Or omit if subject isn't required by your JWT builder
+                .issuer("http://localhost:8080")
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plusSeconds(3600))
+                .claim("userId", null) // Explicitly null userId claim
+                .claim("email", "test@redmath.com")
+                .build();
 
-        assertThatThrownBy(() -> accountBalanceService.getBalance(nullIdUser))
+        // Act & Assert
+        assertThatThrownBy(() -> accountBalanceService.getBalance(nullJwtPrincipal))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("User principal and ID must not be null");
 
@@ -99,7 +124,7 @@ class AccountBalanceServiceTest {
     void getBalance_AccountNotFound_ThrowsAccountNotFoundException() {
         given(bankAccountRepository.findByUser_Id(userId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> accountBalanceService.getBalance(validUserPrincipal))
+        assertThatThrownBy(() -> accountBalanceService.getBalance(validJwtPrincipal))
                 .isInstanceOf(AccountNotFoundException.class)
                 .hasMessage("No bank account found for user ID: " + userId);
 
@@ -113,7 +138,7 @@ class AccountBalanceServiceTest {
         given(bankAccountRepository.findByUser_Id(userId)).willReturn(Optional.of(bankAccount));
         given(accountBalanceRepository.findLatestBalance(accountNumber)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> accountBalanceService.getBalance(validUserPrincipal))
+        assertThatThrownBy(() -> accountBalanceService.getBalance(validJwtPrincipal))
                 .isInstanceOf(BalanceNotFoundException.class)
                 .hasMessage("Balance record not found for account: " + accountNumber);
 

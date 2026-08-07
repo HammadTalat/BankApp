@@ -1,9 +1,6 @@
 package com.redmath.bankapp.transaction.controller;
 
-import com.redmath.bankapp.transaction.dto.AccountLookupResponse;
-import com.redmath.bankapp.transaction.dto.TransferRequest;
-import com.redmath.bankapp.transaction.dto.TransferResponse;
-import com.redmath.bankapp.transaction.dto.UserTransactionsResponse;
+import com.redmath.bankapp.transaction.dto.*;
 import com.redmath.bankapp.transaction.service.TransactionService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -41,6 +38,23 @@ public class TransactionController {
         throws AccountNotFoundException {
         TransferResponse response = transactionService.executeTransfer(jwt, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/hello")
+    public String hello() {
+        return "helo";
+    }
+
+    @PostMapping("/hello")
+    public String helloPost() {
+        return "helo";
+    }
+
+    @PostMapping("/deposit")
+    public ResponseEntity<DepositResponse> executeDeposit(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody DepositRequest request) throws AccountNotFoundException {
+        DepositResponse response = transactionService.executeDeposit(jwt, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+
     }
 
     @GetMapping("/get-transactions")

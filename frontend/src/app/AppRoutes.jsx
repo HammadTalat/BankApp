@@ -23,6 +23,12 @@ import ProtectedRoute from "../routes/ProtectedRoute";
 import { ROUTES } from "../routes/routePaths";
 import ComponentShowcasePage from "./ComponentShowcasePage";
 import HomePage from "./HomePage";
+import AuthFlowTestPage from "./temp/AuthFlowTestPage";
+import TransactionsPage from "../features/transactions/pages/TransactionsPage.jsx";
+import TransferPage from "../features/transfers/pages/TransferPage.jsx";
+import ProfilePage from "../features/proifle/pages/ProfilePage.jsx";
+import DashboardPage from "../features/dashboard/pages/DashboardPage.jsx";
+import DepositPage from "../features/deposit/pages/DepositPage.jsx";
 
 function AppRoutes() {
     return (
@@ -42,6 +48,23 @@ function AppRoutes() {
                     element={<ComponentShowcasePage />}
                 />
             </Route>
+            {/*Transaction*/}
+            <Route path={ROUTES.ACCOUNT_TRANSACTIONS} element={<TransactionsPage />} />
+            <Route path={ROUTES.ACCOUNT_TRANSFERS} element={<TransferPage />} />
+
+            {/*Profile */}
+            <Route path={ROUTES.ACCOUNT_PROFILE} element={<ProfilePage />} />
+
+            {/*Dashboard*/}
+            <Route path={ROUTES.ACCOUNT_HOME} element={<DashboardPage />} />
+
+            {/*Deposit*/}
+            <Route path={ROUTES.ACCOUNT_DEPOSIT} element={<DepositPage />} />
+
+            <Route
+                path={ROUTES.COMPONENTS}
+                element={<ComponentShowcasePage />}
+            />
 
             <Route
                 element={(
