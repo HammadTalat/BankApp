@@ -223,8 +223,13 @@ public class TransactionService {
         Long userId = extractUserId(jwt);
         log.debug("Fetching transaction history for user ID: {}", userId);
 
-        LocalDateTime start = (startDate != null) ? startDate.atStartOfDay() : null;
-        LocalDateTime end = (endDate != null) ? endDate.atTime(LocalTime.MAX) : null;
+        // Default endDate to today if null
+        LocalDate effectiveEndDate = (endDate != null) ? endDate : LocalDate.now();
+        // Default startDate to 15 days before effectiveEndDate if null
+        LocalDate effectiveStartDate = (startDate != null) ? startDate : effectiveEndDate.minusDays(30);
+
+        LocalDateTime start = effectiveStartDate.atStartOfDay();
+        LocalDateTime end = effectiveEndDate.atTime(LocalTime.MAX);
 
         BankAccount account = accountRepository.findByUser_Id(userId)
                 .orElseThrow(() -> new AccountNotFoundException("No account linked to the current user"));
