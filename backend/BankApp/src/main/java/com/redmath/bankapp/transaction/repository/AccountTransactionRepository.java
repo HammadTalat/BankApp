@@ -52,4 +52,5 @@ public interface AccountTransactionRepository extends JpaRepository<AccountTrans
             @Param("endDate") LocalDateTime endDate,
             Pageable pageable
     );
+
 }

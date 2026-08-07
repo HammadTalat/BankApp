@@ -30,12 +30,13 @@ public class PendingProfileAccessManager {
       return false;
     }
 
-    if (appUser.getApprovalStatus() != ApprovalStatus.PENDING) {
+    if (appUser.getApprovalStatus() == ApprovalStatus.APPROVED) {
       return true;
     }
 
     String requestUri = request.getRequestURI();
-    return requestUri.startsWith("/api/v1/me");
+    return "/api/v1/me".equals(requestUri)
+        || requestUri.startsWith("/api/v1/me/");
   }
 
   private String extractEmail(Authentication authentication) {

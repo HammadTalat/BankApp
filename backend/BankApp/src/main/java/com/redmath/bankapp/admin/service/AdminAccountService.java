@@ -9,8 +9,11 @@ import com.redmath.bankapp.account.repository.BankAccountRepository;
 import com.redmath.bankapp.admin.dto.response.AccountClosureResponse;
 import com.redmath.bankapp.admin.dto.response.AdminAccountDetailsResponse;
 import com.redmath.bankapp.admin.dto.response.AdminAccountSummaryResponse;
+import com.redmath.bankapp.admin.dto.response.AdminAccountTransactionsResponse;
 import com.redmath.bankapp.admin.exception.InvalidAccountStateException;
 import com.redmath.bankapp.admin.exception.ResourceNotFoundException;
+import com.redmath.bankapp.transaction.dto.TransactionResponse;
+import com.redmath.bankapp.transaction.repository.AccountTransactionRepository;
 import com.redmath.bankapp.user.entity.AppUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,6 +22,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +32,7 @@ public class AdminAccountService {
 
     private final BankAccountRepository bankAccountRepository;
     private final AccountBalanceRepository accountBalanceRepository;
+    private final AccountTransactionRepository accountTransactionRepository;
 
     @Transactional(readOnly = true)
     public Page<AdminAccountSummaryResponse> getAccounts(
@@ -168,5 +175,48 @@ public class AdminAccountService {
                     "Only active accounts can be closed"
             );
         }
+    }
+    @Transactional(readOnly = true)
+    public AdminAccountTransactionsResponse getAccountTransactions(
+            String accountNumber,
+            LocalDate startDate,
+            LocalDate endDate,
+            Pageable pageable
+    ) {
+        findAccount(accountNumber);
+
+        if (
+                startDate != null
+                        && endDate != null
+                        && startDate.isAfter(endDate)
+        ) {
+            throw new IllegalArgumentException(
+                    "Start date cannot be after end date"
+            );
+        }
+
+        LocalDateTime start =
+                startDate == null
+                        ? null
+                        : startDate.atStartOfDay();
+
+        LocalDateTime end =
+                endDate == null
+                        ? null
+                        : endDate.atTime(LocalTime.MAX);
+
+        Page<TransactionResponse> transactions =
+                accountTransactionRepository
+                        .findByAccountNumberAndDateRange(
+
+                                accountNumber,
+                                start,
+                                end,
+                                pageable
+                        )
+                        .map(TransactionResponse::fromEntity);
+
+        return AdminAccountTransactionsResponse
+                .fromPage(transactions);
     }
 }

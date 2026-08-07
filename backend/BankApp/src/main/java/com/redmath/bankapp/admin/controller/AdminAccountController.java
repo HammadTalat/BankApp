@@ -5,14 +5,18 @@ import com.redmath.bankapp.account.entity.AccountStatus;
 import com.redmath.bankapp.admin.dto.response.AccountClosureResponse;
 import com.redmath.bankapp.admin.dto.response.AdminAccountDetailsResponse;
 import com.redmath.bankapp.admin.dto.response.AdminAccountSummaryResponse;
+import com.redmath.bankapp.admin.dto.response.AdminAccountTransactionsResponse;
 import com.redmath.bankapp.admin.service.AdminAccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/v1/admin/accounts")
@@ -63,6 +67,40 @@ public class AdminAccountController {
     ) {
         return ResponseEntity.ok(
                 adminAccountService.closeAccount(accountNumber)
+        );
+    }
+    @GetMapping("/{accountNumber}/transactions")
+    public ResponseEntity<AdminAccountTransactionsResponse> getAccountTransactions(
+            @PathVariable String accountNumber,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate startDate,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate endDate,
+
+            @RequestParam(defaultValue = "0")
+            int page,
+
+            @RequestParam(defaultValue = "10")
+            int size
+    ) {
+        page = Math.max(page, 0);
+        size = Math.max(size, 1);
+        size = Math.min(size, MAXIMUM_PAGE_SIZE);
+
+        Pageable pageable =
+                PageRequest.of(page, size);
+
+        return ResponseEntity.ok(
+                adminAccountService.getAccountTransactions(
+                        accountNumber,
+                        startDate,
+                        endDate,
+                        pageable
+                )
         );
     }
 }

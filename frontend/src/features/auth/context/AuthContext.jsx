@@ -12,23 +12,31 @@ import * as authApi from "../api/authApi";
 // eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext(null);
 
+function isProfileIncomplete(address) {
+    return !address?.trim()
+        || address.trim().toLowerCase() === "not provided";
+}
 
-function toUser(response, profile = null) {
+function toUser(response = {}, profile = null) {
+    const role = profile?.role || response?.role;
+    const address = profile?.address;
+
     return {
-        email: profile?.email || response.email,
-        name: profile?.name || response.name,
-        role: profile?.role || response.role,
-        address: profile?.address,
+        email: profile?.email || response?.email,
+        name: profile?.name || response?.name,
+        role,
+        address,
         approvalStatus: profile?.approvalStatus,
         needsProfileCompletion: response?.redirectPath === "/complete-profile"
-            || Boolean(profile && (!profile.address || profile.address === "Not provided")),
+            || Boolean(
+                profile
+                && role === "ACCOUNT_HOLDER"
+                && isProfileIncomplete(address),
+            ),
     };
 }
 
-export function AuthProvider({children}) {
-    const [loading, setLoading] = useState(true);
-
-
+export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [isInitializing, setIsInitializing] = useState(true);
 
@@ -41,10 +49,15 @@ export function AuthProvider({children}) {
     }, []);
 
     const refreshProfile = useCallback(async () => {
-        const profile = await authApi.getCurrentUser();
-        setUser(toUser(null, profile));
-        setLoading(false);
-        return profile;
+        try {
+            const profile = await authApi.getCurrentUser();
+            const nextUser = toUser({}, profile);
+            setUser(nextUser);
+            return nextUser;
+        } catch (error) {
+            if (error?.status === 401) setUser(null);
+            throw error;
+        }
     }, []);
 
     useEffect(() => {
@@ -66,15 +79,13 @@ export function AuthProvider({children}) {
                 setIsInitializing(false);
             }
         });
-        return () => {
-            isActive = false;
-        };
+        return () => { isActive = false; };
     }, [refreshProfile]);
 
     const signIn = useCallback(async (credentials) => {
-        await authApi.login(credentials);
+        const response = await authApi.login(credentials);
         const profile = await authApi.getCurrentUser();
-        const nextUser = toUser({}, profile);
+        const nextUser = toUser(response, profile);
         setUser(nextUser);
         return nextUser;
     }, []);
@@ -83,11 +94,12 @@ export function AuthProvider({children}) {
 
     const finishProfile = useCallback(async (address) => {
         const profile = await authApi.completeProfile(address);
-        setUser((currentUser) => ({
-            ...toUser(currentUser || {}, profile),
+        const nextUser = {
+            ...toUser({}, profile),
             needsProfileCompletion: false,
-        }));
-        return profile;
+        };
+        setUser(nextUser);
+        return nextUser;
     }, []);
 
     const value = useMemo(() => ({
