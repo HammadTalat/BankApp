@@ -6,6 +6,7 @@ import com.redmath.bankapp.account.entity.AccountBalance;
 import com.redmath.bankapp.account.entity.BankAccount;
 import com.redmath.bankapp.account.repository.AccountBalanceRepository;
 import com.redmath.bankapp.account.repository.BankAccountRepository;
+import com.redmath.bankapp.transaction.exception.BalanceNotFoundException;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +27,7 @@ public class AccountService {
     }
 
     @Transactional(readOnly = true)
-    public BalanceResponse getBalance(Jwt user) throws AccountNotFoundException {
+    public BalanceResponse getBalance(Jwt user) throws AccountNotFoundException, BalanceNotFoundException {
         if (user == null) {
             throw new IllegalArgumentException("User principal and ID must not be null");
         }
