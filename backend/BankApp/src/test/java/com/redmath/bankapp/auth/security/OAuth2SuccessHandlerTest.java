@@ -4,8 +4,8 @@ import com.redmath.bankapp.user.entity.AppUser;
 import com.redmath.bankapp.user.entity.ApprovalStatus;
 import com.redmath.bankapp.user.entity.Role;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -56,8 +56,8 @@ class OAuth2SuccessHandlerTest {
     given(oauthUserResolver.resolve(any(OAuth2User.class))).willReturn(appUser);
     given(apiSecurityService.generateToken(appUser)).willReturn("mock-jwt-token");
 
-    HttpServletRequest request = mock(HttpServletRequest.class);
-    HttpServletResponse response = mock(HttpServletResponse.class);
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    MockHttpServletResponse response = new MockHttpServletResponse();
 
     Map<String, Object> attributes = new HashMap<>();
     attributes.put("email", "oauth@example.com");
@@ -76,13 +76,49 @@ class OAuth2SuccessHandlerTest {
     verify(oauthUserResolver).resolve(oauth2User);
     verify(apiSecurityService).generateToken(appUser);
     verify(authCookieService).addAccessToken(response, "mock-jwt-token");
+    assertThat(response.getRedirectedUrl()).isEqualTo("http://localhost:5173/login");
+  }
+
+  @Test
+  @DisplayName("Should strip trailing slash from frontend URL before redirecting")
+  void onAuthenticationSuccess_TrailingSlashFrontendUrl_RedirectsWithoutDuplicateSlash()
+      throws Exception {
+    ReflectionTestUtils.setField(oAuth2SuccessHandler, "frontendUrl", "http://localhost:5173/");
+
+    AppUser appUser = AppUser.builder()
+        .email("slash@example.com")
+        .name("Slash User")
+        .build();
+    given(oauthUserResolver.resolve(any(OAuth2User.class))).willReturn(appUser);
+    given(apiSecurityService.generateToken(appUser)).willReturn("token");
+
+    Map<String, Object> attributes = new HashMap<>();
+    attributes.put("email", "slash@example.com");
+    attributes.put("name", "Slash User");
+    OAuth2User oauth2User = new DefaultOAuth2User(
+        Collections.emptySet(),
+        attributes,
+        "email"
+    );
+
+    Authentication authentication = mock(Authentication.class);
+    given(authentication.getPrincipal()).willReturn(oauth2User);
+
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    oAuth2SuccessHandler.onAuthenticationSuccess(
+        new MockHttpServletRequest(),
+        response,
+        authentication
+    );
+
+    assertThat(response.getRedirectedUrl()).isEqualTo("http://localhost:5173/login");
   }
 
   @Test
   @DisplayName("Should throw ServletException when principal is not OAuth2User")
   void onAuthenticationSuccess_InvalidPrincipal_ThrowsServletException() throws Exception {
-    HttpServletRequest request = mock(HttpServletRequest.class);
-    HttpServletResponse response = mock(HttpServletResponse.class);
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    MockHttpServletResponse response = new MockHttpServletResponse();
     Authentication authentication = mock(Authentication.class);
 
     given(authentication.getPrincipal()).willReturn("not-an-oauth2-user");
