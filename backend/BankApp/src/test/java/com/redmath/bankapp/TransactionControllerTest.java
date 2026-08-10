@@ -2,13 +2,15 @@ package com.redmath.bankapp;
 
 import com.redmath.bankapp.account.entity.AccountStatus;
 import com.redmath.bankapp.tempconfig.security.UserPrincipal;
+import com.redmath.bankapp.transaction.dto.*;
+import com.redmath.bankapp.transaction.exception.BusinessRuleException;
+import com.redmath.bankapp.transaction.exception.GlobalExceptionHandler;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.oauth2.jwt.Jwt;
+
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+
 import com.redmath.bankapp.transaction.controller.TransactionController;
-import com.redmath.bankapp.transaction.dto.AccountLookupResponse;
-import com.redmath.bankapp.transaction.dto.TransferRequest;
-import com.redmath.bankapp.transaction.dto.TransferResponse;
-import com.redmath.bankapp.transaction.dto.UserTransactionsResponse;
 import com.redmath.bankapp.transaction.enums.OperationStatus;
 import com.redmath.bankapp.transaction.service.TransactionService;
 import org.junit.jupiter.api.BeforeEach;
@@ -138,7 +140,6 @@ class TransactionControllerTest {
     @Nested
     @DisplayName("POST /api/v1/transaction/transfer")
     class ExecuteTransferTests {
-
 
 
         @Test
@@ -284,4 +285,147 @@ class TransactionControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
     }
+
+    @Nested
+    @DisplayName("Deposit Tests")
+//    @Import(GlobalExceptionHandler.class)
+    class DepositTest {
+
+        private String validAccountNumber;
+        private BigDecimal validAmount;
+        private String validDescription;
+        private DepositRequest validRequest;
+        private DepositResponse mockResponse;
+
+        @BeforeEach
+        void setUp() {
+            validAccountNumber = "ACC-12345678";
+            validAmount = new BigDecimal("100.00");
+            validDescription = "Cash Deposit";
+
+            validRequest = new DepositRequest(validAccountNumber, validAmount, validDescription);
+
+            mockResponse = new DepositResponse(
+                    "op-uuid-1234",
+                    OperationStatus.COMPLETED,
+                    validAmount,
+                    validAccountNumber,
+                    new BigDecimal("500.00"),
+                    validDescription,
+                    LocalDateTime.of(2026, 8, 10, 10, 0)
+            );
+        }
+
+        @Test
+        @DisplayName("Should return 201 Created and DepositResponse when payload is valid")
+        void executeDeposit_ValidRequest_Returns201Created() throws Exception {
+            given(transactionService.executeDeposit(any(Jwt.class), eq(validRequest)))
+                    .willReturn(mockResponse);
+
+            mockMvc.perform(post("/api/v1/transaction/deposit")
+                            .with(jwt()) // Simulates valid Jwt authentication principal
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(validRequest)))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.operationId").value("op-uuid-1234"))
+                    .andExpect(jsonPath("$.status").value("COMPLETED"))
+                    .andExpect(jsonPath("$.amount").value(100.00))
+                    .andExpect(jsonPath("$.accountNumber").value(validAccountNumber))
+                    .andExpect(jsonPath("$.newBalance").value(500.00))
+                    .andExpect(jsonPath("$.description").value(validDescription))
+                    .andExpect(jsonPath("$.transactionDate").exists());
+
+            verify(transactionService).executeDeposit(any(Jwt.class), eq(validRequest));
+        }
+
+        @Test
+        @DisplayName("Should return 201 Created when optional description is null")
+        void executeDeposit_NullDescription_Returns201Created() throws Exception {
+            DepositRequest requestWithNullDesc = new DepositRequest(validAccountNumber, validAmount, null);
+
+            given(transactionService.executeDeposit(any(Jwt.class), eq(requestWithNullDesc)))
+                    .willReturn(mockResponse);
+
+            mockMvc.perform(post("/api/v1/transaction/deposit")
+                            .with(jwt())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(requestWithNullDesc)))
+                    .andExpect(status().isCreated());
+
+            verify(transactionService).executeDeposit(any(Jwt.class), eq(requestWithNullDesc));
+        }
+
+        @Test
+        @DisplayName("Should return 400 Bad Request when accountNumber is blank")
+        void executeDeposit_BlankAccountNumber_Returns400BadRequest() throws Exception {
+            DepositRequest invalidRequest = new DepositRequest("", validAmount, validDescription);
+
+            mockMvc.perform(post("/api/v1/transaction/deposit")
+                            .with(jwt())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(invalidRequest)))
+                    .andExpect(status().isBadRequest());
+
+            verify(transactionService, never()).executeDeposit(any(), any());
+        }
+
+        @Test
+        @DisplayName("Should return 400 Bad Request when amount is null")
+        void executeDeposit_NullAmount_Returns400BadRequest() throws Exception {
+            DepositRequest invalidRequest = new DepositRequest(validAccountNumber, null, validDescription);
+
+            mockMvc.perform(post("/api/v1/transaction/deposit")
+                            .with(jwt())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(invalidRequest)))
+                    .andExpect(status().isBadRequest());
+
+            verify(transactionService, never()).executeDeposit(any(), any());
+        }
+
+        @Test
+        @DisplayName("Should return 400 Bad Request when amount is less than 0.01")
+        void executeDeposit_AmountZeroOrNegative_Returns400BadRequest() throws Exception {
+            DepositRequest invalidRequest = new DepositRequest(validAccountNumber, new BigDecimal("0.00"), validDescription);
+
+            mockMvc.perform(post("/api/v1/transaction/deposit")
+                            .with(jwt())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(invalidRequest)))
+                    .andExpect(status().isBadRequest());
+
+            verify(transactionService, never()).executeDeposit(any(), any());
+        }
+
+        @Test
+        @DisplayName("Should return 404 Not Found when account does not exist")
+        void executeDeposit_AccountNotFoundException_Returns404() throws Exception {
+            given(transactionService.executeDeposit(any(Jwt.class), eq(validRequest)))
+                    .willThrow(new AccountNotFoundException("Account not found: " + validAccountNumber));
+
+            mockMvc.perform(post("/api/v1/transaction/deposit")
+                            .with(jwt())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(validRequest)))
+                    .andExpect(status().isNotFound()); // Assumes @ControllerAdvice maps AccountNotFoundException to 404 NOT_FOUND
+
+            verify(transactionService).executeDeposit(any(Jwt.class), eq(validRequest));
+        }
+
+        @Test
+        @DisplayName("Should return 400 Bad Request when business rule fails in service")
+        void executeDeposit_BusinessRuleException_Returns400() throws Exception {
+            given(transactionService.executeDeposit(any(Jwt.class), eq(validRequest)))
+                    .willThrow(new BusinessRuleException("Account is inactive"));
+
+            mockMvc.perform(post("/api/v1/transaction/deposit")
+                            .with(jwt())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(validRequest)))
+                    .andExpect(status().isBadRequest()); // Assumes @ControllerAdvice maps BusinessRuleException to 400 BAD_REQUEST
+
+            verify(transactionService).executeDeposit(any(Jwt.class), eq(validRequest));
+        }
     }
+
+}

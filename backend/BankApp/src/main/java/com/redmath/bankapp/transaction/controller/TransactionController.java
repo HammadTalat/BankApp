@@ -1,7 +1,7 @@
 package com.redmath.bankapp.transaction.controller;
 
-import com.redmath.bankapp.transaction.dto.DepositRequest;
 import com.redmath.bankapp.transaction.dto.AccountLookupResponse;
+import com.redmath.bankapp.transaction.dto.DepositRequest;
 import com.redmath.bankapp.transaction.dto.DepositResponse;
 import com.redmath.bankapp.transaction.dto.TransferRequest;
 import com.redmath.bankapp.transaction.dto.TransferResponse;
@@ -45,16 +45,6 @@ public class TransactionController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @GetMapping("/hello")
-    public String hello() {
-        return "helo";
-    }
-
-    @PostMapping("/hello")
-    public String helloPost() {
-        return "helo";
-    }
-
     @PostMapping("/deposit")
     public ResponseEntity<DepositResponse> executeDeposit(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody DepositRequest request) throws AccountNotFoundException {
         DepositResponse response = transactionService.executeDeposit(jwt, request);
@@ -69,11 +59,6 @@ public class TransactionController {
                                                                         @RequestParam(value = "endDate", required = false)
                                                                             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
                                                                         @PageableDefault(page = 0, size = 10) Pageable pageable) throws AccountNotFoundException {
-
-        if (jwt == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // 401 instead of 500
-        }
-
       UserTransactionsResponse response = transactionService.getUserTransactions(jwt, startDate, endDate, pageable);
         return ResponseEntity.ok(response);
     }
