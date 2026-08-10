@@ -1,5 +1,7 @@
 package com.redmath.bankapp.auth.security;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -31,6 +33,18 @@ public class ApiAuthenticationFailureHandler
   @Value("${app.frontend-url:http://localhost:5173}")
   private String frontendUrl;
 
+  @PostConstruct
+  void validateFrontendUrl() {
+    if (frontendUrl == null || frontendUrl.isBlank()
+        || (!frontendUrl.startsWith("http://") && !frontendUrl.startsWith("https://"))) {
+      throw new IllegalStateException(
+          "Invalid app.frontend-url: must be a non-empty http/https URL");
+    }
+  }
+
+  @SuppressFBWarnings(
+      value = "UNVALIDATED_REDIRECT",
+      justification = "frontendUrl is a server-configured property, not user input")
   @Override
   public void onAuthenticationFailure(
       HttpServletRequest request,
@@ -94,8 +108,8 @@ public class ApiAuthenticationFailureHandler
     }
 
     if (isOAuthRequest(request)) {
-      response.sendRedirect(frontendUrl.replaceAll("/$", "")
-          + "/login#oauthError="
+      String base = frontendUrl.replaceAll("/$", "");
+      response.sendRedirect(base + "/login#oauthError="
           + URLEncoder.encode(message, StandardCharsets.UTF_8));
       return;
     }

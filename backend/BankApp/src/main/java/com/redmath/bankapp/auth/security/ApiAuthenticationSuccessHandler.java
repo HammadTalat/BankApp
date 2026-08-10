@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -32,9 +33,15 @@ public class ApiAuthenticationSuccessHandler
       throws IOException, ServletException {
 
     CustomUserDetails userDetails =
-        (CustomUserDetails) authentication.getPrincipal();
+        Objects.requireNonNull(
+            (CustomUserDetails) authentication.getPrincipal(),
+            "Authenticated principal is missing"
+        );
 
     AppUser appUser = userDetails.getAppUser();
+    if (appUser == null) {
+      throw new IllegalStateException("Authenticated user details are missing appUser");
+    }
 
     String accessToken =
         apiSecurityService.generateToken(appUser);
