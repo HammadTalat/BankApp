@@ -7,6 +7,8 @@ import com.redmath.bankapp.account.entity.BankAccount;
 import com.redmath.bankapp.account.repository.AccountBalanceRepository;
 import com.redmath.bankapp.account.repository.BankAccountRepository;
 import com.redmath.bankapp.tempconfig.security.UserPrincipal;
+import com.redmath.bankapp.transaction.dto.DepositRequest;
+import com.redmath.bankapp.transaction.dto.DepositResponse;
 import org.springframework.security.oauth2.jwt.Jwt;
 import com.redmath.bankapp.transaction.dto.TransferRequest;
 import com.redmath.bankapp.transaction.dto.TransferResponse;
@@ -48,6 +50,8 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -372,6 +376,144 @@ class TransactionServiceTest {
             assertThat(creditTxn.getIndicator()).isEqualTo(TransactionIndicator.CREDIT);
             assertThat(creditTxn.getDescription()).isEqualTo(description);
             assertThat(creditTxn.getOperationId()).isEqualTo(response.operationId());
+        }
+    }
+
+    @Nested
+    @DisplayName("Deposit Execution - Success Cases")
+    class SuccessCases {
+
+
+        private final Long userId = 99L;
+        private final String accountNumber = "ACC-12345";
+        private BankAccount targetAccount;
+
+        @BeforeEach
+        void setUp() {
+            targetAccount = new BankAccount();
+            targetAccount.setAccountNumber(accountNumber);
+            // Assuming your account entity tracks ownership via a user object or userId field
+            // Configure standard valid state for targetAccount to pass validateAccountOwnership & validateAccountActive
+        }
+
+        @Test
+        @DisplayName("Should execute deposit when account has existing balance and description is provided")
+        void executeDeposit_ExistingBalanceAndDescription_Success() throws Exception {
+            DepositRequest request = new DepositRequest(SENDER_ACC, new BigDecimal("100.00"), "Monthly Salary");
+            AccountBalance existingBalance = new AccountBalance(senderAccount, new BigDecimal("250.00"), BalanceIndicator.CREDIT);
+
+            given(accountRepository.findByIdForUpdate(SENDER_ACC)).willReturn(Optional.of(senderAccount));
+            given(balanceRepository.findLatestBalanceForUpdate(SENDER_ACC)).willReturn(Optional.of(existingBalance));
+
+            LocalDateTime beforeExecution = LocalDateTime.now().minusSeconds(1);
+            DepositResponse response = transactionService.executeDeposit(jwt, request);
+
+            // Response Assertions (Kills return object/mutation bugs)
+            assertThat(response).isNotNull();
+            assertThat(response.operationId()).isNotBlank();
+            assertThat(response.status()).isEqualTo(OperationStatus.COMPLETED);
+            assertThat(response.amount()).isEqualByComparingTo("100.00");
+            assertThat(response.accountNumber()).isEqualTo(SENDER_ACC);
+            assertThat(response.newBalance()).isEqualByComparingTo("350.00"); // 250 + 100
+            assertThat(response.description()).isEqualTo("Monthly Salary");
+            assertThat(response.transactionDate()).isAfterOrEqualTo(beforeExecution);
+
+            // Ledger Entity Assertions (Kills persistence mutations)
+            verify(balanceRepository).save(balanceCaptor.capture());
+            AccountBalance savedBalance = balanceCaptor.getValue();
+            assertThat(savedBalance.getAmount()).isEqualByComparingTo("350.00");
+            assertThat(savedBalance.getIndicator()).isEqualTo(BalanceIndicator.CREDIT);
+
+            verify(transactionRepository).save(transactionCaptor.capture());
+            AccountTransaction savedTx = transactionCaptor.getValue();
+            assertThat(savedTx.getAmount()).isEqualByComparingTo("100.00");
+            assertThat(savedTx.getDescription()).isEqualTo("Monthly Salary");
+        }
+
+        @Test
+        @DisplayName("Should default to zero balance and 'Cash Deposit' description when optional values are null")
+        void executeDeposit_NullBalanceRecordAndNullDescription_DefaultsApplied() throws Exception {
+            DepositRequest request = new DepositRequest(SENDER_ACC, new BigDecimal("50.00"), null);
+
+            given(accountRepository.findByIdForUpdate(SENDER_ACC)).willReturn(Optional.of(senderAccount));
+            given(balanceRepository.findLatestBalanceForUpdate(SENDER_ACC)).willReturn(Optional.empty());
+
+            DepositResponse response = transactionService.executeDeposit(jwt, request);
+
+            assertThat(response.newBalance()).isEqualByComparingTo("50.00"); // 0 + 50
+            assertThat(response.description()).isEqualTo("Cash Deposit");
+
+            verify(balanceRepository).save(balanceCaptor.capture());
+            assertThat(balanceCaptor.getValue().getAmount()).isEqualByComparingTo("50.00");
+
+            verify(transactionRepository).save(transactionCaptor.capture());
+            assertThat(transactionCaptor.getValue().getDescription()).isEqualTo("Cash Deposit");
+        }
+
+        @Test
+        @DisplayName("Should handle existing balance entity having a null amount field by treating it as ZERO")
+        void executeDeposit_BalanceEntityWithNullAmount_TreatsAsZero() throws Exception {
+            DepositRequest request = new DepositRequest(SENDER_ACC, new BigDecimal("75.00"), "Bonus");
+            AccountBalance balanceWithNullAmount = new AccountBalance(senderAccount, null, BalanceIndicator.CREDIT);
+
+            given(accountRepository.findByIdForUpdate(SENDER_ACC)).willReturn(Optional.of(senderAccount));
+            given(balanceRepository.findLatestBalanceForUpdate(SENDER_ACC)).willReturn(Optional.of(balanceWithNullAmount));
+
+            DepositResponse response = transactionService.executeDeposit(jwt, request);
+
+            assertThat(response.newBalance()).isEqualByComparingTo("75.00");
+            verify(balanceRepository).save(balanceCaptor.capture());
+            assertThat(balanceCaptor.getValue().getAmount()).isEqualByComparingTo("75.00");
+        }
+
+        @Test
+        @DisplayName("Should throw BusinessRuleException when deposit amount is null")
+        void executeDeposit_NullAmount_ThrowsBusinessRuleException() {
+            DepositRequest request = new DepositRequest(SENDER_ACC, null, "Deposit");
+
+            assertThatThrownBy(() -> transactionService.executeDeposit(jwt, request))
+                    .isInstanceOf(BusinessRuleException.class)
+                    .hasMessage("Transfer amount must be greater than zero");
+
+            verify(accountRepository, never()).findByIdForUpdate(any());
+        }
+
+        @Test
+        @DisplayName("Should throw BusinessRuleException when deposit amount is zero")
+        void executeDeposit_ZeroAmount_ThrowsBusinessRuleException() {
+            DepositRequest request = new DepositRequest(SENDER_ACC, BigDecimal.ZERO, "Deposit");
+
+            assertThatThrownBy(() -> transactionService.executeDeposit(jwt, request))
+                    .isInstanceOf(BusinessRuleException.class)
+                    .hasMessage("Transfer amount must be greater than zero");
+
+            verify(accountRepository, never()).findByIdForUpdate(any());
+        }
+
+        @Test
+        @DisplayName("Should throw BusinessRuleException when deposit amount is negative")
+        void executeDeposit_NegativeAmount_ThrowsBusinessRuleException() {
+            DepositRequest request = new DepositRequest(SENDER_ACC, new BigDecimal("-10.00"), "Deposit");
+
+            assertThatThrownBy(() -> transactionService.executeDeposit(jwt, request))
+                    .isInstanceOf(BusinessRuleException.class)
+                    .hasMessage("Transfer amount must be greater than zero");
+
+            verify(accountRepository, never()).findByIdForUpdate(any());
+        }
+
+        @Test
+        @DisplayName("Should throw AccountNotFoundException with exact message when account does not exist")
+        void executeDeposit_AccountNotFound_ThrowsAccountNotFoundException() {
+            DepositRequest request = new DepositRequest(SENDER_ACC, new BigDecimal("100.00"), "Deposit");
+            given(accountRepository.findByIdForUpdate(SENDER_ACC)).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> transactionService.executeDeposit(jwt, request))
+                    .isInstanceOf(AccountNotFoundException.class)
+                    .hasMessage("Account not found: " + SENDER_ACC);
+
+            verify(balanceRepository, never()).findLatestBalanceForUpdate(any());
+            verify(balanceRepository, never()).save(any());
         }
     }
 }
