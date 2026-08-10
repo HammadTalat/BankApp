@@ -9,7 +9,6 @@ import com.redmath.bankapp.account.entity.BankAccount;
 import com.redmath.bankapp.account.repository.AccountBalanceRepository;
 import com.redmath.bankapp.account.repository.BankAccountRepository;
 import com.redmath.bankapp.account.service.AccountService;
-import com.redmath.bankapp.tempconfig.security.UserPrincipal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -168,7 +167,7 @@ class AccountServiceTest {
             given(bankAccountRepository.findByUser_Id(any(Long.class))).willReturn(Optional.of(mockAccount));
 
             // Act
-            AccountResponse response = accountService.getAccount(jwt);
+            AccountResponse response = accountService.getAccount(validJwtPrincipal);
 
             // Assert - Explicit property assertions kill return/mapping object mutations
             assertThat(response).isNotNull();
@@ -184,11 +183,11 @@ class AccountServiceTest {
         @DisplayName("Should throw AccountNotFoundException with exact message when account does not exist")
         void getAccount_AccountNotFound_ThrowsAccountNotFoundException() {
             // Arrange
-            given(bankAccountRepository.findByUser_Id(userId)).willReturn(Optional.empty());
 
+            given(bankAccountRepository.findByUser_Id(userId)).willReturn(Optional.empty());
             // Act & Assert
             // Asserting exact class and message kills lambda/exception message mutations
-            assertThatThrownBy(() -> accountService.getAccount(jwt))
+            assertThatThrownBy(() -> accountService.getAccount(validJwtPrincipal))
                     .isInstanceOf(AccountNotFoundException.class)
                     .hasMessage("No bank account found for user");
 
