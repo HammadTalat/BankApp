@@ -11,7 +11,6 @@ export const DashboardPage = () => {
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Dynamic Account & Balance states
     const [accountDetails, setAccountDetails] = useState({
         accountNumber: "",
         status: "ACTIVE",
@@ -21,7 +20,6 @@ export const DashboardPage = () => {
 
     const navigate = useNavigate();
 
-    // Fetch account metadata (accountNumber and status)
     const fetchAccountDetails = () => {
         httpClient
             .get("/api/v1/account")
@@ -38,7 +36,6 @@ export const DashboardPage = () => {
             });
     };
 
-    // Fetch account balance from backend
     const fetchBalance = () => {
         setRefreshingBalance(true);
         httpClient
@@ -55,11 +52,18 @@ export const DashboardPage = () => {
     };
 
     useEffect(() => {
-        // Fetch account details & initial balance
         fetchAccountDetails();
-        fetchBalance();
+        httpClient
+            .get("/api/v1/account/balance")
+            .then((data) => {
+                if (data?.amount !== undefined) {
+                    setBalance(data.amount);
+                }
+            })
+            .catch((err) => {
+                console.error("Failed to load balance:", err);
+            });
 
-        // Fetch recent transactions
         httpClient
             .get("/api/v1/transaction/get-transactions?page=0&size=5")
             .then((data) => {
@@ -89,7 +93,6 @@ export const DashboardPage = () => {
         }
     };
 
-    // Format raw account numbers into spaced groups (e.g., 5839 2017 4638 2915) for UI readability
     const formatAccountNumber = (num) => {
         if (!num) return "Loading...";
         return num.replace(/(.{4})/g, "$1 ").trim();

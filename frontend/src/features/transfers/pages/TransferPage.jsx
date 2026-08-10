@@ -6,30 +6,24 @@ import { httpClient } from "../../../api/httpClient.js";
 export const TransferPage = () => {
     const navigate = useNavigate();
 
-    // Sender state
     const [senderAccount, setSenderAccount] = useState("");
     const [isFetchingAccount, setIsFetchingAccount] = useState(true);
     const [accountError, setAccountError] = useState("");
 
-    // Form inputs
     const [recipientAccount, setRecipientAccount] = useState("");
     const [amount, setAmount] = useState("");
     const [description, setDescription] = useState("");
 
-    // Recipient lookup state
     const [recipient, setRecipient] = useState(null);
     const [isSearching, setIsSearching] = useState(false);
     const [lookupError, setLookupError] = useState("");
 
-    // Transfer submission state
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [transferError, setTransferError] = useState("");
     const [transferSuccess, setTransferSuccess] = useState(false);
 
-    // 1. Fetch current logged-in user's account details
     useEffect(() => {
         let isMounted = true;
-        setIsFetchingAccount(true);
 
         httpClient
             .get("/api/v1/account")
@@ -55,27 +49,21 @@ export const TransferPage = () => {
         };
     }, []);
 
-    // Helper to sanitize account input: remove spaces and slice to max 16 chars
     const handleRecipientAccountChange = (e) => {
         const sanitizedValue = e.target.value.replace(/\s+/g, "").slice(0, 16);
         setRecipientAccount(sanitizedValue);
+        setRecipient(null);
+        setLookupError("");
     };
 
-    // 2. Debounced recipient lookup - strictly triggers when length === 16
+
     useEffect(() => {
         const cleanAccount = recipientAccount.trim();
 
-        // If less than 16 characters, reset lookup state and do not query
-        if (cleanAccount.length < 16) {
-            setRecipient(null);
-            setLookupError("");
-            return;
-        }
+        if (cleanAccount.length < 16) return undefined;
 
         if (cleanAccount === senderAccount) {
-            setRecipient(null);
-            setLookupError("You cannot transfer money to your own account.");
-            return;
+            return undefined;
         }
 
         let isCancelled = false;
@@ -113,11 +101,15 @@ export const TransferPage = () => {
         };
     }, [recipientAccount, senderAccount]);
 
+    const ownAccountSelected = recipientAccount.trim() === senderAccount;
+    const visibleLookupError = ownAccountSelected
+        ? "You cannot transfer money to your own account."
+        : lookupError;
+
     const handleLogout = async () => {
         try {
             await httpClient.post("/api/v1/auth/logout");
         } catch {
-            // Proceed with local cleanup regardless of network status
         } finally {
             localStorage.removeItem("ACCESS_TOKEN");
             navigate(ROUTES.HOME);
@@ -277,9 +269,9 @@ export const TransferPage = () => {
                                     </div>
                                 )}
 
-                                {lookupError && !isSearching && (
+                                {visibleLookupError && !isSearching && (
                                     <div className="bg-red-50 p-4 rounded-2xl text-xs text-red-500 font-medium">
-                                        {lookupError}
+                                        {visibleLookupError}
                                     </div>
                                 )}
 

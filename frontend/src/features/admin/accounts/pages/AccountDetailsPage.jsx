@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Landmark } from "lucide-react";
 import {
     useNavigate,
-    useOutletContext,
     useParams,
 } from "react-router";
 
@@ -28,9 +27,6 @@ function AccountDetailsContent({
     updateAccount,
     onViewTransactions,
 }) {
-    const [actionLoading, setActionLoading] =
-        useState(false);
-
     const [actionError, setActionError] =
         useState("");
 
@@ -40,7 +36,6 @@ function AccountDetailsContent({
 
     async function handleSaveHolder(holder) {
         try {
-            setActionLoading(true);
             setActionError("");
             setFeedback(null);
 
@@ -74,14 +69,11 @@ function AccountDetailsContent({
                 requestError.message
                 || "Unable to update account holder.",
             );
-        } finally {
-            setActionLoading(false);
         }
     }
 
     async function handleCloseAccount() {
         try {
-            setActionLoading(true);
             setActionError("");
             setFeedback(null);
 
@@ -114,8 +106,6 @@ function AccountDetailsContent({
                 requestError.message
                 || "Unable to close this account.",
             );
-        } finally {
-            setActionLoading(false);
         }
     }
     return (
@@ -131,6 +121,15 @@ function AccountDetailsContent({
                     title={feedback.title}
                 >
                     {feedback.message}
+                </Alert>
+            )}
+
+            {actionError && (
+                <Alert
+                    type="error"
+                    title="Account action could not be completed"
+                >
+                    {actionError}
                 </Alert>
             )}
 
