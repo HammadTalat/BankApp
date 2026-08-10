@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { ROUTES } from "../../../routes/routePaths.js";
-import { httpClient } from "../../../api/httpClient.js";
+import { transfersApi } from "../api/transferApi.js";
 
 export const TransferPage = () => {
     const navigate = useNavigate();
@@ -29,26 +29,26 @@ export const TransferPage = () => {
     // 1. Fetch current logged-in user's account details
     useEffect(() => {
         let isMounted = true;
-        setIsFetchingAccount(true);
 
-        httpClient
-            .get("/api/v1/account")
-            .then((data) => {
+        const loadSenderAccount = async () => {
+            try {
+                const data = await transfersApi.getSenderAccount();
                 if (!isMounted) return;
                 if (data?.accountNumber) {
                     setSenderAccount(data.accountNumber);
                 } else {
                     setAccountError("Could not retrieve your account information.");
                 }
-            })
-            .catch((err) => {
+            } catch (err) {
                 if (isMounted) {
                     setAccountError(err.message || "Failed to load account details.");
                 }
-            })
-            .finally(() => {
+            } finally {
                 if (isMounted) setIsFetchingAccount(false);
-            });
+            }
+        };
+
+        loadSenderAccount();
 
         return () => {
             isMounted = false;
@@ -59,52 +59,49 @@ export const TransferPage = () => {
     const handleRecipientAccountChange = (e) => {
         const sanitizedValue = e.target.value.replace(/\s+/g, "").slice(0, 16);
         setRecipientAccount(sanitizedValue);
+        // Reset recipient lookup feedback when input changes
+        setRecipient(null);
+        setLookupError("");
     };
 
-    // 2. Debounced recipient lookup - strictly triggers when length === 16
+    // 2. Debounced recipient lookup - triggers when account length is 16
     useEffect(() => {
         const cleanAccount = recipientAccount.trim();
 
-        // If less than 16 characters, reset lookup state and do not query
         if (cleanAccount.length < 16) {
-            setRecipient(null);
-            setLookupError("");
             return;
         }
 
         if (cleanAccount === senderAccount) {
-            setRecipient(null);
-            setLookupError("You cannot transfer money to your own account.");
             return;
         }
 
         let isCancelled = false;
-        const timeoutId = setTimeout(() => {
+        const timeoutId = setTimeout(async () => {
             setIsSearching(true);
-            setLookupError("");
-            setRecipient(null);
 
-            httpClient
-                .get(`/api/v1/transaction/lookup?accountID=${encodeURIComponent(cleanAccount)}`)
-                .then((data) => {
-                    if (isCancelled) return;
+            try {
+                const data = await transfersApi.lookupRecipient(cleanAccount);
+                if (isCancelled) return;
 
-                    if (data?.accountNumber && data?.status === "ACTIVE") {
-                        setRecipient(data);
-                    } else if (data?.status === "CLOSED") {
-                        setLookupError("This account is currently closed.");
-                    } else {
-                        setLookupError("Account not found.");
-                    }
-                })
-                .catch((err) => {
-                    if (!isCancelled) {
-                        setLookupError(err.message || "Could not verify recipient account.");
-                    }
-                })
-                .finally(() => {
-                    if (!isCancelled) setIsSearching(false);
-                });
+                if (data?.accountNumber && data?.status === "ACTIVE") {
+                    setRecipient(data);
+                    setLookupError("");
+                } else if (data?.status === "CLOSED") {
+                    setRecipient(null);
+                    setLookupError("This account is currently closed.");
+                } else {
+                    setRecipient(null);
+                    setLookupError("Account not found.");
+                }
+            } catch (err) {
+                if (!isCancelled) {
+                    setRecipient(null);
+                    setLookupError(err.message || "Could not verify recipient account.");
+                }
+            } finally {
+                if (!isCancelled) setIsSearching(false);
+            }
         }, 500);
 
         return () => {
@@ -112,17 +109,6 @@ export const TransferPage = () => {
             clearTimeout(timeoutId);
         };
     }, [recipientAccount, senderAccount]);
-
-    const handleLogout = async () => {
-        try {
-            await httpClient.post("/api/v1/auth/logout");
-        } catch {
-            // Proceed with local cleanup regardless of network status
-        } finally {
-            localStorage.removeItem("ACCESS_TOKEN");
-            navigate(ROUTES.HOME);
-        }
-    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -147,7 +133,7 @@ export const TransferPage = () => {
         setIsSubmitting(true);
 
         try {
-            await httpClient.post("/api/v1/transaction/transfer", {
+            await transfersApi.executeTransfer({
                 senderAccountNumber: senderAccount,
                 receiverAccountNumber: recipientAccount.trim(),
                 amount: parsedAmount,
@@ -165,179 +151,131 @@ export const TransferPage = () => {
         }
     };
 
+    // Calculate self-transfer error notice
+    const isSelfTransfer = recipientAccount.trim().length === 16 && recipientAccount.trim() === senderAccount;
+
     return (
-        <div className="flex min-h-screen bg-[#F8FAFC]">
-            {/* Sidebar */}
-            <aside className="w-64 bg-[#0F2942] flex flex-col justify-between py-8 px-6 text-white shrink-0">
-                <div>
-                    <div className="mb-10">
-                        <h1 className="text-xl font-bold tracking-tight text-white">NexaBank</h1>
-                        <p className="text-xs text-gray-400 mt-0.5">Personal Banking</p>
+        <div className="max-w-3xl">
+            <h2 className="text-3xl font-bold text-gray-900">Transfer Money</h2>
+            <p className="text-gray-500 text-sm mt-1">
+                Verify the recipient, enter the amount, then review before sending.
+            </p>
+
+            {accountError && (
+                <div className="mt-4 bg-red-50 border border-red-200 text-red-600 p-4 rounded-xl text-sm font-medium">
+                    {accountError}
+                </div>
+            )}
+
+            <div className="mt-8 bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+                {transferSuccess ? (
+                    <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 p-4 rounded-xl text-center font-medium">
+                        Transfer completed successfully! Redirecting to dashboard...
                     </div>
-
-                    <nav className="space-y-2">
-                        <Link
-                            to={ROUTES.ACCOUNT_HOME}
-                            className="flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                        >
-                            Dashboard
-                        </Link>
-                        <Link
-                            to={ROUTES.ACCOUNT_DEPOSIT}
-                            className="flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                        >
-                            Deposit Money
-                        </Link>
-                        <Link
-                            to={ROUTES.ACCOUNT_TRANSFERS}
-                            className="flex items-center px-4 py-3 text-sm font-semibold text-white bg-white/10 rounded-lg transition-colors"
-                        >
-                            Transfer Money
-                        </Link>
-                        <Link
-                            to={ROUTES.ACCOUNT_TRANSACTIONS}
-                            className="flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                        >
-                            Transactions
-                        </Link>
-                        <Link
-                            to={ROUTES.ACCOUNT_PROFILE}
-                            className="flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                        >
-                            Profile
-                        </Link>
-                    </nav>
-                </div>
-
-                <div>
-                    <button
-                        onClick={handleLogout}
-                        className="text-sm font-medium text-pink-300 hover:text-pink-200 transition-colors"
-                    >
-                        Logout
-                    </button>
-                </div>
-            </aside>
-
-            {/* Main Content */}
-            <main className="flex-1 p-10 overflow-y-auto">
-                <div className="max-w-3xl">
-                    <h2 className="text-3xl font-bold text-gray-900">Transfer Money</h2>
-                    <p className="text-gray-500 text-sm mt-1">
-                        Verify the recipient, enter the amount, then review before sending.
-                    </p>
-
-                    {accountError && (
-                        <div className="mt-4 bg-red-50 border border-red-200 text-red-600 p-4 rounded-xl text-sm font-medium">
-                            {accountError}
-                        </div>
-                    )}
-
-                    <div className="mt-8 bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
-                        {transferSuccess ? (
-                            <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 p-4 rounded-xl text-center font-medium">
-                                Transfer completed successfully! Redirecting to dashboard...
+                ) : (
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        {transferError && (
+                            <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-xl text-sm font-medium">
+                                {transferError}
                             </div>
-                        ) : (
-                            <form onSubmit={handleSubmit} className="space-y-6">
-                                {transferError && (
-                                    <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-xl text-sm font-medium">
-                                        {transferError}
-                                    </div>
-                                )}
-
-                                {/* Sender Account Banner */}
-                                {senderAccount && (
-                                    <div className="bg-gray-50 border border-gray-200 p-3.5 rounded-xl text-xs text-gray-600 flex justify-between items-center">
-                                        <span>Transferring from account:</span>
-                                        <span className="font-mono font-bold text-gray-800">{senderAccount}</span>
-                                    </div>
-                                )}
-
-                                {/* Recipient Account Input */}
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-800 mb-2">
-                                        Recipient account number
-                                    </label>
-                                    <input
-                                        type="text"
-                                        maxLength={16}
-                                        placeholder="Enter 20-digit account number"
-                                        value={recipientAccount}
-                                        onChange={handleRecipientAccountChange}
-                                        disabled={isFetchingAccount}
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 text-gray-800 placeholder-gray-400 disabled:bg-gray-100"
-                                    />
-                                </div>
-
-                                {/* Lookup Feedback */}
-                                {isSearching && (
-                                    <div className="bg-[#EEF9F5] p-5 rounded-2xl text-xs text-emerald-600 font-medium">
-                                        Verifying account details...
-                                    </div>
-                                )}
-
-                                {lookupError && !isSearching && (
-                                    <div className="bg-red-50 p-4 rounded-2xl text-xs text-red-500 font-medium">
-                                        {lookupError}
-                                    </div>
-                                )}
-
-                                {recipient && !isSearching && (
-                                    <div className="bg-[#EEF9F5] p-5 rounded-2xl">
-                                        <p className="text-sm font-bold text-gray-900">
-                                            {recipient.accountHolderName}
-                                        </p>
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            Account: {recipient.accountNumber}
-                                        </p>
-                                    </div>
-                                )}
-
-                                {/* Amount Input */}
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-800 mb-2">
-                                        Amount
-                                    </label>
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        min="0.01"
-                                        placeholder="PKR 0.00"
-                                        value={amount}
-                                        onChange={(e) => setAmount(e.target.value)}
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 text-gray-800 placeholder-gray-400"
-                                    />
-                                </div>
-
-                                {/* Description Input */}
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-800 mb-2">
-                                        Description <span className="font-normal text-gray-400">(Optional)</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        maxLength={255}
-                                        placeholder="What is this transfer for?"
-                                        value={description}
-                                        onChange={(e) => setDescription(e.target.value)}
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 text-gray-800 placeholder-gray-400"
-                                    />
-                                </div>
-
-                                {/* Submit Button */}
-                                <button
-                                    type="submit"
-                                    disabled={isSubmitting || !recipient || isFetchingAccount || !senderAccount}
-                                    className="w-full bg-[#2563EB] hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-3.5 px-4 rounded-xl text-sm transition-colors shadow-sm cursor-pointer disabled:cursor-not-allowed"
-                                >
-                                    {isSubmitting ? "Processing..." : "Submit Transfer"}
-                                </button>
-                            </form>
                         )}
-                    </div>
-                </div>
-            </main>
+
+                        {/* Sender Account Banner */}
+                        {senderAccount && (
+                            <div className="bg-gray-50 border border-gray-200 p-3.5 rounded-xl text-xs text-gray-600 flex justify-between items-center">
+                                <span>Transferring from account:</span>
+                                <span className="font-mono font-bold text-gray-800">{senderAccount}</span>
+                            </div>
+                        )}
+
+                        {/* Recipient Account Input */}
+                        <div>
+                            <label className="block text-xs font-bold text-gray-800 mb-2">
+                                Recipient account number
+                            </label>
+                            <input
+                                type="text"
+                                maxLength={16}
+                                placeholder="Enter 16-digit account number"
+                                value={recipientAccount}
+                                onChange={handleRecipientAccountChange}
+                                disabled={isFetchingAccount}
+                                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 text-gray-800 placeholder-gray-400 disabled:bg-gray-100 font-mono"
+                            />
+                        </div>
+
+                        {/* Lookup Feedback */}
+                        {isSearching && (
+                            <div className="bg-[#EEF9F5] p-5 rounded-2xl text-xs text-emerald-600 font-medium">
+                                Verifying account details...
+                            </div>
+                        )}
+
+                        {isSelfTransfer && !isSearching && (
+                            <div className="bg-red-50 p-4 rounded-2xl text-xs text-red-500 font-medium">
+                                You cannot transfer money to your own account.
+                            </div>
+                        )}
+
+                        {lookupError && !isSearching && !isSelfTransfer && (
+                            <div className="bg-red-50 p-4 rounded-2xl text-xs text-red-500 font-medium">
+                                {lookupError}
+                            </div>
+                        )}
+
+                        {recipient && !isSearching && !isSelfTransfer && (
+                            <div className="bg-[#EEF9F5] p-5 rounded-2xl">
+                                <p className="text-sm font-bold text-gray-900">
+                                    {recipient.accountHolderName}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1 font-mono">
+                                    Account: {recipient.accountNumber}
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Amount Input */}
+                        <div>
+                            <label className="block text-xs font-bold text-gray-800 mb-2">
+                                Amount (PKR)
+                            </label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0.01"
+                                placeholder="PKR 0.00"
+                                value={amount}
+                                onChange={(e) => setAmount(e.target.value)}
+                                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 text-gray-800 placeholder-gray-400"
+                            />
+                        </div>
+
+                        {/* Description Input */}
+                        <div>
+                            <label className="block text-xs font-bold text-gray-800 mb-2">
+                                Description <span className="font-normal text-gray-400">(Optional)</span>
+                            </label>
+                            <input
+                                type="text"
+                                maxLength={255}
+                                placeholder="What is this transfer for?"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 text-gray-800 placeholder-gray-400"
+                            />
+                        </div>
+
+                        {/* Submit Button */}
+                        <button
+                            type="submit"
+                            disabled={isSubmitting || !recipient || isFetchingAccount || !senderAccount || isSelfTransfer}
+                            className="w-full bg-[#2563EB] hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-3.5 px-4 rounded-xl text-sm transition-colors shadow-sm cursor-pointer disabled:cursor-not-allowed"
+                        >
+                            {isSubmitting ? "Processing..." : "Submit Transfer"}
+                        </button>
+                    </form>
+                )}
+            </div>
         </div>
     );
 };

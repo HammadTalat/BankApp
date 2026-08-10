@@ -1,4 +1,4 @@
-import { httpClient } from './httpClient'; // Adjust the import path as needed
+import { httpClient } from "../../../api/httpClient.js";
 
 /**
  * @typedef {Object} TransferRequest
@@ -34,15 +34,23 @@ import { httpClient } from './httpClient'; // Adjust the import path as needed
 const buildQueryString = (params = {}) => {
     const query = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
+        if (value !== undefined && value !== null && value !== "") {
             query.append(key, value);
         }
     });
     const queryString = query.toString();
-    return queryString ? `?${queryString}` : '';
+    return queryString ? `?${queryString}` : "";
 };
 
 export const transfersApi = {
+    /**
+     * Look up primary sender account details
+     * Endpoint: GET /api/v1/account
+     */
+    getSenderAccount: async () => {
+        return await httpClient.get("/api/v1/account");
+    },
+
     /**
      * Look up an account by account ID before initiating a transfer
      * Endpoint: GET /api/v1/transaction/lookup
@@ -51,13 +59,8 @@ export const transfersApi = {
      * @returns {Promise<AccountLookupResponse>}
      */
     lookupRecipient: async (accountID) => {
-        try {
-            const queryString = buildQueryString({ accountID });
-            return await httpClient.get(`/api/v1/transaction/lookup${queryString}`);
-        } catch (error) {
-            console.error('[transfersApi.lookupRecipient] Error:', error);
-            throw error;
-        }
+        const queryString = buildQueryString({ accountID });
+        return await httpClient.get(`/api/v1/transaction/lookup${queryString}`);
     },
 
     /**
@@ -68,12 +71,7 @@ export const transfersApi = {
      * @returns {Promise<TransferResponse>}
      */
     executeTransfer: async (payload) => {
-        try {
-            return await httpClient.post('/api/v1/transaction/transfer', payload);
-        } catch (error) {
-            console.error('[transfersApi.executeTransfer] Error:', error);
-            throw error;
-        }
+        return await httpClient.post("/api/v1/transaction/transfer", payload);
     },
 
     /**
@@ -87,12 +85,9 @@ export const transfersApi = {
      * @returns {Promise<{ transactions: Array, currentPage: number, totalPages: number, totalElements: number, isLast: boolean }>}
      */
     getUserTransactions: async ({ page = 0, size = 20, sort } = {}) => {
-        try {
-            const queryString = buildQueryString({ page, size, sort });
-            return await httpClient.get(`/api/v1/transaction/get-transactions${queryString}`);
-        } catch (error) {
-            console.error('[transfersApi.getUserTransactions] Error:', error);
-            throw error;
-        }
+        const queryString = buildQueryString({ page, size, sort });
+        return await httpClient.get(`/api/v1/transaction/get-transactions${queryString}`);
     },
 };
+
+export default transfersApi;

@@ -13,18 +13,17 @@ import SignupPage from "../features/auth/pages/SignupPage";
 import CompleteGoogleProfilePage from "../features/auth/pages/CompleteGoogleProfilePage";
 import PendingUsersPage from "../features/admin/users/pages/PendingUsersPage";
 import DashboardPage from "../features/dashboard/pages/DashboardPage";
-import ProfilePage from "../features/proifle/pages/ProfilePage";
+import ProfilePage from "../features/profile/pages/ProfilePage";
 import TransactionsPage from "../features/transactions/pages/TransactionsPage";
 import TransferPage from "../features/transfers/pages/TransferPage";
+import DepositPage from "../features/deposit/pages/DepositPage";
 import AdminLayout from "../layouts/AdminLayout";
+import CustomerLayout from "../layouts/CustomerLayout";
 import NotFoundPage from "../routes/NotFoundPage";
 import ProtectedRoute from "../routes/ProtectedRoute";
 import { ROUTES } from "../routes/routePaths";
 import ComponentShowcasePage from "./ComponentShowcasePage";
 import HomePage from "./HomePage";
-import AuthFlowTestPage from "./temp/AuthFlowTestPage";
-import DepositPage from "../features/deposit/pages/DepositPage.jsx"
-
 
 function AppRoutes() {
     return (
@@ -44,23 +43,6 @@ function AppRoutes() {
                     element={<ComponentShowcasePage />}
                 />
             </Route>
-            {/*Transaction*/}
-            <Route path={ROUTES.ACCOUNT_TRANSACTIONS} element={<TransactionsPage />} />
-            <Route path={ROUTES.ACCOUNT_TRANSFERS} element={<TransferPage />} />
-
-            {/*Profile */}
-            <Route path={ROUTES.ACCOUNT_PROFILE} element={<ProfilePage />} />
-
-            {/*Dashboard*/}
-            <Route path={ROUTES.ACCOUNT_HOME} element={<DashboardPage />} />
-
-            {/*Deposit*/}
-            <Route path={ROUTES.ACCOUNT_DEPOSIT} element={<DepositPage />} />
-
-            <Route
-                path={ROUTES.COMPONENTS}
-                element={<ComponentShowcasePage />}
-            />
 
             <Route
                 element={(
@@ -84,25 +66,28 @@ function AppRoutes() {
                     />
                 )}
             >
-                <Route
-                    path={ROUTES.ACCOUNT_HOME}
-                    element={<DashboardPage />}
-                />
-
-                <Route
-                    path={ROUTES.ACCOUNT_TRANSFERS}
-                    element={<TransferPage />}
-                />
-
-                <Route
-                    path={ROUTES.ACCOUNT_TRANSACTIONS}
-                    element={<TransactionsPage />}
-                />
-
-                <Route
-                    path={ROUTES.ACCOUNT_PROFILE}
-                    element={<ProfilePage />}
-                />
+                <Route element={<CustomerLayout />}>
+                    <Route
+                        path={ROUTES.ACCOUNT_HOME}
+                        element={<DashboardPage />}
+                    />
+                    <Route
+                        path={ROUTES.ACCOUNT_DEPOSIT}
+                        element={<DepositPage />}
+                    />
+                    <Route
+                        path={ROUTES.ACCOUNT_TRANSFERS}
+                        element={<TransferPage />}
+                    />
+                    <Route
+                        path={ROUTES.ACCOUNT_TRANSACTIONS}
+                        element={<TransactionsPage />}
+                    />
+                    <Route
+                        path={ROUTES.ACCOUNT_PROFILE}
+                        element={<ProfilePage />}
+                    />
+                </Route>
             </Route>
 
             <Route

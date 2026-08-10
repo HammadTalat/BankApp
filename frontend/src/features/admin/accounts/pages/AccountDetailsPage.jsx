@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Landmark } from "lucide-react";
 import {
     useNavigate,
-    useOutletContext,
     useParams,
 } from "react-router";
 
@@ -28,7 +27,7 @@ function AccountDetailsContent({
     updateAccount,
     onViewTransactions,
 }) {
-    const [actionLoading, setActionLoading] =
+    const [, setActionLoading] =
         useState(false);
 
     const [actionError, setActionError] =
@@ -131,6 +130,15 @@ function AccountDetailsContent({
                     title={feedback.title}
                 >
                     {feedback.message}
+                </Alert>
+            )}
+
+            {actionError && (
+                <Alert
+                    type="error"
+                    title="Action failed"
+                >
+                    {actionError}
                 </Alert>
             )}
 

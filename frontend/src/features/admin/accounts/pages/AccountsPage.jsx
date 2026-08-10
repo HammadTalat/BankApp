@@ -1,8 +1,7 @@
-import { useState,useEffect} from "react";
+import { useState, useEffect } from "react";
 import { Landmark } from "lucide-react";
 import {
     useNavigate,
-    useOutletContext,
 } from "react-router";
 
 import EmptyState from "../../../../shared/components/feedback/EmptyState";
@@ -12,7 +11,7 @@ import TableContainer from "../../../../shared/components/ui/TableContainer";
 import { getAdminAccountDetailsPath } from "../../../../routes/routePaths";
 import AccountFilters from "../components/AccountFilters";
 import AccountsTable from "../components/AccountsTable";
-import {getAdminAccounts} from "../api/adminAccountApi.js"
+import { getAdminAccounts } from "../api/adminAccountApi.js";
 import Alert from "../../../../shared/components/feedback/Alert";
 import LoadingSpinner from "../../../../shared/components/feedback/LoadingSpinner";
 import Pagination from "../../../../shared/components/ui/Pagination";
@@ -113,6 +112,15 @@ function AccountsPage() {
                 onSubmit={handleSubmit}
                 onClear={handleClearFilters}
             />
+
+            {error && (
+                <Alert
+                    type="error"
+                    title="Error loading accounts"
+                >
+                    {error}
+                </Alert>
+            )}
 
             {loading ? (
 
