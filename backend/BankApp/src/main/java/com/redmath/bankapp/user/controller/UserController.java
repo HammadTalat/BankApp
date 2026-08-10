@@ -3,6 +3,7 @@ package com.redmath.bankapp.user.controller;
 import com.redmath.bankapp.user.dto.request.CompleteProfileRequest;
 import com.redmath.bankapp.user.dto.response.UserProfileResponse;
 import com.redmath.bankapp.user.service.UserProfileService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -32,7 +33,7 @@ public class UserController {
   @PostMapping("/complete-profile")
   public ResponseEntity<UserProfileResponse> completeProfile(
       @AuthenticationPrincipal Jwt jwt,
-      @RequestBody CompleteProfileRequest request) {
+      @Valid @RequestBody CompleteProfileRequest request) {
 
     return ResponseEntity.ok(
         userProfileService.completeProfile(jwt.getSubject(), request.address())
