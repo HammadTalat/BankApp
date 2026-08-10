@@ -1,5 +1,6 @@
 package com.redmath.bankapp.config;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import com.redmath.bankapp.auth.security.ApiSecurityService;
 import com.redmath.bankapp.auth.security.JwtAuthenticationFilter;
 import com.redmath.bankapp.auth.security.ApiAuthenticationFailureHandler;
@@ -31,6 +32,9 @@ import tools.jackson.databind.ObjectMapper;
 
 @Configuration
 @EnableMethodSecurity
+@SuppressFBWarnings(
+    value = "SPRING_CSRF_PROTECTION_DISABLED",
+    justification = "Stateless JWT REST API; CSRF protection is intentionally disabled")
 public class SecurityConfig {
 
   @Value("${app.frontend-url:http://localhost:5173}")

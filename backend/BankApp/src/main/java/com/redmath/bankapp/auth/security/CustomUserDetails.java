@@ -14,8 +14,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 @RequiredArgsConstructor
 public class CustomUserDetails implements UserDetails {
 
-  private final AppUser appUser;
-  private final LocalCredential localCredential;
+  private static final long serialVersionUID = 1L;
+
+  private transient final AppUser appUser;
+  private transient final LocalCredential localCredential;
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
