@@ -4,7 +4,6 @@ import {
 } from "react";
 
 import {
-    useNavigate,
     useParams,
 } from "react-router";
 
@@ -34,12 +33,8 @@ import {
     getAdminAccountTransactions,
 } from "../api/adminAccountApi.js";
 
-const PAGE_SIZE = 10;
-
-
 function AccountTransactionsPage() {
     const { accountNumber } = useParams();
-    const navigate = useNavigate();
 
     const [account, setAccount] = useState(null);
     const [transactions, setTransactions] = useState([]);

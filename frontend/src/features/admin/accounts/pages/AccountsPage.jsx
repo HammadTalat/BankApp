@@ -2,7 +2,6 @@ import { useState,useEffect} from "react";
 import { Landmark } from "lucide-react";
 import {
     useNavigate,
-    useOutletContext,
 } from "react-router";
 
 import EmptyState from "../../../../shared/components/feedback/EmptyState";
@@ -113,6 +112,15 @@ function AccountsPage() {
                 onSubmit={handleSubmit}
                 onClear={handleClearFilters}
             />
+
+            {error && (
+                <Alert
+                    type="error"
+                    title="Accounts could not be loaded"
+                >
+                    {error}
+                </Alert>
+            )}
 
             {loading ? (
 

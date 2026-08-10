@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import { ROUTES } from "../../../routes/routePaths.js";
 import { httpClient } from "../../../api/httpClient.js";
@@ -54,48 +54,52 @@ export const TransactionsPage = () => {
         }
     };
 
-    // Fetch user transactions matching backend specification
-    const fetchTransactions = useCallback(async () => {
-        setLoading(true);
-        setError("");
+    useEffect(() => {
+        let isActive = true;
 
-        try {
-            const queryParams = new URLSearchParams({
-                page: String(page),
-                size: String(pageSize),
-            });
+        async function loadTransactions() {
+            try {
+                const queryParams = new URLSearchParams({
+                    page: String(page),
+                    size: String(pageSize),
+                });
 
-            if (appliedFilters.fromDate) {
-                queryParams.append("startDate", appliedFilters.fromDate);
-            }
-            if (appliedFilters.toDate) {
-                queryParams.append("endDate", appliedFilters.toDate);
-            }
+                if (appliedFilters.fromDate) {
+                    queryParams.append("startDate", appliedFilters.fromDate);
+                }
+                if (appliedFilters.toDate) {
+                    queryParams.append("endDate", appliedFilters.toDate);
+                }
 
-            const data = await httpClient.get(
-                `/api/v1/transaction/get-transactions?${queryParams.toString()}`
-            );
+                const data = await httpClient.get(
+                    `/api/v1/transaction/get-transactions?${queryParams.toString()}`
+                );
 
-            if (data?.transactions) {
-                setTransactions(data.transactions);
-                setTotalPages(data.totalPages || 1);
-            } else {
+                if (!isActive) return;
+
+                setError("");
+                setTransactions(data?.transactions || []);
+                setTotalPages(data?.totalPages || 1);
+            } catch (err) {
+                if (!isActive) return;
+
+                console.error("Failed to fetch transactions:", err);
+                setError(err.message || "Failed to load transactions.");
                 setTransactions([]);
+            } finally {
+                if (isActive) setLoading(false);
             }
-        } catch (err) {
-            console.error("Failed to fetch transactions:", err);
-            setError(err.message || "Failed to load transactions.");
-            setTransactions([]);
-        } finally {
-            setLoading(false);
         }
+
+        loadTransactions();
+
+        return () => {
+            isActive = false;
+        };
     }, [page, pageSize, appliedFilters]);
 
-    useEffect(() => {
-        fetchTransactions();
-    }, [fetchTransactions]);
-
     const handleApplyFilters = () => {
+        setLoading(true);
         setPage(0);
         setAppliedFilters({
             fromDate,
@@ -105,6 +109,7 @@ export const TransactionsPage = () => {
     };
 
     const handleClearFilters = () => {
+        setLoading(true);
         setFromDate("");
         setToDate("");
         setTypeFilter("ALL");

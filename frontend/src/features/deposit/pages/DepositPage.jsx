@@ -5,7 +5,7 @@ import { httpClient } from "../../../api/httpClient.js";
 import { useAuth } from "../../auth/context/useAuth.js";
 
 export const DepositPage = () => {
-    const { user, signOut, loading: authLoading } = useAuth();
+    const { signOut, loading: authLoading } = useAuth();
     const navigate = useNavigate();
 
     // Account & form state
@@ -58,7 +58,6 @@ export const DepositPage = () => {
         setSubmitting(true);
 
         try {
-            // Target backend deposit endpoint with full payload schema
             const response = await httpClient.post("/api/v1/transaction/deposit", {
                 accountNumber: accountNumber,
                 amount: parsedAmount,
