@@ -94,6 +94,29 @@ class OAuthUserResolverTest {
   }
 
   @Test
+  @DisplayName("Should create new Google user with default name when name is blank")
+  void resolve_NewUser_BlankName_UsesDefault() {
+    given(appUserRepository.findByEmail("blankname@example.com"))
+        .willReturn(Optional.empty());
+    given(appUserRepository.save(any(AppUser.class)))
+        .willAnswer(invocation -> invocation.getArgument(0));
+
+    Map<String, Object> attributes = new HashMap<>();
+    attributes.put("email", "blankname@example.com");
+    attributes.put("name", "   ");
+    OAuth2User oauth2User = new DefaultOAuth2User(
+        Collections.emptySet(),
+        attributes,
+        "email"
+    );
+
+    AppUser result = oAuthUserResolver.resolve(oauth2User);
+
+    assertThat(result.getName()).isEqualTo("Google User");
+    assertThat(result.getEmail()).isEqualTo("blankname@example.com");
+  }
+
+  @Test
   @DisplayName("Should create new Google user with default name when name is missing")
   void resolve_NewUser_MissingName_UsesDefault() {
     given(appUserRepository.findByEmail("noname@example.com"))
