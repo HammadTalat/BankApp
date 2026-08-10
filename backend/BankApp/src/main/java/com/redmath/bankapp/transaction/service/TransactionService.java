@@ -55,7 +55,6 @@ public class TransactionService {
 
     @Transactional(readOnly = true)
     public AccountLookupResponse lookupAccount(String accountID) throws AccountNotFoundException {
-        log.debug("Initiating account lookup for account identifier: {}", accountID);
 
         BankAccount account = accountRepository.findById(accountID)
                 .orElseThrow(() -> new AccountNotFoundException("Account not found with identifier: " + accountID));
@@ -227,7 +226,6 @@ public class TransactionService {
                                                         LocalDate endDate,
                                                         Pageable pageable) throws AccountNotFoundException {
         Long userId = extractUserId(jwt);
-        log.debug("Fetching transaction history for user ID: {}", userId);
 
         // Default endDate to today if null
         LocalDate effectiveEndDate = (endDate != null) ? endDate : LocalDate.now();

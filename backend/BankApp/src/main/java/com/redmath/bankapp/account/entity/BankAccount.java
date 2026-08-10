@@ -21,7 +21,7 @@ import java.util.Objects;
 @Table(name = "bank_account")
 @Getter
 @Setter
-public class BankAccount {
+public final class BankAccount {
 
     @Id
     @Column(
