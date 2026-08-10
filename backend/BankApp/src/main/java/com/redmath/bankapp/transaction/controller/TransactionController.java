@@ -54,11 +54,6 @@ public class TransactionController {
                                                                         @RequestParam(value = "endDate", required = false)
                                                                             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
                                                                         @PageableDefault(page = 0, size = 10) Pageable pageable) throws AccountNotFoundException {
-
-        if (jwt == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // 401 instead of 500
-        }
-
       UserTransactionsResponse response = transactionService.getUserTransactions(jwt, startDate, endDate, pageable);
         return ResponseEntity.ok(response);
     }
