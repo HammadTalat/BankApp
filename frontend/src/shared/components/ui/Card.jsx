@@ -5,7 +5,7 @@ function Card({
     ...cardProps
 }) {
     const cardClasses = [
-        "rounded-2xl border border-brand-border bg-brand-surface shadow-sm",
+        "rounded-xl border border-brand-border bg-brand-surface shadow-sm",
         padding ? "p-5 sm:p-6" : "",
         className,
     ]

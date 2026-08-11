@@ -1,10 +1,14 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { ROUTES } from "../../../routes/routePaths.js";
 import { httpClient } from "../../../api/httpClient.js";
+import { useAuth } from "../../auth/context/useAuth.js";
+import AccountHeader from "../../../shared/components/navigation/AccountHeader";
+import AccountSidebar from "../../../shared/components/navigation/AccountSidebar";
 
 export const TransferPage = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
 
     const [senderAccount, setSenderAccount] = useState("");
     const [isFetchingAccount, setIsFetchingAccount] = useState(true);
@@ -62,9 +66,7 @@ export const TransferPage = () => {
 
         if (cleanAccount.length < 16) return undefined;
 
-        if (cleanAccount === senderAccount) {
-            return undefined;
-        }
+        if (cleanAccount === senderAccount) return undefined;
 
         let isCancelled = false;
         const timeoutId = setTimeout(() => {
@@ -110,6 +112,7 @@ export const TransferPage = () => {
         try {
             await httpClient.post("/api/v1/auth/logout");
         } catch {
+            // Client-side cleanup still completes when the logout request fails.
         } finally {
             localStorage.removeItem("ACCESS_TOKEN");
             navigate(ROUTES.HOME);
@@ -158,62 +161,14 @@ export const TransferPage = () => {
     };
 
     return (
-        <div className="flex min-h-screen bg-[#F8FAFC]">
-            {/* Sidebar */}
-            <aside className="w-64 bg-[#0F2942] flex flex-col justify-between py-8 px-6 text-white shrink-0">
-                <div>
-                    <div className="mb-10">
-                        <h1 className="text-xl font-bold tracking-tight text-white">NexaBank</h1>
-                        <p className="text-xs text-gray-400 mt-0.5">Personal Banking</p>
-                    </div>
+        <div className="flex min-h-screen bg-brand-background">
+            <AccountSidebar />
 
-                    <nav className="space-y-2">
-                        <Link
-                            to={ROUTES.ACCOUNT_HOME}
-                            className="flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                        >
-                            Dashboard
-                        </Link>
-                        <Link
-                            to={ROUTES.ACCOUNT_DEPOSIT}
-                            className="flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                        >
-                            Deposit Money
-                        </Link>
-                        <Link
-                            to={ROUTES.ACCOUNT_TRANSFERS}
-                            className="flex items-center px-4 py-3 text-sm font-semibold text-white bg-white/10 rounded-lg transition-colors"
-                        >
-                            Transfer Money
-                        </Link>
-                        <Link
-                            to={ROUTES.ACCOUNT_TRANSACTIONS}
-                            className="flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                        >
-                            Transactions
-                        </Link>
-                        <Link
-                            to={ROUTES.ACCOUNT_PROFILE}
-                            className="flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                        >
-                            Profile
-                        </Link>
-                    </nav>
-                </div>
-
-                <div>
-                    <button
-                        onClick={handleLogout}
-                        className="text-sm font-medium text-pink-300 hover:text-pink-200 transition-colors"
-                    >
-                        Logout
-                    </button>
-                </div>
-            </aside>
-
-            {/* Main Content */}
-            <main className="flex-1 p-10 overflow-y-auto">
-                <div className="max-w-3xl">
+            <div className="flex min-w-0 flex-1 flex-col">
+                <AccountHeader accountProfile={user} onLogout={handleLogout} />
+                <main className="flex-1 overflow-y-auto px-6 py-6 sm:px-8 sm:py-8">
+                    <div className="mx-auto w-full max-w-[1600px]">
+                        <div className="mx-auto max-w-3xl">
                     <h2 className="text-3xl font-bold text-gray-900">Transfer Money</h2>
                     <p className="text-gray-500 text-sm mt-1">
                         Verify the recipient, enter the amount, then review before sending.
@@ -258,7 +213,7 @@ export const TransferPage = () => {
                                         value={recipientAccount}
                                         onChange={handleRecipientAccountChange}
                                         disabled={isFetchingAccount}
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 text-gray-800 placeholder-gray-400 disabled:bg-gray-100"
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-brand-primary text-gray-800 placeholder-gray-400 disabled:bg-gray-100"
                                     />
                                 </div>
 
@@ -298,7 +253,7 @@ export const TransferPage = () => {
                                         placeholder="PKR 0.00"
                                         value={amount}
                                         onChange={(e) => setAmount(e.target.value)}
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 text-gray-800 placeholder-gray-400"
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-brand-primary text-gray-800 placeholder-gray-400"
                                     />
                                 </div>
 
@@ -313,7 +268,7 @@ export const TransferPage = () => {
                                         placeholder="What is this transfer for?"
                                         value={description}
                                         onChange={(e) => setDescription(e.target.value)}
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 text-gray-800 placeholder-gray-400"
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-brand-primary text-gray-800 placeholder-gray-400"
                                     />
                                 </div>
 
@@ -321,15 +276,17 @@ export const TransferPage = () => {
                                 <button
                                     type="submit"
                                     disabled={isSubmitting || !recipient || isFetchingAccount || !senderAccount}
-                                    className="w-full bg-[#2563EB] hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-3.5 px-4 rounded-xl text-sm transition-colors shadow-sm cursor-pointer disabled:cursor-not-allowed"
+                                    className="w-full bg-brand-primary hover:bg-brand-primary-hover disabled:opacity-50 text-white font-semibold py-3.5 px-4 rounded-xl text-sm transition-colors shadow-sm cursor-pointer disabled:cursor-not-allowed"
                                 >
                                     {isSubmitting ? "Processing..." : "Submit Transfer"}
                                 </button>
                             </form>
                         )}
                     </div>
-                </div>
-            </main>
+                        </div>
+                    </div>
+                </main>
+            </div>
         </div>
     );
 };

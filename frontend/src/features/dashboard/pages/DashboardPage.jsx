@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { ROUTES } from "../../../routes/routePaths.js";
 import { httpClient } from "../../../api/httpClient.js";
 import { useAuth } from "../../auth/context/useAuth.js";
+import AccountHeader from "../../../shared/components/navigation/AccountHeader";
+import AccountSidebar from "../../../shared/components/navigation/AccountSidebar";
 
 export const DashboardPage = () => {
     const { user, signOut, loading: authLoading } = useAuth();
@@ -100,73 +102,21 @@ export const DashboardPage = () => {
 
     if (authLoading) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
+            <div className="flex min-h-screen items-center justify-center bg-brand-background">
                 <p className="text-gray-500 font-medium">Loading session...</p>
             </div>
         );
     }
 
     return (
-        <div className="flex min-h-screen bg-[#F8FAFC]">
-            {/* Sidebar */}
-            <aside className="w-64 bg-[#0F2942] flex flex-col justify-between py-8 px-6 text-white shrink-0">
-                <div>
-                    <div className="mb-10">
-                        <h1 className="text-xl font-bold tracking-tight text-white">
-                            NexaBank
-                        </h1>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                            Personal Banking
-                        </p>
-                    </div>
+        <div className="flex min-h-screen bg-brand-background">
+            <AccountSidebar />
 
-                    <nav className="space-y-2">
-                        <Link
-                            to={ROUTES.ACCOUNT_HOME}
-                            className="flex items-center px-4 py-3 text-sm font-semibold text-white bg-white/10 rounded-lg transition-colors"
-                        >
-                            Dashboard
-                        </Link>
-                        <Link
-                            to={ROUTES.ACCOUNT_DEPOSIT}
-                            className="flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                        >
-                            Deposit Money
-                        </Link>
-                        <Link
-                            to={ROUTES.ACCOUNT_TRANSFERS}
-                            className="flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                        >
-                            Transfer Money
-                        </Link>
-                        <Link
-                            to={ROUTES.ACCOUNT_TRANSACTIONS}
-                            className="flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                        >
-                            Transactions
-                        </Link>
-                        <Link
-                            to={ROUTES.ACCOUNT_PROFILE}
-                            className="flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                        >
-                            Profile
-                        </Link>
-                    </nav>
-                </div>
-
-                <div>
-                    <button
-                        onClick={handleLogout}
-                        className="text-sm font-medium text-pink-300 hover:text-pink-200 transition-colors"
-                    >
-                        Logout
-                    </button>
-                </div>
-            </aside>
-
-            {/* Main Content Area */}
-            <main className="flex-1 p-10 overflow-y-auto">
-                <div className="mb-8">
+            <div className="flex min-w-0 flex-1 flex-col">
+                <AccountHeader accountProfile={user} onLogout={handleLogout} />
+                <main className="flex-1 overflow-y-auto px-6 py-6 sm:px-8 sm:py-8">
+                    <div className="mx-auto w-full max-w-[1600px]">
+                        <div className="mb-8">
                     <h2 className="text-3xl font-bold text-gray-900">
                         Account Dashboard
                     </h2>
@@ -176,19 +126,19 @@ export const DashboardPage = () => {
                 </div>
 
                 {/* Top Cards Row */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                     {/* Available Balance Card */}
-                    <div className="lg:col-span-2 bg-[#2563EB] rounded-2xl p-8 text-white flex flex-col justify-between shadow-sm">
+                    <div className="lg:col-span-2 bg-brand-primary rounded-xl p-8 text-white flex flex-col justify-between shadow-sm">
                         <div>
                             <div className="flex items-center justify-between">
-                                <p className="text-blue-100 text-sm font-medium">
+                                <p className="text-red-100 text-sm font-medium">
                                     Available Balance
                                 </p>
                                 <button
                                     onClick={fetchBalance}
                                     disabled={refreshingBalance}
                                     title="Refresh Balance"
-                                    className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-blue-100 hover:text-white transition-colors disabled:opacity-50"
+                                    className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-red-100 hover:text-white transition-colors disabled:opacity-50"
                                 >
                                     <svg
                                         className={`w-4 h-4 ${
@@ -214,7 +164,7 @@ export const DashboardPage = () => {
                                 maximumFractionDigits: 2,
                             })}
                             </h3>
-                            <p className="text-blue-200 text-xs mt-3">
+                            <p className="text-red-100 text-xs mt-3">
                                 Updated a few moments ago
                             </p>
                         </div>
@@ -222,7 +172,7 @@ export const DashboardPage = () => {
                         <div className="flex gap-4 mt-8">
                             <button
                                 onClick={() => navigate(ROUTES.ACCOUNT_TRANSFERS)}
-                                className="bg-white text-blue-600 px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-50 transition-colors shadow-sm"
+                                className="bg-white text-brand-primary px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-red-50 transition-colors shadow-sm"
                             >
                                 Transfer Money
                             </button>
@@ -236,7 +186,7 @@ export const DashboardPage = () => {
                     </div>
 
                     {/* Account Details Card */}
-                    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col justify-between">
+                    <div className="bg-white rounded-xl p-6 border border-brand-border shadow-sm flex flex-col justify-between">
                         <div>
                             <p className="text-xs font-medium text-gray-400">
                                 Account number
@@ -275,7 +225,7 @@ export const DashboardPage = () => {
                 </div>
 
                 {/* Recent Transactions */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+                        <div className="bg-white rounded-xl border border-brand-border shadow-sm p-8">
                     <h3 className="text-lg font-bold text-gray-900 mb-6">
                         Recent transactions
                     </h3>
@@ -328,8 +278,10 @@ export const DashboardPage = () => {
                             })}
                         </div>
                     )}
-                </div>
-            </main>
+                        </div>
+                    </div>
+                </main>
+            </div>
         </div>
     );
 };

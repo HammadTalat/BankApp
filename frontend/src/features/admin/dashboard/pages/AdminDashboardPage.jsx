@@ -67,7 +67,7 @@
                 value: dashboard.totalAccounts,
                 description: "All bank accounts created in the system.",
                 icon: Landmark,
-                iconClasses: "bg-blue-50 text-brand-primary",
+                iconClasses: "bg-red-50 text-brand-primary",
                 to: ROUTES.ADMIN_ACCOUNTS,
             },
             {
@@ -92,7 +92,7 @@
         return (
             <section className="space-y-6">
                 <PageHeader
-                    eyebrow="NexaBank Admin"
+                    eyebrow="RedMath Administration"
                     title="Dashboard"
                     description="View user applications and bank-account information from one place."
                 />

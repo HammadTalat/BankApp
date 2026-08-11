@@ -27,7 +27,7 @@ function Input({
         "placeholder:text-slate-400 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-brand-muted",
         error
             ? "border-brand-danger focus:border-brand-danger focus:ring-4 focus:ring-red-100"
-            : "border-brand-border focus:border-brand-primary focus:ring-4 focus:ring-blue-100",
+            : "border-brand-border focus:border-brand-primary focus:ring-4 focus:ring-red-100",
         className,
     ]
         .filter(Boolean)

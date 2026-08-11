@@ -13,7 +13,11 @@ function includesNormalized(values, currentValue, normalize) {
         || values.some((value) => normalize(value) === normalize(currentValue));
 }
 
-function ProtectedRoute({ allowedRoles, allowedApprovalStatuses }) {
+function ProtectedRoute({
+    allowedRoles,
+    allowedApprovalStatuses,
+    allowProfileCompletion = false,
+}) {
     const { isAuthenticated, isInitializing, user } = useAuth();
     const location = useLocation();
 
@@ -31,7 +35,7 @@ function ProtectedRoute({ allowedRoles, allowedApprovalStatuses }) {
 
     const fallbackRoute = getPostAuthRoute(user);
 
-    if (user?.needsProfileCompletion) {
+    if (user?.needsProfileCompletion && !allowProfileCompletion) {
         return <Navigate to={ROUTES.COMPLETE_GOOGLE_PROFILE} replace />;
     }
 

@@ -8,7 +8,7 @@ function EmptyState({
 }) {
     return (
         <div className="flex flex-col items-center px-5 py-10 text-center sm:py-12">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-brand-primary">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-50 text-brand-primary">
                 <Icon size={24} aria-hidden="true" />
             </div>
 

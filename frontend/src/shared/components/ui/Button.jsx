@@ -2,7 +2,7 @@
 
 const variantClasses = {
     primary:
-        "border-transparent bg-brand-primary text-white hover:bg-blue-700",
+        "border-transparent bg-brand-primary text-white hover:bg-brand-primary-hover",
     secondary:
         "border-brand-border bg-brand-surface text-brand-text hover:bg-slate-50",
     danger:

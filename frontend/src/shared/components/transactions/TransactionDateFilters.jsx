@@ -3,7 +3,7 @@ import Card from "../ui/Card";
 
 function DateControl({ label, value, onChange }) {
     return (
-        <label className="flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-xl border border-brand-border bg-brand-surface px-4 shadow-sm transition focus-within:border-brand-primary focus-within:ring-4 focus-within:ring-blue-100 sm:w-56">
+        <label className="flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-xl border border-brand-border bg-brand-surface px-4 shadow-sm transition focus-within:border-brand-primary focus-within:ring-4 focus-within:ring-red-100 sm:w-56">
             <span className="shrink-0 text-sm font-semibold text-brand-muted">
                 {label}:
             </span>

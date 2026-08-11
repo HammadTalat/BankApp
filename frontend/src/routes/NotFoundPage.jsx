@@ -20,7 +20,7 @@ function NotFoundPage() {
 
                 <Link
                     to={ROUTES.HOME}
-                    className="mt-7 inline-block rounded-xl bg-brand-primary px-5 py-3 font-semibold text-white hover:bg-blue-700"
+                    className="mt-7 inline-block rounded-xl bg-brand-primary px-5 py-3 font-semibold text-white hover:bg-brand-primary-hover"
                 >
                     Return home
                 </Link>

@@ -1,20 +1,29 @@
 @import "tailwindcss";
 
 @theme {
-    --color-brand-navy: #102a43;
-    --color-brand-navy-light: #183b56;
-    --color-brand-primary: #2f6fed;
-    --color-brand-background: #f6f8fb;
+    --color-brand-navy: #2a384c;
+    --color-brand-navy-light: #3a4759;
+    --color-brand-primary: #8b1e2d;
+    --color-brand-primary-hover: #741824;
+    --color-brand-background: #f8f8f8;
     --color-brand-surface: #ffffff;
-    --color-brand-text: #172033;
-    --color-brand-muted: #667085;
-    --color-brand-border: #e2e7ef;
-    --color-brand-success: #17845c;
-    --color-brand-warning: #b86900;
-    --color-brand-danger: #c43d4b;
+    --color-brand-text: #1f2937;
+    --color-brand-muted: #6b7280;
+    --color-brand-border: #e5e7eb;
+    --color-brand-success: #18794e;
+    --color-brand-warning: #a16207;
+    --color-brand-danger: #8b1e2d;
 }
 
 :root {
+    --rm-red: #8b1e2d;
+    --rm-red-dark: #741824;
+    --rm-navy: #2a384c;
+    --rm-bg: #f8f8f8;
+    --rm-surface: #ffffff;
+    --rm-border: #e5e7eb;
+    --rm-text: #1f2937;
+    --rm-muted: #6b7280;
     font-family:
             Inter,
             system-ui,
@@ -23,8 +32,8 @@
             "Segoe UI",
             sans-serif;
 
-    color: #172033;
-    background-color: #f6f8fb;
+    color: var(--rm-text);
+    background-color: var(--rm-bg);
     font-synthesis: none;
     text-rendering: optimizeLegibility;
 }
@@ -38,6 +47,7 @@ body {
     min-width: 320px;
     min-height: 100vh;
     margin: 0;
+    background: var(--rm-bg);
 }
 
 button,
@@ -54,4 +64,10 @@ a {
 
 * {
     box-sizing: border-box;
+}
+
+.rm-urdu-brand {
+    font-family: "Noto Sans Arabic", Tahoma, Arial, sans-serif;
+    line-height: 1.35;
+    white-space: nowrap;
 }

@@ -18,7 +18,7 @@ function PasswordInput({ label = "Password", error, helperText, ...props }) {
                     type={isVisible ? "text" : "password"}
                     aria-invalid={error ? "true" : undefined}
                     aria-describedby={error ? `${id}-error` : undefined}
-                    className={`w-full rounded-xl border bg-white px-3.5 py-3 pr-12 text-sm text-brand-text outline-none transition placeholder:text-slate-400 ${error ? "border-brand-danger focus:ring-4 focus:ring-red-100" : "border-brand-border focus:border-brand-primary focus:ring-4 focus:ring-blue-100"}`}
+                    className={`w-full rounded-xl border bg-white px-3.5 py-3 pr-12 text-sm text-brand-text outline-none transition placeholder:text-slate-400 ${error ? "border-brand-danger focus:ring-4 focus:ring-red-100" : "border-brand-border focus:border-brand-primary focus:ring-4 focus:ring-red-100"}`}
                 />
                 <button
                     type="button"
