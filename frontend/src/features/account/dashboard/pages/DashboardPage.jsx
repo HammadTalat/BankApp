@@ -76,9 +76,10 @@ export const DashboardPage = () => {
     }, []);
 
     useEffect(() => {
-        loadDashboardData();
-    }, [loadDashboardData]);
-
+        if (!authLoading) {
+            loadDashboardData();
+        }
+    }, [loadDashboardData, authLoading]);
     // Actions
     const handleCopyAccount = () => {
         if (!accountDetails.accountNumber) return;
