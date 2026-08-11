@@ -32,6 +32,7 @@ import {
     getAdminAccountDetails,
     getAdminAccountTransactions,
 } from "../api/adminAccountApi.js";
+import { getCurrentMonthDateRange } from "../utils/getCurrentMonthDateRange";
 
 function AccountTransactionsPage() {
     const { accountNumber } = useParams();
@@ -44,13 +45,16 @@ function AccountTransactionsPage() {
 
     const [error, setError] = useState("");
 
-    const [fromDate, setFromDate] = useState("");
-    const [toDate, setToDate] = useState("");
+    const [fromDate, setFromDate] = useState(
+        () => getCurrentMonthDateRange().startDate,
+    );
+    const [toDate, setToDate] = useState(
+        () => getCurrentMonthDateRange().endDate,
+    );
 
-    const [appliedDates, setAppliedDates] = useState({
-        startDate: "",
-        endDate: "",
-    });
+    const [appliedDates, setAppliedDates] = useState(
+        getCurrentMonthDateRange,
+    );
 
     const [dateError, setDateError] = useState("");
 
@@ -182,7 +186,7 @@ function AccountTransactionsPage() {
                 title="Account Transactions"
                 description={
                     account
-                        ? `Transactions for account ${maskAccountNumber(account.accountNumber)} — ${account.holderName}`
+                        ? `Transactions for account ${(account.accountNumber)} - ${account.holderName}`
                         : "Review account transaction history."
                 }
             />
@@ -228,6 +232,7 @@ function AccountTransactionsPage() {
                     <TransactionHistoryTable
                         transactions={transactions}
                         loading={loadingTransactions}
+                        maskAccountNumbers={false}
                     />
                 </div>
             </Card>

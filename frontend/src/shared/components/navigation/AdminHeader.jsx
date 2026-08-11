@@ -32,7 +32,7 @@ function AdminHeader({
         name: adminProfile?.name || "Admin",
         email: adminProfile?.email || "admin@bank.local",
         address: adminProfile?.address || "System",
-        role: adminProfile?.role || "ADMIN",
+        role: adminProfile?.role == "ACCOUNT_HOLDER" ? "ACCOUNT HOLDER" : adminProfile?.role || "ADMIN",
         approvalStatus: adminProfile?.approvalStatus || "APPROVED",
     };
 

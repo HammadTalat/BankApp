@@ -13,7 +13,19 @@ function getAmountClasses(indicator) {
         : "text-brand-success";
 }
 
-function TransactionHistoryTable({ transactions, loading = false }) {
+function TransactionHistoryTable({
+    transactions,
+    loading = false,
+    maskAccountNumbers = true,
+}) {
+    function displayRelatedAccount(accountNumber) {
+        if (!accountNumber) return "—";
+
+        return maskAccountNumbers
+            ? maskAccountSuffix(accountNumber)
+            : accountNumber;
+    }
+
     if (loading) {
         return (
             <div className="flex min-h-80 items-center justify-center">
@@ -62,7 +74,7 @@ function TransactionHistoryTable({ transactions, loading = false }) {
                                     Related account
                                 </p>
                                 <p className="mt-1 text-sm text-brand-muted">
-                                    {maskAccountSuffix(transaction.recipientAccountId)}
+                                    {displayRelatedAccount(transaction.recipientAccountId)}
                                 </p>
                             </div>
                             <p className={`whitespace-nowrap font-semibold ${getAmountClasses(transaction.indicator)}`}>
@@ -100,7 +112,7 @@ function TransactionHistoryTable({ transactions, loading = false }) {
                                     {transaction.description || "Transaction"}
                                 </th>
                                 <td className="w-[22%] px-4 py-7 text-brand-muted">
-                                    {maskAccountSuffix(transaction.recipientAccountId)}
+                                    {displayRelatedAccount(transaction.recipientAccountId)}
                                 </td>
                                 <td className="w-[16%] px-4 py-7">
                                     <StatusBadge

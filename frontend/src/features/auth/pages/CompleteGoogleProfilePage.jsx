@@ -59,6 +59,9 @@ function CompleteGoogleProfilePage() {
                     <h1 className="mt-5 text-2xl font-bold tracking-tight text-brand-text">
                         Complete your profile
                     </h1>
+                    <p className="mt-2 text-sm text-brand-muted">
+                        Welcome, {user?.name}.
+                    </p>
                     <form onSubmit={handleSubmit} className="mt-6 space-y-5">
                         {error && <Alert type="error">{error}</Alert>}
                         <div>

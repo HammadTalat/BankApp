@@ -37,7 +37,7 @@ function LoginPage() {
                 <RedMathBrand />
                 <div className="mt-8 border-t border-brand-border pt-7">
                     <h1 className="text-2xl font-bold tracking-tight text-brand-text">
-                        Sign in
+                        Sign in to your account
                     </h1>
                     <div className="mt-6">
                         <LoginForm onSubmit={handleLogin} />

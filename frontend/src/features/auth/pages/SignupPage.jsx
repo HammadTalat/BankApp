@@ -33,7 +33,7 @@ function SignupPage() {
                 <RedMathBrand />
                 <div className="mt-8 border-t border-brand-border pt-7">
                     <h1 className="text-2xl font-bold tracking-tight text-brand-text">
-                        Create an account
+                        Banking starts here
                     </h1>
                     <div className="mt-6">
                         <SignupForm onSubmit={handleSignup} />
