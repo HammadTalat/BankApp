@@ -12,16 +12,16 @@ import LoginPage from "../features/auth/pages/LoginPage";
 import SignupPage from "../features/auth/pages/SignupPage";
 import CompleteGoogleProfilePage from "../features/auth/pages/CompleteGoogleProfilePage";
 import PendingUsersPage from "../features/admin/users/pages/PendingUsersPage";
-import DashboardPage from "../features/dashboard/pages/DashboardPage";
-import TransactionsPage from "../features/transactions/pages/TransactionsPage";
-import TransferPage from "../features/transfers/pages/TransferPage";
+import DashboardPage from "../features/account/dashboard/pages/DashboardPage";
+import TransactionsPage from "../features/account/transactions/pages/TransactionsPage";
+import TransferPage from "../features/account/transfers/pages/TransferPage";
 import AdminLayout from "../layouts/AdminLayout";
 import NotFoundPage from "../routes/NotFoundPage";
 import ProtectedRoute from "../routes/ProtectedRoute";
 import { ROUTES } from "../routes/routePaths";
 import ComponentShowcasePage from "./ComponentShowcasePage";
 import HomePage from "./HomePage";
-import DepositPage from "../features/deposit/pages/DepositPage.jsx"
+import DepositPage from "../features/account/deposit/pages/DepositPage.jsx"
 
 
 function AppRoutes() {
