@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { ROUTES } from "../../../../routes/routePaths.js";
-import { httpClient } from "../../../../api/httpClient.js";
 import { useAuth } from "../../../auth/context/useAuth.js";
+import { transactionService } from "../api/transactionService.js";
 import AccountHeader from "../../../../shared/components/navigation/AccountHeader.jsx";
 import AccountSidebar from "../../../../shared/components/navigation/AccountSidebar.jsx";
 
@@ -49,9 +49,9 @@ export const TransactionsPage = () => {
 
     const handleLogout = async () => {
         try {
-            await httpClient.post("/api/v1/auth/logout");
+            await transactionService.logout();
         } catch {
-            // Proceed with client cleanup
+            // Proceed with client cleanup regardless of server response
         } finally {
             localStorage.removeItem("ACCESS_TOKEN");
             navigate(ROUTES.HOME);
@@ -63,21 +63,12 @@ export const TransactionsPage = () => {
 
         async function loadTransactions() {
             try {
-                const queryParams = new URLSearchParams({
-                    page: String(page),
-                    size: String(pageSize),
+                const data = await transactionService.getTransactions({
+                    page,
+                    pageSize,
+                    fromDate: appliedFilters.fromDate,
+                    toDate: appliedFilters.toDate,
                 });
-
-                if (appliedFilters.fromDate) {
-                    queryParams.append("startDate", appliedFilters.fromDate);
-                }
-                if (appliedFilters.toDate) {
-                    queryParams.append("endDate", appliedFilters.toDate);
-                }
-
-                const data = await httpClient.get(
-                    `/api/v1/transaction/get-transactions?${queryParams.toString()}`
-                );
 
                 if (!isActive) return;
 
@@ -140,156 +131,156 @@ export const TransactionsPage = () => {
                 <main className="flex-1 overflow-y-auto px-6 py-6 sm:px-8 sm:py-8">
                     <div className="mx-auto w-full max-w-[1600px]">
                         <div className="w-full space-y-6">
-                    <h2 className="text-3xl font-bold text-gray-900">
-                        Transactions
-                    </h2>
-                    <p className="text-gray-500 text-sm mt-1">
-                        Review credits, debits, and transfers across your account.
-                    </p>
+                            <h2 className="text-3xl font-bold text-gray-900">
+                                Transactions
+                            </h2>
+                            <p className="text-gray-500 text-sm mt-1">
+                                Review credits, debits, and transfers across your account.
+                            </p>
 
-                    {/* Filter Control Panel */}
-                    <div className="rounded-xl border border-brand-border bg-brand-surface p-6 shadow-sm flex flex-wrap items-center gap-4">
-                        <div>
-                            <label className="text-xs text-gray-500 block mb-1 font-medium">From:</label>
-                            <input
-                                type="date"
-                                value={fromDate}
-                                onChange={(e) => setFromDate(e.target.value)}
-                                className="border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-700 font-medium focus:outline-none focus:border-brand-primary bg-white"
-                            />
-                        </div>
+                            {/* Filter Control Panel */}
+                            <div className="rounded-xl border border-brand-border bg-brand-surface p-6 shadow-sm flex flex-wrap items-center gap-4">
+                                <div>
+                                    <label className="text-xs text-gray-500 block mb-1 font-medium">From:</label>
+                                    <input
+                                        type="date"
+                                        value={fromDate}
+                                        onChange={(e) => setFromDate(e.target.value)}
+                                        className="border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-700 font-medium focus:outline-none focus:border-brand-primary bg-white"
+                                    />
+                                </div>
 
-                        <div>
-                            <label className="text-xs text-gray-500 block mb-1 font-medium">To:</label>
-                            <input
-                                type="date"
-                                value={toDate}
-                                onChange={(e) => setToDate(e.target.value)}
-                                className="border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-700 font-medium focus:outline-none focus:border-brand-primary bg-white"
-                            />
-                        </div>
+                                <div>
+                                    <label className="text-xs text-gray-500 block mb-1 font-medium">To:</label>
+                                    <input
+                                        type="date"
+                                        value={toDate}
+                                        onChange={(e) => setToDate(e.target.value)}
+                                        className="border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-700 font-medium focus:outline-none focus:border-brand-primary bg-white"
+                                    />
+                                </div>
 
-                        <div>
-                            <label className="text-xs text-gray-500 block mb-1 font-medium">Type:</label>
-                            <select
-                                value={typeFilter}
-                                onChange={(e) => setTypeFilter(e.target.value)}
-                                className="border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-700 font-medium focus:outline-none focus:border-brand-primary bg-white"
-                            >
-                                <option value="ALL">All types</option>
-                                <option value="CREDIT">Credit</option>
-                                <option value="DEBIT">Debit</option>
-                            </select>
-                        </div>
+                                <div>
+                                    <label className="text-xs text-gray-500 block mb-1 font-medium">Type:</label>
+                                    <select
+                                        value={typeFilter}
+                                        onChange={(e) => setTypeFilter(e.target.value)}
+                                        className="border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-700 font-medium focus:outline-none focus:border-brand-primary bg-white"
+                                    >
+                                        <option value="ALL">All types</option>
+                                        <option value="CREDIT">Credit</option>
+                                        <option value="DEBIT">Debit</option>
+                                    </select>
+                                </div>
 
-                        <div className="flex items-center gap-3 mt-auto">
-                            <button
-                                onClick={handleApplyFilters}
-                                className="bg-brand-primary hover:bg-brand-primary-hover text-white text-xs font-semibold px-6 py-2.5 rounded-xl transition-colors shadow-sm cursor-pointer"
-                            >
-                                Apply filters
-                            </button>
-                            <button
-                                onClick={handleClearFilters}
-                                className="border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-semibold px-6 py-2.5 rounded-xl transition-colors cursor-pointer"
-                            >
-                                Clear
-                            </button>
-                        </div>
-                    </div>
+                                <div className="flex items-center gap-3 mt-auto">
+                                    <button
+                                        onClick={handleApplyFilters}
+                                        className="bg-brand-primary hover:bg-brand-primary-hover text-white text-xs font-semibold px-6 py-2.5 rounded-xl transition-colors shadow-sm cursor-pointer"
+                                    >
+                                        Apply filters
+                                    </button>
+                                    <button
+                                        onClick={handleClearFilters}
+                                        className="border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-semibold px-6 py-2.5 rounded-xl transition-colors cursor-pointer"
+                                    >
+                                        Clear
+                                    </button>
+                                </div>
+                            </div>
 
-                    {/* Error Banner */}
-                    {error && (
-                        <div className="mt-4 bg-red-50 border border-red-200 text-red-600 p-4 rounded-xl text-xs font-medium">
-                            {error}
-                        </div>
-                    )}
+                            {/* Error Banner */}
+                            {error && (
+                                <div className="mt-4 bg-red-50 border border-red-200 text-red-600 p-4 rounded-xl text-xs font-medium">
+                                    {error}
+                                </div>
+                            )}
 
-                    {/* Transactions List */}
-                    <div className="rounded-xl border border-brand-border bg-brand-surface p-8 shadow-sm">
-                        <h3 className="text-lg font-bold text-gray-900 mb-6">
-                            Transaction history
-                        </h3>
+                            {/* Transactions List */}
+                            <div className="rounded-xl border border-brand-border bg-brand-surface p-8 shadow-sm">
+                                <h3 className="text-lg font-bold text-gray-900 mb-6">
+                                    Transaction history
+                                </h3>
 
-                        {loading ? (
-                            <p className="text-xs text-gray-400 py-6">Loading transactions...</p>
-                        ) : displayedTransactions.length === 0 ? (
-                            <p className="text-xs text-gray-400 py-6">No transactions found matching your criteria.</p>
-                        ) : (
-                            <div className="divide-y divide-gray-100">
-                                {displayedTransactions.map((tx, idx) => {
-                                    const isDebit = tx.indicator === "DEBIT";
+                                {loading ? (
+                                    <p className="text-xs text-gray-400 py-6">Loading transactions...</p>
+                                ) : displayedTransactions.length === 0 ? (
+                                    <p className="text-xs text-gray-400 py-6">No transactions found matching your criteria.</p>
+                                ) : (
+                                    <div className="divide-y divide-gray-100">
+                                        {displayedTransactions.map((tx, idx) => {
+                                            const isDebit = tx.indicator === "DEBIT";
 
-                                    const dateObj = new Date(tx.transactionDate);
-                                    const formattedDate = !isNaN(dateObj.getTime())
-                                        ? dateObj.toLocaleDateString("en-GB", {
-                                            day: "2-digit",
-                                            month: "short",
-                                        })
-                                        : "N/A";
+                                            const dateObj = new Date(tx.transactionDate);
+                                            const formattedDate = !isNaN(dateObj.getTime())
+                                                ? dateObj.toLocaleDateString("en-GB", {
+                                                    day: "2-digit",
+                                                    month: "short",
+                                                })
+                                                : "N/A";
 
-                                    const rawAccount = tx.recipientAccountId || tx.accountId;
-                                    const accountMask = rawAccount
-                                        ? `•••• ${String(rawAccount).slice(-4)}`
-                                        : "—";
+                                            const rawAccount = tx.recipientAccountId || tx.accountId;
+                                            const accountMask = rawAccount
+                                                ? `•••• ${String(rawAccount).slice(-4)}`
+                                                : "—";
 
-                                    return (
-                                        <div
-                                            key={tx.operationId || tx.id || idx}
-                                            className="py-6 grid grid-cols-12 items-center text-sm font-semibold"
+                                            return (
+                                                <div
+                                                    key={tx.operationId || tx.id || idx}
+                                                    className="py-6 grid grid-cols-12 items-center text-sm font-semibold"
+                                                >
+                                                    <div className="col-span-2 text-xs text-gray-400 font-medium">
+                                                        {formattedDate}
+                                                    </div>
+
+                                                    <div className="col-span-4 text-gray-900 font-bold">
+                                                        {tx.description || "Transfer"}
+                                                    </div>
+
+                                                    <div className="col-span-3 text-xs text-gray-400 font-mono">
+                                                        {accountMask}
+                                                    </div>
+
+                                                    <div className="col-span-1 text-xs text-gray-400 font-medium tracking-wide">
+                                                        {tx.indicator}
+                                                    </div>
+
+                                                    <div
+                                                        className={`col-span-2 text-right font-bold ${
+                                                            isDebit ? "text-red-500" : "text-emerald-600"
+                                                        }`}
+                                                    >
+                                                        {isDebit ? "- " : "+ "}PKR {tx.amount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+
+                                {/* Pagination Controls */}
+                                {totalPages > 1 && (
+                                    <div className="mt-6 flex justify-between items-center pt-4 border-t border-gray-100 text-xs">
+                                        <button
+                                            disabled={page === 0 || loading}
+                                            onClick={() => setPage((prev) => Math.max(prev - 1, 0))}
+                                            className="px-4 py-2 border border-gray-200 rounded-lg disabled:opacity-50 hover:bg-gray-50 transition-colors cursor-pointer disabled:cursor-not-allowed"
                                         >
-                                            <div className="col-span-2 text-xs text-gray-400 font-medium">
-                                                {formattedDate}
-                                            </div>
-
-                                            <div className="col-span-4 text-gray-900 font-bold">
-                                                {tx.description || "Transfer"}
-                                            </div>
-
-                                            <div className="col-span-3 text-xs text-gray-400 font-mono">
-                                                {accountMask}
-                                            </div>
-
-                                            <div className="col-span-1 text-xs text-gray-400 font-medium tracking-wide">
-                                                {tx.indicator}
-                                            </div>
-
-                                            <div
-                                                className={`col-span-2 text-right font-bold ${
-                                                    isDebit ? "text-red-500" : "text-emerald-600"
-                                                }`}
-                                            >
-                                                {isDebit ? "- " : "+ "}PKR {tx.amount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                                            Previous
+                                        </button>
+                                        <span className="text-gray-500">
+                      Page {page + 1} of {totalPages}
+                    </span>
+                                        <button
+                                            disabled={page >= totalPages - 1 || loading}
+                                            onClick={() => setPage((prev) => prev + 1)}
+                                            className="px-4 py-2 border border-gray-200 rounded-lg disabled:opacity-50 hover:bg-gray-50 transition-colors cursor-pointer disabled:cursor-not-allowed"
+                                        >
+                                            Next
+                                        </button>
+                                    </div>
+                                )}
                             </div>
-                        )}
-
-                        {/* Pagination Controls */}
-                        {totalPages > 1 && (
-                            <div className="mt-6 flex justify-between items-center pt-4 border-t border-gray-100 text-xs">
-                                <button
-                                    disabled={page === 0 || loading}
-                                    onClick={() => setPage((prev) => Math.max(prev - 1, 0))}
-                                    className="px-4 py-2 border border-gray-200 rounded-lg disabled:opacity-50 hover:bg-gray-50 transition-colors cursor-pointer disabled:cursor-not-allowed"
-                                >
-                                    Previous
-                                </button>
-                                <span className="text-gray-500">
-                                    Page {page + 1} of {totalPages}
-                                </span>
-                                <button
-                                    disabled={page >= totalPages - 1 || loading}
-                                    onClick={() => setPage((prev) => prev + 1)}
-                                    className="px-4 py-2 border border-gray-200 rounded-lg disabled:opacity-50 hover:bg-gray-50 transition-colors cursor-pointer disabled:cursor-not-allowed"
-                                >
-                                    Next
-                                </button>
-                            </div>
-                        )}
-                    </div>
                         </div>
                     </div>
                 </main>
