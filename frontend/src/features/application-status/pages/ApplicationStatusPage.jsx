@@ -187,6 +187,15 @@ function ApplicationStatusPage() {
     return (
         <main className="flex min-h-screen items-center justify-center bg-brand-background px-5 py-10">
             <div className="flex w-full max-w-xl flex-col gap-4">
+                <div className="text-center">
+                    <p lang="ur" dir="rtl" className="text-2xl font-bold text-brand-navy">
+                        ریڈ میتھ بینک
+                    </p>
+                    <p className="mt-2 text-sm font-semibold text-brand-muted">
+                        Application Status
+                    </p>
+                </div>
+
                 {error && (
                     <Alert
                         type="error"

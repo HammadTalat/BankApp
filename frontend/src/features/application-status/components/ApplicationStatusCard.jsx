@@ -19,7 +19,7 @@ const statusDetails = {
         labelClasses: "text-brand-warning",
         title: "Your application is under review",
         message:
-            "Your registration is complete. An administrator must approve your account before banking features become available.",
+            "Your account is awaiting administrator review.",
     },
     REJECTED: {
         icon: ShieldX,
@@ -28,7 +28,7 @@ const statusDetails = {
         labelClasses: "text-brand-danger",
         title: "Your application was not approved",
         message:
-            "We are sorry, but access to banking features cannot be provided at this time. You can refresh the page if your application is reviewed again.",
+            "Your application was not approved. Refresh this page if it is reviewed again.",
     },
     APPROVED: {
         icon: CircleCheck,
@@ -37,7 +37,7 @@ const statusDetails = {
         labelClasses: "text-brand-success",
         title: "Your account is ready",
         message:
-            "Your application has been approved. We are taking you to your account now.",
+            "Redirecting you to your account.",
     },
     UNKNOWN: {
         icon: CircleHelp,
@@ -46,7 +46,7 @@ const statusDetails = {
         labelClasses: "text-slate-600",
         title: "We could not read your application status",
         message:
-            "Your account information is available, but its approval status is missing. Please refresh and try again.",
+            "Please refresh and try again.",
     },
 };
 
@@ -69,10 +69,10 @@ function ApplicationStatusCard({
     return (
         <Card
             padding={false}
-            className="w-full max-w-xl p-7 text-center sm:p-10"
+            className="w-full max-w-xl p-7 text-center sm:p-9"
         >
             <div
-                className={`mx-auto flex h-16 w-16 items-center justify-center rounded-2xl ${selectedStatus.iconClasses}`}
+                className={`mx-auto flex h-14 w-14 items-center justify-center rounded-lg ${selectedStatus.iconClasses}`}
             >
                 <StatusIcon
                     size={32}
@@ -87,11 +87,11 @@ function ApplicationStatusCard({
                 {selectedStatus.label}
             </p>
 
-            <h1 className="mt-3 text-2xl font-bold text-brand-text sm:text-3xl">
+            <h1 className="mt-3 text-2xl font-bold text-brand-text">
                 {selectedStatus.title}
             </h1>
 
-            <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-brand-muted sm:text-base sm:leading-7">
+            <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-brand-muted">
                 {selectedStatus.message}
             </p>
 
@@ -152,9 +152,7 @@ function ApplicationStatusCard({
             )}
 
             {normalizedStatus === "PENDING" && (
-                <p className="mt-6 text-sm text-brand-muted">
-                    This page checks your status automatically every five seconds.
-                </p>
+                <p className="mt-6 text-xs text-brand-muted">Status updates automatically.</p>
             )}
         </Card>
     );

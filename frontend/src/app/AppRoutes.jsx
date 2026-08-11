@@ -13,7 +13,6 @@ import SignupPage from "../features/auth/pages/SignupPage";
 import CompleteGoogleProfilePage from "../features/auth/pages/CompleteGoogleProfilePage";
 import PendingUsersPage from "../features/admin/users/pages/PendingUsersPage";
 import DashboardPage from "../features/dashboard/pages/DashboardPage";
-import ProfilePage from "../features/proifle/pages/ProfilePage";
 import TransactionsPage from "../features/transactions/pages/TransactionsPage";
 import TransferPage from "../features/transfers/pages/TransferPage";
 import AdminLayout from "../layouts/AdminLayout";
@@ -35,7 +34,19 @@ function AppRoutes() {
 
             <Route path={ROUTES.LOGIN} element={<LoginPage />} />
             <Route path={ROUTES.SIGNUP} element={<SignupPage />} />
-            <Route path={ROUTES.COMPLETE_GOOGLE_PROFILE} element={<CompleteGoogleProfilePage />} />
+            <Route
+                element={(
+                    <ProtectedRoute
+                        allowedRoles={["ACCOUNT_HOLDER"]}
+                        allowProfileCompletion
+                    />
+                )}
+            >
+                <Route
+                    path={ROUTES.COMPLETE_GOOGLE_PROFILE}
+                    element={<CompleteGoogleProfilePage />}
+                />
+            </Route>
 
             <Route element={<ProtectedRoute />}>
                 <Route
@@ -43,24 +54,6 @@ function AppRoutes() {
                     element={<ComponentShowcasePage />}
                 />
             </Route>
-            {/*Transaction*/}
-            <Route path={ROUTES.ACCOUNT_TRANSACTIONS} element={<TransactionsPage />} />
-            <Route path={ROUTES.ACCOUNT_TRANSFERS} element={<TransferPage />} />
-
-            {/*Profile */}
-            <Route path={ROUTES.ACCOUNT_PROFILE} element={<ProfilePage />} />
-
-            {/*Dashboard*/}
-            <Route path={ROUTES.ACCOUNT_HOME} element={<DashboardPage />} />
-
-            {/*Deposit*/}
-            <Route path={ROUTES.ACCOUNT_DEPOSIT} element={<DepositPage />} />
-
-            <Route
-                path={ROUTES.COMPONENTS}
-                element={<ComponentShowcasePage />}
-            />
-
             <Route
                 element={(
                     <ProtectedRoute
@@ -99,9 +92,10 @@ function AppRoutes() {
                 />
 
                 <Route
-                    path={ROUTES.ACCOUNT_PROFILE}
-                    element={<ProfilePage />}
+                    path={ROUTES.ACCOUNT_DEPOSIT}
+                    element={<DepositPage />}
                 />
+
             </Route>
 
             <Route

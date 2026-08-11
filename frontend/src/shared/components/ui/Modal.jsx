@@ -61,7 +61,7 @@ function Modal({
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={titleId}
-                className={`flex max-h-[calc(100vh-2rem)] w-full flex-col overflow-hidden rounded-2xl border border-brand-border bg-brand-surface shadow-xl ${selectedSize}`}
+                className={`flex max-h-[calc(100vh-2rem)] w-full flex-col overflow-hidden rounded-xl border border-brand-border bg-brand-surface shadow-lg ${selectedSize}`}
             >
                 <header className="flex shrink-0 items-start justify-between gap-4 border-b border-brand-border px-5 py-4 sm:px-6">
                     <h2

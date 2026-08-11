@@ -8,7 +8,7 @@ function DashboardMetricCard({
     value,
     description,
     icon: Icon,
-    iconClasses = "bg-blue-50 text-brand-primary",
+    iconClasses = "bg-red-50 text-brand-primary",
     to,
 }) {
     const card = (

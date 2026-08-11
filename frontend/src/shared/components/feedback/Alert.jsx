@@ -20,7 +20,7 @@ const alertStyles = {
     },
     info: {
         icon: Info,
-        classes: "border-blue-200 bg-blue-50 text-brand-primary",
+        classes: "border-red-200 bg-red-50 text-brand-primary",
     },
 };
 

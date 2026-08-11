@@ -4,7 +4,7 @@ function TableContainer({
     ...containerProps
 }) {
     const containerClasses = [
-        "w-full min-w-0 overflow-x-auto rounded-2xl border border-brand-border bg-brand-surface shadow-sm",
+        "w-full min-w-0 overflow-x-auto rounded-xl border border-brand-border bg-brand-surface shadow-sm",
         className,
     ]
         .filter(Boolean)

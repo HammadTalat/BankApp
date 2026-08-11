@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { ROUTES } from "../../../routes/routePaths.js";
 import { httpClient } from "../../../api/httpClient.js";
 import { useAuth } from "../../auth/context/useAuth.js";
+import AccountHeader from "../../../shared/components/navigation/AccountHeader";
+import AccountSidebar from "../../../shared/components/navigation/AccountSidebar";
 
 export const DepositPage = () => {
-    const { signOut, loading: authLoading } = useAuth();
+    const { user, signOut, loading: authLoading } = useAuth();
     const navigate = useNavigate();
 
     // Account & form state
@@ -88,73 +90,21 @@ export const DepositPage = () => {
 
     if (authLoading) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
+            <div className="flex min-h-screen items-center justify-center bg-brand-background">
                 <p className="text-gray-500 font-medium">Loading session...</p>
             </div>
         );
     }
 
     return (
-        <div className="flex min-h-screen bg-[#F8FAFC]">
-            {/* Sidebar */}
-            <aside className="w-64 bg-[#0F2942] flex flex-col justify-between py-8 px-6 text-white shrink-0">
-                <div>
-                    <div className="mb-10">
-                        <h1 className="text-xl font-bold tracking-tight text-white">
-                            NexaBank
-                        </h1>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                            Personal Banking
-                        </p>
-                    </div>
+        <div className="flex min-h-screen bg-brand-background">
+            <AccountSidebar />
 
-                    <nav className="space-y-2">
-                        <Link
-                            to={ROUTES.ACCOUNT_HOME}
-                            className="flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                        >
-                            Dashboard
-                        </Link>
-                        <Link
-                            to={ROUTES.ACCOUNT_DEPOSIT || "/account/deposit"}
-                            className="flex items-center px-4 py-3 text-sm font-semibold text-white bg-white/10 rounded-lg transition-colors"
-                        >
-                            Deposit Money
-                        </Link>
-                        <Link
-                            to={ROUTES.ACCOUNT_TRANSFERS}
-                            className="flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                        >
-                            Transfer Money
-                        </Link>
-                        <Link
-                            to={ROUTES.ACCOUNT_TRANSACTIONS}
-                            className="flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                        >
-                            Transactions
-                        </Link>
-                        <Link
-                            to={ROUTES.ACCOUNT_PROFILE}
-                            className="flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                        >
-                            Profile
-                        </Link>
-                    </nav>
-                </div>
-
-                <div>
-                    <button
-                        onClick={handleLogout}
-                        className="text-sm font-medium text-pink-300 hover:text-pink-200 transition-colors"
-                    >
-                        Logout
-                    </button>
-                </div>
-            </aside>
-
-            {/* Main Content Area */}
-            <main className="flex-1 p-10 overflow-y-auto">
-                <div className="mb-8">
+            <div className="flex min-w-0 flex-1 flex-col">
+                <AccountHeader accountProfile={user} onLogout={handleLogout} />
+                <main className="flex-1 overflow-y-auto px-6 py-6 sm:px-8 sm:py-8">
+                    <div className="mx-auto w-full max-w-[1600px]">
+                        <div className="mx-auto mb-8 max-w-2xl">
                     <h2 className="text-3xl font-bold text-gray-900">
                         Deposit Money
                     </h2>
@@ -163,7 +113,7 @@ export const DepositPage = () => {
                     </p>
                 </div>
 
-                <div className="max-w-2xl bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+                        <div className="mx-auto max-w-2xl bg-white rounded-xl border border-brand-border shadow-sm p-8">
                     {/* Success Inline Banner */}
                     {successMessage && (
                         <div className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex items-start gap-3">
@@ -232,7 +182,7 @@ export const DepositPage = () => {
                                     onChange={(e) => setAmount(e.target.value)}
                                     placeholder="0.00"
                                     disabled={fetchingAccount || !accountNumber}
-                                    className="w-full pl-14 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all disabled:opacity-50"
+                                    className="w-full pl-14 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:bg-white transition-all disabled:opacity-50"
                                     required
                                 />
                             </div>
@@ -250,7 +200,7 @@ export const DepositPage = () => {
                                 onChange={(e) => setDescription(e.target.value)}
                                 placeholder="e.g., Initial Deposit, Monthly Savings"
                                 disabled={fetchingAccount || !accountNumber}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all disabled:opacity-50"
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:bg-white transition-all disabled:opacity-50"
                             />
                         </div>
 
@@ -268,7 +218,7 @@ export const DepositPage = () => {
                                         onClick={() => setAmount(preset.toString())}
                                         className={`px-3.5 py-2 text-xs font-semibold rounded-lg border transition-colors disabled:opacity-50 ${
                                             amount === preset.toString()
-                                                ? "bg-blue-50 border-blue-600 text-blue-600"
+                                                ? "bg-red-50 border-brand-primary text-brand-primary"
                                                 : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
                                         }`}
                                     >
@@ -283,7 +233,7 @@ export const DepositPage = () => {
                             <button
                                 type="submit"
                                 disabled={submitting || fetchingAccount || !accountNumber}
-                                className="bg-[#2563EB] hover:bg-blue-700 text-white font-semibold text-sm px-8 py-3 rounded-xl transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
+                                className="bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold text-sm px-8 py-3 rounded-xl transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
                             >
                                 {submitting ? (
                                     <>
@@ -306,8 +256,10 @@ export const DepositPage = () => {
                             </button>
                         </div>
                     </form>
-                </div>
-            </main>
+                        </div>
+                    </div>
+                </main>
+            </div>
         </div>
     );
 };

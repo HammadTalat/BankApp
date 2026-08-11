@@ -16,7 +16,6 @@ export const ROUTES = {
     ACCOUNT_HOME: "/account",
     ACCOUNT_TRANSFERS: "/account/transfers",
     ACCOUNT_TRANSACTIONS: "/account/transactions",
-    ACCOUNT_PROFILE: "/account/profile",
     ACCOUNT_DEPOSIT: "/account/deposit",
 };
 

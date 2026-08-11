@@ -16,36 +16,38 @@ function AdminProfileCard({
     onClose,
     onLogout,
     loggingOut = false,
+    profileDescription = "Predefined administrator",
+    profileRegionLabel = "Administrator profile",
 }) {
     return (
         <div
             id={id}
             ref={cardRef}
             role="region"
-            aria-label="Administrator profile"
+            aria-label={profileRegionLabel}
             tabIndex={-1}
-            className="absolute right-0 top-[calc(100%+0.75rem)] z-50 w-72 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-brand-border bg-brand-surface text-left shadow-xl outline-none sm:w-80"
+            className="absolute right-0 top-[calc(100%+0.75rem)] z-50 w-72 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-brand-border bg-brand-surface text-left shadow-md outline-none sm:w-80"
         >
-            <div className="relative bg-brand-navy px-5 py-5 text-white">
+            <div className="relative border-b border-brand-border bg-red-50 px-5 py-5">
                 <button
                     type="button"
                     onClick={onClose}
-                    className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-300 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-                    aria-label="Close administrator profile"
+                    className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-lg text-brand-muted transition hover:bg-white hover:text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+                    aria-label={`Close ${profileRegionLabel.toLowerCase()}`}
                 >
                     <X size={18} aria-hidden="true" />
                 </button>
 
                 <div className="flex items-center gap-3 pr-8">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-primary text-white shadow-sm">
                         <UserRound size={24} aria-hidden="true" />
                     </div>
                     <div className="min-w-0">
-                        <p className="truncate text-lg font-semibold">
+                        <p className="truncate text-lg font-semibold text-brand-text">
                             {profile.name}
                         </p>
-                        <p className="truncate text-xs text-slate-300">
-                            Predefined administrator
+                        <p className="truncate text-xs text-brand-muted">
+                            {profileDescription}
                         </p>
                     </div>
                 </div>
@@ -100,7 +102,7 @@ function AdminProfileCard({
                     type="button"
                     onClick={onLogout}
                     disabled={loggingOut}
-                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-brand-danger transition hover:border-red-300 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-danger focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-brand-border bg-brand-surface px-4 py-2.5 text-sm font-semibold text-brand-text transition hover:bg-red-50 hover:text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                     <LogOut size={18} aria-hidden="true" />
                     {loggingOut ? "Logging out…" : "Log out"}

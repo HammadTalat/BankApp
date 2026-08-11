@@ -33,7 +33,7 @@ function AdminSidebar({
     onClose,
 }) {
     const sidebarClasses = [
-        "fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col bg-brand-navy text-white shadow-xl",
+        "fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col border-r border-brand-border bg-brand-surface text-brand-text shadow-xl",
         "transition-transform duration-200 ease-out lg:w-64 lg:max-w-none lg:translate-x-0 lg:shadow-none",
         isOpen ? "translate-x-0" : "-translate-x-full",
     ].join(" ");
@@ -44,8 +44,8 @@ function AdminSidebar({
             aria-label="Admin navigation"
             className={sidebarClasses}
         >
-            <div className="flex min-h-20 items-center gap-3 border-b border-white/10 px-5">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-primary text-white shadow-sm">
+            <div className="flex min-h-24 items-center gap-3 border-b border-brand-border px-5">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-brand-primary text-white shadow-sm">
                     <Landmark
                         size={23}
                         aria-hidden="true"
@@ -53,10 +53,10 @@ function AdminSidebar({
                 </div>
 
                 <div className="min-w-0 flex-1">
-                    <p className="truncate text-lg font-bold">
-                        NexaBank
+                    <p lang="ur" dir="rtl" className="rm-urdu-brand text-lg font-bold text-brand-navy">
+                        ریڈ میتھ بینک
                     </p>
-                    <p className="text-xs font-medium text-slate-300">
+                    <p className="mt-0.5 text-xs font-medium text-brand-muted">
                         Admin Portal
                     </p>
                 </div>
@@ -64,7 +64,7 @@ function AdminSidebar({
                 <button
                     type="button"
                     aria-label="Close admin navigation"
-                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-300 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 lg:hidden"
+                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-brand-muted transition-colors hover:bg-red-50 hover:text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary lg:hidden"
                     onClick={onClose}
                 >
                     <X
@@ -86,10 +86,10 @@ function AdminSidebar({
                             onClick={onClose}
                             className={({ isActive }) => [
                                 "flex min-h-11 items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-colors",
-                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70",
+                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary",
                                 isActive
                                     ? "bg-brand-primary text-white shadow-sm"
-                                    : "text-slate-300 hover:bg-white/10 hover:text-white",
+                                    : "text-brand-muted hover:bg-red-50 hover:text-brand-primary",
                             ].join(" ")}
                         >
                             <Icon

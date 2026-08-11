@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { ROUTES } from "../../../routes/routePaths.js";
 import { httpClient } from "../../../api/httpClient.js";
+import { useAuth } from "../../auth/context/useAuth.js";
+import AccountHeader from "../../../shared/components/navigation/AccountHeader";
+import AccountSidebar from "../../../shared/components/navigation/AccountSidebar";
 
 const getStartOfMonth = () => {
     const now = new Date();
@@ -20,6 +23,7 @@ const getToday = () => {
 
 export const TransactionsPage = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
 
     // Default filters
     const [fromDate, setFromDate] = useState(getStartOfMonth);
@@ -128,66 +132,14 @@ export const TransactionsPage = () => {
     });
 
     return (
-        <div className="flex min-h-screen bg-[#F8FAFC]">
-            {/* Dark Blue Sidebar */}
-            <aside className="w-64 bg-[#0F2942] flex flex-col justify-between py-8 px-6 text-white shrink-0">
-                <div>
-                    <div className="mb-10">
-                        <h1 className="text-xl font-bold tracking-tight text-white">
-                            NexaBank
-                        </h1>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                            Personal Banking
-                        </p>
-                    </div>
+        <div className="flex min-h-screen bg-brand-background">
+            <AccountSidebar />
 
-                    <nav className="space-y-2">
-                        <Link
-                            to={ROUTES.ACCOUNT_HOME}
-                            className="flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                        >
-                            Dashboard
-                        </Link>
-                        <Link
-                            to={ROUTES.ACCOUNT_DEPOSIT}
-                            className="flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                        >
-                            Deposit Money
-                        </Link>
-                        <Link
-                            to={ROUTES.ACCOUNT_TRANSFERS}
-                            className="flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                        >
-                            Transfer Money
-                        </Link>
-                        <Link
-                            to={ROUTES.ACCOUNT_TRANSACTIONS}
-                            className="flex items-center px-4 py-3 text-sm font-semibold text-white bg-white/10 rounded-lg transition-colors"
-                        >
-                            Transactions
-                        </Link>
-                        <Link
-                            to={ROUTES.ACCOUNT_PROFILE}
-                            className="flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                        >
-                            Profile
-                        </Link>
-                    </nav>
-                </div>
-
-                <div>
-                    <button
-                        onClick={handleLogout}
-                        className="text-sm font-medium text-pink-300 hover:text-pink-200 transition-colors cursor-pointer"
-                    >
-                        Logout
-                    </button>
-                </div>
-            </aside>
-
-            {/* Main Content Area */}
-            <main className="flex-1 p-10 overflow-y-auto">
-                <div className="max-w-5xl">
+            <div className="flex min-w-0 flex-1 flex-col">
+                <AccountHeader accountProfile={user} onLogout={handleLogout} />
+                <main className="flex-1 overflow-y-auto px-6 py-6 sm:px-8 sm:py-8">
+                    <div className="mx-auto w-full max-w-[1600px]">
+                        <div className="w-full space-y-6">
                     <h2 className="text-3xl font-bold text-gray-900">
                         Transactions
                     </h2>
@@ -196,14 +148,14 @@ export const TransactionsPage = () => {
                     </p>
 
                     {/* Filter Control Panel */}
-                    <div className="mt-8 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-wrap items-center gap-4">
+                    <div className="rounded-xl border border-brand-border bg-brand-surface p-6 shadow-sm flex flex-wrap items-center gap-4">
                         <div>
                             <label className="text-xs text-gray-500 block mb-1 font-medium">From:</label>
                             <input
                                 type="date"
                                 value={fromDate}
                                 onChange={(e) => setFromDate(e.target.value)}
-                                className="border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-700 font-medium focus:outline-none focus:border-blue-500 bg-white"
+                                className="border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-700 font-medium focus:outline-none focus:border-brand-primary bg-white"
                             />
                         </div>
 
@@ -213,7 +165,7 @@ export const TransactionsPage = () => {
                                 type="date"
                                 value={toDate}
                                 onChange={(e) => setToDate(e.target.value)}
-                                className="border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-700 font-medium focus:outline-none focus:border-blue-500 bg-white"
+                                className="border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-700 font-medium focus:outline-none focus:border-brand-primary bg-white"
                             />
                         </div>
 
@@ -222,7 +174,7 @@ export const TransactionsPage = () => {
                             <select
                                 value={typeFilter}
                                 onChange={(e) => setTypeFilter(e.target.value)}
-                                className="border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-700 font-medium focus:outline-none focus:border-blue-500 bg-white"
+                                className="border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-700 font-medium focus:outline-none focus:border-brand-primary bg-white"
                             >
                                 <option value="ALL">All types</option>
                                 <option value="CREDIT">Credit</option>
@@ -233,7 +185,7 @@ export const TransactionsPage = () => {
                         <div className="flex items-center gap-3 mt-auto">
                             <button
                                 onClick={handleApplyFilters}
-                                className="bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-semibold px-6 py-2.5 rounded-xl transition-colors shadow-sm cursor-pointer"
+                                className="bg-brand-primary hover:bg-brand-primary-hover text-white text-xs font-semibold px-6 py-2.5 rounded-xl transition-colors shadow-sm cursor-pointer"
                             >
                                 Apply filters
                             </button>
@@ -254,7 +206,7 @@ export const TransactionsPage = () => {
                     )}
 
                     {/* Transactions List */}
-                    <div className="mt-8 bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+                    <div className="rounded-xl border border-brand-border bg-brand-surface p-8 shadow-sm">
                         <h3 className="text-lg font-bold text-gray-900 mb-6">
                             Transaction history
                         </h3>
@@ -338,8 +290,10 @@ export const TransactionsPage = () => {
                             </div>
                         )}
                     </div>
-                </div>
-            </main>
+                        </div>
+                    </div>
+                </main>
+            </div>
         </div>
     );
 };
