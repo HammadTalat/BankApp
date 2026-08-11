@@ -1,11 +1,8 @@
 package com.redmath.bankapp;
 
 import com.redmath.bankapp.account.entity.AccountStatus;
-import com.redmath.bankapp.tempconfig.security.UserPrincipal;
 import com.redmath.bankapp.transaction.dto.*;
 import com.redmath.bankapp.transaction.exception.BusinessRuleException;
-import com.redmath.bankapp.transaction.exception.GlobalExceptionHandler;
-import org.springframework.context.annotation.Import;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
@@ -30,7 +27,6 @@ import tools.jackson.databind.ObjectMapper;
 
 import javax.security.auth.login.AccountNotFoundException;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collections;
