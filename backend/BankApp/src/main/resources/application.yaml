@@ -63,3 +63,7 @@ management:
     export:
       otlp:
         enabled: false
+
+services:
+  anomaly-detection:
+    url: ${ANOMALY_DETECTION_URL:http://localhost:8080}
