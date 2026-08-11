@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { ROUTES } from "../../../routes/routePaths.js";
-import { httpClient } from "../../../api/httpClient.js";
-import { useAuth } from "../../auth/context/useAuth.js";
-import AccountHeader from "../../../shared/components/navigation/AccountHeader";
-import AccountSidebar from "../../../shared/components/navigation/AccountSidebar";
+import { ROUTES } from "../../../../routes/routePaths.js";
+import { httpClient } from "../../../../api/httpClient.js";
+import { useAuth } from "../../../auth/context/useAuth.js";
+import AccountHeader from "../../../../shared/components/navigation/AccountHeader.jsx";
+import AccountSidebar from "../../../../shared/components/navigation/AccountSidebar.jsx";
 
 export const DepositPage = () => {
     const { user, signOut, loading: authLoading } = useAuth();
