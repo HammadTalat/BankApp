@@ -4,7 +4,7 @@ import { ROUTES } from "../../../../routes/routePaths.js";
 import { useAuth } from "../../../auth/context/useAuth.js";
 import AccountHeader from "../../../../shared/components/navigation/AccountHeader.jsx";
 import AccountSidebar from "../../../../shared/components/navigation/AccountSidebar.jsx";
-import { dashboardService } from "../api/DashboardService.js";
+import { dashboardService } from "../api/dashboardService.js";
 
 export const DashboardPage = () => {
     const { user, signOut, loading: authLoading } = useAuth();
