@@ -141,8 +141,9 @@ export const TransactionsPage = () => {
                             {/* Filter Control Panel */}
                             <div className="rounded-xl border border-brand-border bg-brand-surface p-6 shadow-sm flex flex-wrap items-center gap-4">
                                 <div>
-                                    <label className="text-xs text-gray-500 block mb-1 font-medium">From:</label>
+                                    <label htmlFor="from-date" className="text-xs text-gray-500 block mb-1 font-medium">From:</label>
                                     <input
+                                        id="from-date"
                                         type="date"
                                         value={fromDate}
                                         onChange={(e) => setFromDate(e.target.value)}
@@ -151,8 +152,9 @@ export const TransactionsPage = () => {
                                 </div>
 
                                 <div>
-                                    <label className="text-xs text-gray-500 block mb-1 font-medium">To:</label>
+                                    <label htmlFor="to-date" className="text-xs text-gray-500 block mb-1 font-medium">To:</label>
                                     <input
+                                        id="to-date"
                                         type="date"
                                         value={toDate}
                                         onChange={(e) => setToDate(e.target.value)}
@@ -161,8 +163,9 @@ export const TransactionsPage = () => {
                                 </div>
 
                                 <div>
-                                    <label className="text-xs text-gray-500 block mb-1 font-medium">Type:</label>
+                                    <label htmlFor="type-filter" className="text-xs text-gray-500 block mb-1 font-medium">Type:</label>
                                     <select
+                                        id="type-filter"
                                         value={typeFilter}
                                         onChange={(e) => setTypeFilter(e.target.value)}
                                         className="border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-700 font-medium focus:outline-none focus:border-brand-primary bg-white"
