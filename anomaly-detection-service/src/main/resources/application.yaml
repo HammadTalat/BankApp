@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: TransactionVerification
+  ai:
+    openai:
+      chat:
+        base-url: https://api.groq.com/openai/v1
+        model: llama-3.3-70b-versatile
+      api-key: ${OPENAI_API_KEY}
