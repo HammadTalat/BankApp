@@ -40,10 +40,15 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [isInitializing, setIsInitializing] = useState(true);
 
-    const signOut = useCallback(async () => {
+    const signOut = useCallback(async (userEmail) => {
         try {
             await authApi.logout();
         } finally {
+            // Clear chat history for the user who is signing out.
+            if (userEmail) {
+                localStorage.removeItem(`ai-chat-history:${userEmail}`);
+            }
+            localStorage.removeItem("ACCESS_TOKEN");
             setUser(null);
         }
     }, []);
