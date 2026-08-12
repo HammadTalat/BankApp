@@ -6,6 +6,9 @@ import com.redmath.bankapp.account.entity.BalanceIndicator;
 import com.redmath.bankapp.account.entity.BankAccount;
 import com.redmath.bankapp.account.repository.AccountBalanceRepository;
 import com.redmath.bankapp.account.repository.BankAccountRepository;
+import com.redmath.bankapp.riskservice.dto.EvaluateRiskRequest;
+import com.redmath.bankapp.riskservice.dto.EvaluateRiskResponse;
+import com.redmath.bankapp.riskservice.service.RiskEvaluatorClient;
 import com.redmath.bankapp.tempconfig.security.UserPrincipal;
 import com.redmath.bankapp.transaction.dto.DepositRequest;
 import com.redmath.bankapp.transaction.dto.DepositResponse;
@@ -69,6 +72,9 @@ class TransactionServiceTest {
     @Mock
     private AccountTransactionRepository transactionRepository;
 
+    @Mock
+    private RiskEvaluatorClient riskEvaluatorClient;
+
     @InjectMocks
     private TransactionService transactionService;
 
@@ -84,7 +90,6 @@ class TransactionServiceTest {
     private BankAccount receiverAccount;
     private AccountBalance senderBalance;
     private AccountBalance receiverBalance;
-
     private static final String SENDER_ACC = "PK1000000001";
     private static final String RECEIVER_ACC = "PK2000000002";
     private static final Long USER_ID = 1L;
@@ -244,6 +249,10 @@ class TransactionServiceTest {
         void executeTransfer_ReceiverBalanceMissing_ProceedsSuccessfully() throws AccountNotFoundException {
             TransferRequest request = new TransferRequest(SENDER_ACC, RECEIVER_ACC, new BigDecimal("100.00"), "Transfer");
 
+            EvaluateRiskResponse riskResponse = new EvaluateRiskResponse(true, "Valid", "Valid");
+            given(transactionRepository.findTop20ByAccount_AccountNumberOrderByTransactionDateDesc(SENDER_ACC))
+                    .willReturn(List.of());
+            given(riskEvaluatorClient.evaluateTransactionRisk(any(EvaluateRiskRequest.class))).willReturn(riskResponse);
             given(accountRepository.findByIdForUpdate(SENDER_ACC)).willReturn(Optional.of(senderAccount));
             given(accountRepository.findByIdForUpdate(RECEIVER_ACC)).willReturn(Optional.of(receiverAccount));
             given(balanceRepository.findLatestBalanceForUpdate(SENDER_ACC)).willReturn(Optional.of(senderBalance));
@@ -291,10 +300,15 @@ class TransactionServiceTest {
             BigDecimal transferAmount = new BigDecimal("1000.00"); // Exact balance
             TransferRequest request = new TransferRequest(SENDER_ACC, RECEIVER_ACC, transferAmount, "Clear Account");
 
+            EvaluateRiskResponse riskResponse = new EvaluateRiskResponse(true, "Valid", "Valid");
+            given(transactionRepository.findTop20ByAccount_AccountNumberOrderByTransactionDateDesc(SENDER_ACC))
+                    .willReturn(List.of());
+            given(riskEvaluatorClient.evaluateTransactionRisk(any(EvaluateRiskRequest.class))).willReturn(riskResponse);
             given(accountRepository.findByIdForUpdate(SENDER_ACC)).willReturn(Optional.of(senderAccount));
             given(accountRepository.findByIdForUpdate(RECEIVER_ACC)).willReturn(Optional.of(receiverAccount));
             given(balanceRepository.findLatestBalanceForUpdate(SENDER_ACC)).willReturn(Optional.of(senderBalance));
             given(balanceRepository.findLatestBalanceForUpdate(RECEIVER_ACC)).willReturn(Optional.of(receiverBalance));
+
 
             TransferResponse response = transactionService.executeTransfer(jwt, request);
 
@@ -325,6 +339,10 @@ class TransactionServiceTest {
             String description = "Rent Payment";
             TransferRequest request = new TransferRequest(SENDER_ACC, RECEIVER_ACC, transferAmount, description);
 
+            EvaluateRiskResponse riskResponse = new EvaluateRiskResponse(true, "Valid", "Valid");
+            given(transactionRepository.findTop20ByAccount_AccountNumberOrderByTransactionDateDesc(SENDER_ACC))
+                    .willReturn(List.of());
+            given(riskEvaluatorClient.evaluateTransactionRisk(any(EvaluateRiskRequest.class))).willReturn(riskResponse);
             given(accountRepository.findByIdForUpdate(SENDER_ACC)).willReturn(Optional.of(senderAccount));
             given(accountRepository.findByIdForUpdate(RECEIVER_ACC)).willReturn(Optional.of(receiverAccount));
             given(balanceRepository.findLatestBalanceForUpdate(SENDER_ACC)).willReturn(Optional.of(senderBalance));

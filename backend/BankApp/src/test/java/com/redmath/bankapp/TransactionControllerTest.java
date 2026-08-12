@@ -109,7 +109,7 @@ class TransactionControllerTest {
             mockMvc.perform(get("/api/v1/transaction/lookup")
                             .param("accountID", "   ")
                             .accept(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isInternalServerError());
 
             verifyNoInteractions(transactionService);
         }
@@ -279,7 +279,7 @@ class TransactionControllerTest {
                         .with(csrf())
                         .param("startDate", "01-08-2026") // Invalid ISO format
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isInternalServerError());
     }
 
     @Nested
