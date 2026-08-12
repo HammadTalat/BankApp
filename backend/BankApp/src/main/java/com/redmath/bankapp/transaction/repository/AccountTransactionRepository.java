@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 @Repository
 public interface AccountTransactionRepository extends JpaRepository<AccountTransaction, Long> {
@@ -54,6 +55,7 @@ public interface AccountTransactionRepository extends JpaRepository<AccountTrans
             Pageable pageable
     );
 
+    List<AccountTransaction> findTop20ByAccount_AccountNumberOrderByTransactionDateDesc(String accountNumber);
     /**
      * Calculates a debit-only spending summary in the database for one account and date range.
      */

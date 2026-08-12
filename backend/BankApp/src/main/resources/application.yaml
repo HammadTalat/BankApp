@@ -35,6 +35,21 @@ spring:
   profiles:
     active:
       - dev
+  ai:
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY}
+        chat:
+          model: ${GEMINI_MODEL:gemini-flash-latest}
+        embedding:
+          api-key: ${GEMINI_API_KEY}
+          text:
+            model: ${GEMINI_EMBEDDING_MODEL:gemini-embedding-001}
+            dimensions: 768
+    vectorstore:
+      pgvector:
+        initialize-schema: true
+        dimensions: 768
 management:
   logging:
     export:
@@ -48,3 +63,7 @@ management:
     export:
       otlp:
         enabled: false
+
+services:
+  anomaly-detection:
+    url: ${ANOMALY_DETECTION_URL:http://localhost:8080}

@@ -17,6 +17,7 @@ export const ROUTES = {
     ACCOUNT_TRANSFERS: "/account/transfers",
     ACCOUNT_TRANSACTIONS: "/account/transactions",
     ACCOUNT_DEPOSIT: "/account/deposit",
+    ACCOUNT_CHATBOT: "/account/chatbot",
 };
 
 export function getAdminAccountDetailsPath(accountNumber) {

@@ -1,5 +1,6 @@
 import {
     ArrowLeftRight,
+    Bot,
     Building2,
     HandCoins,
     LayoutDashboard,
@@ -14,6 +15,7 @@ const navigationItems = [
     { label: "Deposit Money", path: ROUTES.ACCOUNT_DEPOSIT, icon: HandCoins },
     { label: "Transfer Money", path: ROUTES.ACCOUNT_TRANSFERS, icon: ArrowLeftRight },
     { label: "Transactions", path: ROUTES.ACCOUNT_TRANSACTIONS, icon: ReceiptText },
+    { label: "AI Assistant", path: ROUTES.ACCOUNT_CHATBOT, icon: Bot },
 ];
 
 function AccountSidebar() {

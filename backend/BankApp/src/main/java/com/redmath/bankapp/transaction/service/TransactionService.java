@@ -7,6 +7,10 @@ import com.redmath.bankapp.account.entity.BalanceIndicator;
 import com.redmath.bankapp.account.entity.BankAccount;
 import com.redmath.bankapp.account.repository.AccountBalanceRepository;
 import com.redmath.bankapp.account.repository.BankAccountRepository;
+import com.redmath.bankapp.riskservice.dto.EvaluateRiskRequest;
+import com.redmath.bankapp.riskservice.dto.EvaluateRiskResponse;
+import com.redmath.bankapp.riskservice.dto.TransactionDetail;
+import com.redmath.bankapp.riskservice.service.RiskEvaluatorClient;
 import com.redmath.bankapp.transaction.dto.AccountLookupResponse;
 import com.redmath.bankapp.transaction.dto.DepositRequest;
 import com.redmath.bankapp.transaction.dto.DepositResponse;
@@ -33,9 +37,11 @@ import org.springframework.security.oauth2.jwt.Jwt;
 
 import javax.security.auth.login.AccountNotFoundException;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -48,10 +54,13 @@ public class TransactionService {
 
     private final AccountTransactionRepository transactionRepository;
 
-    public TransactionService(BankAccountRepository accountRepository, AccountTransactionRepository transactionRepository, AccountBalanceRepository balanceRepository) {
+    private final RiskEvaluatorClient riskEvaluatorClient;
+
+    public TransactionService(BankAccountRepository accountRepository, AccountTransactionRepository transactionRepository, AccountBalanceRepository balanceRepository, RiskEvaluatorClient riskEvaluatorClient) {
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
         this.balanceRepository = balanceRepository;
+        this.riskEvaluatorClient = riskEvaluatorClient;
     }
 
 
@@ -69,7 +78,7 @@ public class TransactionService {
     public TransferResponse executeTransfer(Jwt jwt, TransferRequest request) throws AccountNotFoundException {
         log.info("Processing transfer of {} from {} to {}",
                 request.amount(), request.senderAccountNumber(), request.receiverAccountNumber());
-
+        // Validate non negative transfer
         if (request.amount() == null || request.amount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessRuleException("Transfer amount must be greater than zero");
         }
@@ -107,6 +116,12 @@ public class TransactionService {
         if (currentSenderAmount.compareTo(request.amount()) < 0) {
             log.warn("Transfer failed: Insufficient funds in account {}", senderAccount.getAccountNumber());
             throw new InsufficientBalanceException("Insufficient balance to perform this transfer");
+        }
+
+        // Detect Anomaly
+        boolean isAnomalous = detectAnomaly(senderAccount, request);
+        if (isAnomalous) {
+            throw new IllegalStateException("Transaction blocked: High risk/anomalous pattern detected.");
         }
 
         // 6. Lock and fetch Receiver Balance
@@ -287,6 +302,32 @@ public class TransactionService {
                     userId, account.getAccountNumber());
             throw new UnauthorizedAccessException("You are not authorized to execute transactions for this account");
         }
+    }
+    private boolean detectAnomaly(BankAccount senderAccount, TransferRequest request) {
+
+        // 1. Fetch historical transactions using the entity property 'account.accountNumber'
+        List<TransactionDetail> history = transactionRepository
+                .findTop20ByAccount_AccountNumberOrderByTransactionDateDesc(senderAccount.getAccountNumber())
+                .stream()
+                .map(tx -> new TransactionDetail(
+                        tx.getOperationId() != null ? tx.getOperationId() : tx.getId().toString(),
+                        tx.getAmount().doubleValue(),
+                        tx.getTransactionDate().toString()
+                ))
+                .toList();
+
+        // 2. Prepare current transaction detail from request
+        TransactionDetail currentTx = new TransactionDetail(
+                "TX-" + System.currentTimeMillis(),
+                request.amount().doubleValue(),
+                Instant.now().toString()
+        );
+
+        // 3. Call the Risk Evaluator Microservice
+        EvaluateRiskRequest riskRequest = new EvaluateRiskRequest(currentTx, history);
+        EvaluateRiskResponse riskResponse = riskEvaluatorClient.evaluateTransactionRisk(riskRequest);
+
+        return !riskResponse.allowed();
     }
 
     private Long extractUserId(Jwt jwt) {
