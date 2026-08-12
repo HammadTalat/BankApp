@@ -1,6 +1,7 @@
 package com.redmath.bankapp.transaction.repository;
 
 import com.redmath.bankapp.transaction.entity.AccountTransaction;
+import com.redmath.bankapp.transaction.enums.TransactionIndicator;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -54,4 +55,20 @@ public interface AccountTransactionRepository extends JpaRepository<AccountTrans
     );
 
     List<AccountTransaction> findTop20ByAccount_AccountNumberOrderByTransactionDateDesc(String accountNumber);
+    /**
+     * Calculates a debit-only spending summary in the database for one account and date range.
+     */
+    @Query("SELECT new com.redmath.bankapp.transaction.repository.SpendingAggregate(" +
+            "SUM(t.amount), COUNT(t), MAX(t.amount)) " +
+            "FROM AccountTransaction t " +
+            "WHERE t.account.accountNumber = :accountNumber " +
+            "AND t.indicator = :indicator " +
+            "AND t.transactionDate BETWEEN :startDate AND :endDate")
+    SpendingAggregate summarizeTransactionsByIndicatorAndDateRange(
+            @Param("accountNumber") String accountNumber,
+            @Param("indicator") TransactionIndicator indicator,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
+
 }

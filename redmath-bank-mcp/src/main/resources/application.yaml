@@ -1,0 +1,44 @@
+server:
+  port: ${MCP_SERVER_PORT:8082}
+  address: ${MCP_SERVER_ADDRESS:127.0.0.1}
+
+
+spring:
+  application:
+    name: redmath-bank-mcp
+
+  ai:
+    mcp:
+      server:
+        name: redmath-bank-mcp
+        version: 1.0.0
+
+        protocol: STREAMABLE
+        type: SYNC
+
+        instructions: >
+          RedMath Bank MCP Server exposing approved
+          banking capabilities through MCP tools.
+
+        capabilities:
+          tool: true
+          resource: false
+          prompt: false
+          completion: false
+
+        streamable-http:
+          mcp-endpoint: /mcp
+
+
+bank:
+  api:
+    base-url: ${BANK_API_BASE_URL:http://localhost:8081}
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info

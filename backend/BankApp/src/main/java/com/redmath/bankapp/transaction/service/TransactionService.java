@@ -14,6 +14,7 @@ import com.redmath.bankapp.riskservice.service.RiskEvaluatorClient;
 import com.redmath.bankapp.transaction.dto.AccountLookupResponse;
 import com.redmath.bankapp.transaction.dto.DepositRequest;
 import com.redmath.bankapp.transaction.dto.DepositResponse;
+import com.redmath.bankapp.transaction.dto.SpendingSummaryResponse;
 import com.redmath.bankapp.transaction.dto.TransactionResponse;
 import com.redmath.bankapp.transaction.dto.TransferRequest;
 import com.redmath.bankapp.transaction.dto.TransferResponse;
@@ -25,6 +26,7 @@ import com.redmath.bankapp.transaction.entity.AccountTransaction;
 import com.redmath.bankapp.transaction.enums.OperationStatus;
 import com.redmath.bankapp.transaction.enums.TransactionIndicator;
 import com.redmath.bankapp.transaction.repository.AccountTransactionRepository;
+import com.redmath.bankapp.transaction.repository.SpendingAggregate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -259,6 +261,38 @@ public class TransactionService {
         Page<TransactionResponse> dtoPage = transactionsPage.map(TransactionResponse::fromEntity);
 
         return UserTransactionsResponse.fromPage(dtoPage);
+    }
+
+    @Transactional(readOnly = true)
+    public SpendingSummaryResponse getSpendingSummary(
+            Jwt jwt,
+            LocalDate startDate,
+            LocalDate endDate
+    ) throws AccountNotFoundException {
+        LocalDate effectiveEndDate = endDate != null ? endDate : LocalDate.now();
+        LocalDate effectiveStartDate = startDate != null ? startDate : effectiveEndDate.withDayOfMonth(1);
+
+        if (effectiveStartDate.isAfter(effectiveEndDate)) {
+            throw new BusinessRuleException("startDate must be on or before endDate");
+        }
+
+        BankAccount account = accountRepository.findByUser_Id(extractUserId(jwt))
+                .orElseThrow(() -> new AccountNotFoundException("No account linked to the current user"));
+
+        SpendingAggregate aggregate = transactionRepository.summarizeTransactionsByIndicatorAndDateRange(
+                account.getAccountNumber(),
+                TransactionIndicator.DEBIT,
+                effectiveStartDate.atStartOfDay(),
+                effectiveEndDate.atTime(LocalTime.MAX)
+        );
+
+        return new SpendingSummaryResponse(
+                effectiveStartDate,
+                effectiveEndDate,
+                aggregate.totalSpent() == null ? BigDecimal.ZERO : aggregate.totalSpent(),
+                aggregate.transactionCount(),
+                aggregate.largestExpense() == null ? BigDecimal.ZERO : aggregate.largestExpense()
+        );
     }
 
 

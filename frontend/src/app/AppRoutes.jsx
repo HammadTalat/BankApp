@@ -22,6 +22,7 @@ import { ROUTES } from "../routes/routePaths";
 import ComponentShowcasePage from "./ComponentShowcasePage";
 import HomePage from "./HomePage";
 import DepositPage from "../features/account/deposit/pages/DepositPage.jsx"
+import ChatbotPage from "../features/account/chatbot/pages/ChatbotPage.jsx"
 
 
 function AppRoutes() {
@@ -94,6 +95,11 @@ function AppRoutes() {
                 <Route
                     path={ROUTES.ACCOUNT_DEPOSIT}
                     element={<DepositPage />}
+                />
+
+                <Route
+                    path={ROUTES.ACCOUNT_CHATBOT}
+                    element={<ChatbotPage />}
                 />
 
             </Route>

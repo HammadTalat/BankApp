@@ -1,0 +1,492 @@
+RedMath Bank - Official Policies, Procedures, and Frequently Asked Questions
+Version: 1.0
+Last Updated: August 2026
+Classification: Internal Use / Customer-Facing
+
+================================================================================
+SECTION 1: ACCOUNT OPENING AND MANAGEMENT
+================================================================================
+
+1.1 ELIGIBILITY
+- Minimum age: 18 years
+- Valid government-issued ID required
+- Proof of address (utility bill, bank statement, or government letter)
+- Social Security Number (SSN) or Tax Identification Number (TIN)
+- Must not be on any sanctions list
+
+1.2 ACCOUNT TYPES
+Standard Account:
+- Default account for all new customers
+- No minimum balance requirement
+- No monthly maintenance fee
+- Earns 1.5% annual interest on balances over $1,000
+- Free domestic transfers
+- $5 international wire transfer fee
+
+Premium Account:
+- Requires minimum balance of $10,000
+- $25 monthly maintenance fee (waived if balance > $25,000)
+- Earns 4.5% annual interest
+- Unlimited free domestic transfers
+- Free international wire transfers
+- Dedicated customer support line
+- Priority transaction processing
+
+Student Account:
+- Available for customers aged 18-24
+- No minimum balance
+- No monthly fee
+- Earns 2.0% annual interest
+- Limited to 5 free withdrawals per month
+- $2 fee for additional withdrawals
+
+1.3 DOCUMENT REQUIREMENTS FOR KYC (KNOW YOUR CUSTOMER)
+Primary Identification (one required):
+- Passport (valid, not expired)
+- State-issued driver's license
+- National ID card
+- Military ID
+
+Proof of Address (one required, issued within last 60 days):
+- Utility bill (electricity, water, gas, internet)
+- Bank statement showing name and address
+- Mortgage statement
+- Lease agreement
+- Property tax bill
+
+Additional Verification (if required):
+- Social Security card or Tax ID documentation
+- Employment verification letter
+- Source of funds declaration for large deposits (>$10,000)
+
+1.4 ACCOUNT APPROVAL PROCESS
+- All new accounts require manual admin approval
+- Standard processing time: 1-2 business days
+- You will receive email notification at each stage:
+  * "Application Received" - immediately after signup
+  * "Under Review" - when admin begins review
+  * "Approved" or "Rejected" - final decision
+- Pending accounts have limited access (see Section 1.5)
+- If rejected, you may reapply with corrected information
+- Rejection reasons: incomplete documents, verification failure, sanctions list match
+
+1.5 ACCOUNT STATUS AND ACCESS LEVELS
+PENDING STATUS:
+- Can view balance and account details
+- Can view transaction history
+- CANNOT make transfers or deposits
+- CANNOT access admin features
+- Cannot update profile until approved
+
+APPROVED STATUS:
+- Full access to all features
+- Can make transfers and deposits
+- Can update profile information
+- Can access all pages and features
+
+REJECTED STATUS:
+- Cannot access banking features
+- Must reapply with corrected information
+- Cannot create new account with same email for 30 days
+
+1.6 PROFILE COMPLETION
+- Required after first login (especially for Google OAuth users)
+- Required information: full address
+- Optional: phone number, date of birth
+- Profile must be complete before transfers/deposits are enabled
+- Admin reviews address for accuracy
+- Updates to address require re-approval
+
+================================================================================
+SECTION 2: TRANSACTIONS - TRANSFERS
+================================================================================
+
+2.1 HOW TO MAKE A TRANSFER
+1. Navigate to the Transfers page
+2. Enter the recipient's account number
+3. Enter the transfer amount
+4. Add an optional description
+5. Review and confirm
+6. Enter your password or 2FA code if prompted
+7. Wait for confirmation
+
+2.2 TRANSFER RULES
+- Cannot transfer to your own account
+- Account must be ACTIVE status
+- Sufficient balance required
+- Transfers are final and cannot be cancelled once completed
+- Minimum transfer amount: $1.00
+- Maximum single transfer amount: $5,000 (Standard), $15,000 (Premium)
+
+2.3 TRANSFER LIMITS
+Standard Account Holder:
+- Daily limit: $10,000
+- Monthly limit: $50,000
+- Single transaction limit: $5,000
+- Maximum 10 transfers per day
+
+Premium Account Holder:
+- Daily limit: $25,000
+- Monthly limit: $250,000
+- Single transaction limit: $15,000
+- Unlimited transfers per day
+
+Admin Account:
+- Daily limit: $50,000
+- Monthly limit: $500,000
+- Single transaction limit: $25,000
+- Unlimited transfers per day
+
+2.4 TRANSFER FEES
+Domestic Transfers:
+- Standard to Standard: Free
+- Premium to Premium: Free
+- Standard to Premium: Free
+- All domestic transfers: No fee
+
+International Transfers:
+- Standard speed (3-5 business days): $15 fee
+- Express speed (1-2 business days): $35 fee
+- Currency conversion fee: 1% of amount
+- Minimum international transfer: $100
+
+2.5 FAILED TRANSFER REASONS
+Common reasons for transfer failure:
+1. Insufficient balance
+2. Daily or monthly limit exceeded
+3. Account not ACTIVE
+4. Recipient account not found
+5. Transfer to self
+6. Amount below minimum ($1.00)
+7. Amount above maximum or limit
+8. System maintenance window
+
+2.6 TRANSFER PROCESSING TIMES
+- Domestic transfers: Instant to 1 business day
+- International transfers: 1-5 business days depending on speed
+- Transfers initiated after 5 PM EST: Processed next business day
+- Weekend transfers: Processed next business day
+
+================================================================================
+SECTION 3: TRANSACTIONS - DEPOSITS
+================================================================================
+
+3.1 HOW TO MAKE A DEPOSIT
+1. Navigate to the Deposit page
+2. Select deposit method (Cash, Check, Wire)
+3. Enter amount
+4. Add optional description
+5. Confirm
+
+3.2 DEPOSIT METHODS
+Cash Deposit:
+- Available immediately
+- No limit on amount
+- Can be made at any partner ATM or branch
+
+Check Deposit:
+- Funds availability: 2-3 business days
+- First $5,000 available next business day
+- Amount over $5,000 held for 7 business days
+- Maximum check deposit: $10,000 per check
+- Must be endorsed by account holder
+
+Wire Transfer Deposit:
+- Funds availability: Same business day (if received before 3 PM EST)
+- No limit on amount
+- Sender pays outgoing wire fee
+- Incoming wires: $10 fee for amounts under $10,000, free for $10,000+
+- Requires sender to have your account number and bank routing number
+
+3.3 DEPOSIT RULES
+- Account must be ACTIVE
+- Pending accounts CANNOT make deposits
+- Deposits must be in USD
+- Third-party checks not accepted
+- Post-dated checks not accepted
+- Deposits over $10,000 require additional verification
+
+================================================================================
+SECTION 4: ACCOUNT BALANCE AND TRANSACTION HISTORY
+================================================================================
+
+4.1 VIEWING BALANCE
+- Dashboard shows current balance in real-time
+- Balance updates immediately after transactions
+- Click balance for detailed breakdown:
+  * Available balance
+  * Pending deposits
+  * Pending withdrawals
+  * Held funds
+
+4.2 VIEWING TRANSACTIONS
+- Navigate to Transactions page
+- See all transactions in reverse chronological order
+- Filter by date range (last 7 days, 30 days, 90 days, custom)
+- Search by keyword in description
+- Export to CSV (last 500 transactions)
+
+4.3 TRANSACTION RECORDS
+Each transaction record includes:
+- Transaction ID (unique identifier)
+- Date and time
+- Description (user-provided or system-generated)
+- Amount
+- Type: CREDIT (money in) or DEBIT (money out)
+- Balance after transaction
+- Operation ID (groups related transfers)
+
+4.4 TRANSACTION STATUSES
+COMPLETED:
+- Transaction fully processed
+- Balance updated
+- Cannot be reversed
+
+PENDING:
+- Transaction initiated but not yet settled
+- Balance may not yet reflect transaction
+- Typically resolves within 1 business day
+
+FAILED:
+- Transaction could not be completed
+- Common reasons: insufficient funds, limit exceeded, account inactive
+- Balance not affected
+
+================================================================================
+SECTION 5: SECURITY AND FRAUD PREVENTION
+================================================================================
+
+5.1 ACCOUNT SECURITY BEST PRACTICES
+- Never share your password with anyone
+- Never share your OTP (One-Time Password)
+- Use strong, unique passwords
+- Enable two-factor authentication (2FA) when available
+- Log out after using shared or public devices
+- Monitor your account regularly
+- Review transaction history weekly
+- Report suspicious activity immediately
+
+5.2 SUSPICIOUS ACTIVITY MONITORING
+- System monitors for unusual patterns 24/7
+- Alerts triggered for:
+  * Transactions over $1,000
+  * Multiple failed login attempts
+  * Login from new device or location
+  * Rapid sequence of transactions
+- You will be notified via SMS and email
+- Temporary card freeze may be applied automatically
+- You can review and approve/decline flagged transactions
+
+5.3 WHAT TO DO IF YOU SUSPECT FRAUD
+1. Immediately note the suspicious transaction details
+2. Contact customer support: 1-800-REDMATH (option 2 for fraud)
+3. Request immediate account freeze
+4. Review all recent transactions
+5. File a dispute for unauthorized transactions
+6. Change your password immediately
+7. Enable 2FA if not already enabled
+
+5.4 PHISHING AWARENESS
+RedMath Bank will NEVER:
+- Ask for your password or OTP via email or phone
+- Send links to login pages (always use our official app or website)
+- Ask for your full credit card number via email
+- Demand immediate action under threat of account closure
+
+If you receive a suspicious message:
+1. Do not click any links
+2. Do not reply with personal information
+3. Forward the message to phishing@redmath.com
+4. Delete the message
+5. Call us directly to verify: 1-800-REDMATH
+
+5.5 PASSWORD REQUIREMENTS
+- Minimum 8 characters
+- Must include at least one uppercase letter
+- Must include at least one lowercase letter
+- Must include at least one number
+- Must include at least one special character (!@#$%^&*)
+- Cannot reuse last 5 passwords
+- Cannot contain your email or name
+- Expires every 90 days
+- Account locks after 5 failed login attempts (unlocks after 30 minutes)
+
+================================================================================
+SECTION 6: SUPPORT AND CONTACT INFORMATION
+================================================================================
+
+6.1 CUSTOMER SUPPORT
+Phone: 1-800-REDMATH (1-800-733-6284)
+Email: support@redmath.com
+Online Chat: Available in mobile app during business hours
+Hours: Monday - Friday, 9:00 AM - 5:00 PM EST
+Weekend Hours: Saturday 10:00 AM - 2:00 PM EST (phone only)
+
+6.2 EMERGENCY SERVICES (24/7)
+Lost or Stolen Card: 1-800-REDMATH (Press 1)
+Fraud Reporting: 1-800-REDMATH (Press 2)
+Wire Transfer Issues: 1-800-REDMATH (Press 3)
+After-Hours Emergency: 1-800-REDMATH (Press 0 for operator)
+
+6.3 ESCALATION PATH
+Level 1 - Customer Support:
+- General inquiries
+- Account questions
+- Transaction disputes
+- Response time: 4 hours
+
+Level 2 - Senior Support:
+- Complex account issues
+- Large transaction investigations
+- Escalated disputes
+- Response time: 24 hours
+
+Level 3 - Manager:
+- Unresolved issues from Level 2
+- Service complaints
+- Compensation requests
+- Response time: 48 hours
+
+Executive Escalation:
+- Email: executive@redmath.com
+- For critical unresolved issues only
+- Response time: 5 business days
+
+6.4 BEFORE CONTACTING SUPPORT
+Please have ready:
+- Your account number
+- The email address on your account
+- Details of the issue (date, time, amount, description)
+- Any error messages received
+- Relevant transaction IDs
+
+================================================================================
+SECTION 7: TECHNICAL SUPPORT AND TROUBLESHOOTING
+================================================================================
+
+7.1 LOGIN ISSUES
+Cannot log in:
+- Verify email and password are correct
+- Check Caps Lock is off
+- Clear browser cache and cookies
+- Try incognito/private mode
+- Ensure JavaScript is enabled
+
+Forgot password:
+- Click "Forgot password" on login page
+- Enter your registered email
+- Check spam folder for reset email
+- Reset link expires in 1 hour
+
+Account locked:
+- Occurs after 5 failed login attempts
+- Locks for 30 minutes
+- Contact support if you need immediate access
+
+7.2 BROWSER REQUIREMENTS
+Supported browsers:
+- Chrome (version 90+)
+- Firefox (version 88+)
+- Safari (version 14+)
+- Edge (version 90+)
+
+Required settings:
+- JavaScript enabled
+- Cookies enabled
+- Local storage enabled
+- Pop-ups allowed for redmath.com
+
+7.3 MOBILE APP REQUIREMENTS
+iOS:
+- Version 15.0 or later
+- iPhone 8 or newer
+
+Android:
+- Version 10.0 or later
+- 2GB RAM minimum
+
+================================================================================
+SECTION 8: LEGAL AND COMPLIANCE
+================================================================================
+
+8.1 TERMS OF SERVICE SUMMARY
+- You must be 18+ to use our services
+- You are responsible for all activity on your account
+- You must provide accurate information
+- You must notify us of unauthorized transactions within 60 days
+- We reserve the right to suspend accounts for suspicious activity
+- All transactions are subject to our fraud monitoring
+
+8.2 PRIVACY POLICY SUMMARY
+- We collect only necessary information for banking services
+- We do not sell your personal information
+- We use encryption for all sensitive data
+- Transaction history is retained for 7 years (regulatory requirement)
+- You may request your data at any time
+
+8.3 FDIC INSURANCE
+- Deposits are insured up to $250,000 per depositor
+- Insurance covers checking, savings, and CD accounts
+- Does not cover investment products
+- Administered by the Federal Deposit Insurance Corporation
+
+================================================================================
+SECTION 9: FEES AND CHARGES
+================================================================================
+
+9.1 ACCOUNT FEES
+Standard Account: $0 monthly maintenance
+Premium Account: $25 monthly (waived with $25,000+ balance)
+Student Account: $0 monthly maintenance
+Account Closure (within 90 days of opening): $25
+Account Closure (after 90 days): $0
+
+9.2 TRANSACTION FEES
+Domestic Transfer: Free
+International Wire (standard): $15
+International Wire (express): $35
+Incoming Wire (under $10,000): $10
+Incoming Wire ($10,000+): Free
+Currency Conversion: 1% of amount
+Overdraft Fee: $35 per occurrence
+Excessive Withdrawal Fee: $2 per withdrawal after 5 free withdrawals
+
+9.3 REPLACEMENT CARD FEES
+Standard Replacement (7-10 business days): $10
+Express Replacement (2-3 business days): $25
+Emergency Replacement (same day): $50
+
+================================================================================
+SECTION 10: IMPORTANT DISCLOSURES
+================================================================================
+
+10.1 DEPOSIT INSURANCE
+Your deposits are protected by FDIC insurance up to the legal maximum.
+This means if something happens to the bank, your money is safe up to $250,000.
+
+10.2 ELECTRONIC FUNDS TRANSFER
+- You have the right to dispute errors in your account
+- Notify us within 60 days of statement date
+- We will investigate within 10 business days
+- Provisional credit may be issued while investigating
+
+10.3 PRIVACY
+- We do not share your information with non-affiliated third parties for marketing
+- We may share information as required by law (court orders, subpoenas)
+- You can opt out of affiliate sharing by contacting support
+
+10.4 ACCOUNT CLOSURE
+- Contact support to close your account
+- Remaining balance will be sent via check
+- Account closure takes 10-15 business days
+- Cannot reopen closed account within 30 days
+
+================================================================================
+END OF DOCUMENT
+================================================================================
+For questions not answered in this document, please contact:
+RedMath Bank Customer Support
+Phone: 1-800-REDMATH
+Email: support@redmath.com
+Hours: Monday-Friday, 9AM-5PM EST
+================================================================================

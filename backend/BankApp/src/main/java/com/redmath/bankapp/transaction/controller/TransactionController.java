@@ -3,6 +3,7 @@ package com.redmath.bankapp.transaction.controller;
 import com.redmath.bankapp.transaction.dto.AccountLookupResponse;
 import com.redmath.bankapp.transaction.dto.DepositRequest;
 import com.redmath.bankapp.transaction.dto.DepositResponse;
+import com.redmath.bankapp.transaction.dto.SpendingSummaryResponse;
 import com.redmath.bankapp.transaction.dto.TransferRequest;
 import com.redmath.bankapp.transaction.dto.TransferResponse;
 import com.redmath.bankapp.transaction.dto.UserTransactionsResponse;
@@ -61,6 +62,17 @@ public class TransactionController {
                                                                         @PageableDefault(page = 0, size = 10) Pageable pageable) throws AccountNotFoundException {
       UserTransactionsResponse response = transactionService.getUserTransactions(jwt, startDate, endDate, pageable);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/spending-summary")
+    public ResponseEntity<SpendingSummaryResponse> getSpendingSummary(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam(value = "startDate", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(value = "endDate", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+    ) throws AccountNotFoundException {
+        return ResponseEntity.ok(transactionService.getSpendingSummary(jwt, startDate, endDate));
     }
 
 }
