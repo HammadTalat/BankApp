@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Bot, Send } from "lucide-react";
-import { useNavigate } from "react-router";
 
 import AccountHeader from "../../../../shared/components/navigation/AccountHeader.jsx";
 import AccountSidebar from "../../../../shared/components/navigation/AccountSidebar.jsx";
-import { ROUTES } from "../../../../routes/routePaths.js";
 import { useAuth } from "../../../auth/context/useAuth.js";
 import { chatService } from "../api/chatService.js";
 
@@ -15,8 +13,40 @@ const INITIAL_MESSAGE = {
         "Hello! I am RedMath Bank's AI assistant. Ask me about your account balance, "
         + "recent transactions, or bank policies and fees.",
 };
+const MAX_STORED_MESSAGES = 150;
+
+function getStorageKey(userEmail) {
+    return `ai-chat-history:${userEmail}`;
+}
+
+function loadMessages(storageKey) {
+    try {
+        const saved = localStorage.getItem(storageKey);
+        if (!saved) return null;
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch {
+        // fall through
+    }
+    return null;
+}
+
+function saveMessages(storageKey, messages) {
+    // Never persist in-flight empty assistant placeholders.
+    const toSave = messages.filter((m) => m.content && m.content.trim());
+    try {
+        localStorage.setItem(storageKey, JSON.stringify(toSave.slice(-MAX_STORED_MESSAGES)));
+    } catch {
+        // Ignore storage failures; chat continues working in-memory.
+    }
+}
 
 function ChatMessage({ message }) {
+    // Do not render anything while an assistant message is still loading.
+    if (!message.content || !message.content.trim()) {
+        return null;
+    }
+
     const isUser = message.role === "user";
 
     return (
@@ -42,27 +72,46 @@ function ChatMessage({ message }) {
 }
 
 export function ChatbotPage() {
-    const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, signOut } = useAuth();
     const messagesEndRef = useRef(null);
+
+    // Tracks whether we have loaded from localStorage for the current user.
+    const loadedForRef = useRef(null);
 
     const [messages, setMessages] = useState([INITIAL_MESSAGE]);
     const [input, setInput] = useState("");
     const [isSending, setIsSending] = useState(false);
     const [error, setError] = useState("");
 
+    // Load history once per user email (not on every render).
+    useEffect(() => {
+        if (!user?.email) return;
+        if (loadedForRef.current === user.email) return;
+
+        loadedForRef.current = user.email;
+        const restored = loadMessages(getStorageKey(user.email));
+        setMessages(restored ?? [INITIAL_MESSAGE]);
+    }, [user?.email]);
+
+    // Save history whenever messages change, but only after initial load.
+    useEffect(() => {
+        if (!user?.email) return;
+        if (loadedForRef.current !== user.email) return;
+
+        saveMessages(getStorageKey(user.email), messages);
+    }, [messages, user?.email]);
+
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, isSending]);
 
-    const handleLogout = async () => {
-        try {
-            await chatService.logout();
-        } catch {
-            // Proceed with client cleanup regardless of server response
-        } finally {
-            localStorage.removeItem("ACCESS_TOKEN");
-            navigate(ROUTES.HOME);
+    const handleLogout = () => signOut(user?.email);
+
+    const handleClearConversation = () => {
+        setMessages([INITIAL_MESSAGE]);
+        setError("");
+        if (user?.email) {
+            localStorage.removeItem(getStorageKey(user.email));
         }
     };
 
@@ -70,9 +119,7 @@ export function ChatbotPage() {
         event.preventDefault();
 
         const trimmedMessage = input.trim();
-        if (!trimmedMessage || isSending) {
-            return;
-        }
+        if (!trimmedMessage || isSending) return;
 
         const userMessage = {
             id: `user-${Date.now()}`,
@@ -80,20 +127,31 @@ export function ChatbotPage() {
             content: trimmedMessage,
         };
 
-        setMessages((current) => [...current, userMessage]);
+        // Append user message and an empty placeholder for the assistant.
+        const assistantMessageId = `assistant-${Date.now()}`;
+        setMessages((current) => [
+            ...current,
+            userMessage,
+            { id: assistantMessageId, role: "assistant", content: "" },
+        ]);
         setInput("");
         setError("");
         setIsSending(true);
 
         try {
             const data = await chatService.sendMessage(trimmedMessage);
-            const assistantMessage = {
-                id: `assistant-${Date.now()}`,
-                role: "assistant",
-                content: data?.response || "I could not generate a response. Please try again.",
-            };
-            setMessages((current) => [...current, assistantMessage]);
+            setMessages((current) => current.map((message) => (
+                message.id === assistantMessageId
+                    ? {
+                        ...message,
+                        content: data?.response?.trim()
+                            || "I could not generate a response. Please try again.",
+                    }
+                    : message
+            )));
         } catch (err) {
+            // Remove the empty placeholder so no empty bubble lingers.
+            setMessages((current) => current.filter((message) => message.id !== assistantMessageId));
             setError(err.message || "Failed to send your message. Please try again.");
         } finally {
             setIsSending(false);
@@ -109,11 +167,21 @@ export function ChatbotPage() {
 
                 <main className="flex flex-1 flex-col overflow-hidden px-6 py-6 sm:px-8 sm:py-8">
                     <div className="mx-auto flex h-full w-full max-w-[1200px] flex-col">
-                        <div className="mb-6">
-                            <h2 className="text-3xl font-bold text-gray-900">AI Assistant</h2>
-                            <p className="mt-1 text-sm text-gray-500">
-                                Ask about your account, transactions, or RedMath Bank policies.
-                            </p>
+                        <div className="mb-6 flex items-start justify-between gap-4">
+                            <div>
+                                <h2 className="text-3xl font-bold text-gray-900">AI Assistant</h2>
+                                <p className="mt-1 text-sm text-gray-500">
+                                    Ask about your account, transactions, or RedMath Bank policies.
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleClearConversation}
+                                disabled={isSending}
+                                className="bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold text-sm px-8 py-3 rounded-xl transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+                            >
+                                Clear conversation
+                            </button>
                         </div>
 
                         {error && (
