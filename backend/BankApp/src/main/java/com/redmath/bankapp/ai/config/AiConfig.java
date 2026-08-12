@@ -1,11 +1,11 @@
 package com.redmath.bankapp.ai.config;
 
-import com.redmath.bankapp.ai.tools.BankingTools;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
+import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -14,6 +14,11 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class AiConfig {
+  private final ToolCallbackProvider mcpTools;
+
+  public AiConfig(ToolCallbackProvider mcpTools) {
+    this.mcpTools = mcpTools;
+  }
 
   @Bean
   public ChatMemory chatMemory() {
@@ -37,8 +42,7 @@ public class AiConfig {
   public ChatClient chatClient(
       ChatClient.Builder builder,
       ChatMemory chatMemory,
-      VectorStore vectorStore,
-      BankingTools bankingTools) {
+      VectorStore vectorStore) {
 
     return builder
         .defaultSystem("""
@@ -52,7 +56,7 @@ public class AiConfig {
         .defaultAdvisors(
             MessageChatMemoryAdvisor.builder(chatMemory).build(),
             QuestionAnswerAdvisor.builder(vectorStore).build())
-        .defaultTools(bankingTools)
+        .defaultTools(mcpTools)
         .build();
   }
 }

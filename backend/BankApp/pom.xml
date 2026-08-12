@@ -66,6 +66,7 @@
       <artifactId>postgresql</artifactId>
     </dependency>
 
+
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
@@ -181,6 +182,12 @@
       <groupId>org.springframework.ai</groupId>
       <artifactId>spring-ai-vector-store-advisor</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.springframework.ai</groupId>
+      <artifactId>spring-ai-starter-mcp-client</artifactId>
+    </dependency>
+
+
     </dependencies>
   <build>
     <plugins>
