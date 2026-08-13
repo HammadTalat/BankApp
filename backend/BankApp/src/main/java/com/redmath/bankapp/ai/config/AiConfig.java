@@ -10,16 +10,17 @@ import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class AiConfig {
-  private final ToolCallbackProvider mcpTools;
+  private final ObjectProvider<ToolCallbackProvider> mcpToolsProvider;
 
-  public AiConfig(ToolCallbackProvider mcpTools) {
-    this.mcpTools = mcpTools;
+  public AiConfig(ObjectProvider<ToolCallbackProvider> mcpToolsProvider) {
+    this.mcpToolsProvider = mcpToolsProvider;
   }
 
   @Bean
@@ -61,7 +62,7 @@ public class AiConfig {
       ChatMemory chatMemory,
       QuestionAnswerAdvisor questionAnswerAdvisor) {
 
-    return builder
+    ChatClient.Builder chatClientBuilder = builder
         .defaultSystem("""
             You are RedMath Bank's AI assistant. Help authenticated customers with their banking
             needs in a professional, helpful, and secure manner.
@@ -73,8 +74,14 @@ public class AiConfig {
             """)
         .defaultAdvisors(
             MessageChatMemoryAdvisor.builder(chatMemory).build(),
-            questionAnswerAdvisor)
-        .defaultTools(mcpTools)
-        .build();
+            questionAnswerAdvisor);
+
+
+    ToolCallbackProvider mcpTools = mcpToolsProvider.getIfAvailable();
+    if (mcpTools != null) {
+      chatClientBuilder.defaultTools(mcpTools);
+    }
+
+    return chatClientBuilder.build();
   }
 }

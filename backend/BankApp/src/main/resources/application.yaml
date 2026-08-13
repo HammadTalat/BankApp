@@ -21,9 +21,9 @@ spring:
             redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:8081/login/oauth2/code/google}
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/banking_db
-    username: postgres
-    password: postgres
+    url: ${PG_URL:jdbc:postgresql://localhost:5432/banking_db}
+    username: ${PG_USERNAME:postgres}
+    password: ${PG_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -39,7 +39,10 @@ spring:
     google:
       genai:
         api-key: ${GEMINI_API_KEY}
+        chat:
+          model: ${GEMINI_MODEL:gemini-flash-latest}
         embedding:
+          api-key: ${GEMINI_API_KEY}
           text:
             model: ${GEMINI_EMBEDDING_MODEL:gemini-embedding-001}
             dimensions: 768
@@ -50,7 +53,10 @@ spring:
 
     mcp:
       client:
-        enabled: true
+        # MCP is optional: the core banking application must start independently.
+        enabled: ${MCP_ENABLED:false}
+        # Discover tools on first use instead of failing BankApp startup if MCP is offline.
+        initialized: false
         name: redmath-bank-ai-client
         version: 1.0.0
         type: SYNC
@@ -58,7 +64,7 @@ spring:
         streamable-http:
           connections:
             redmath-bank:
-              url: http://localhost:8082
+              url: ${MCP_SERVER_URL:http://localhost:8082}
               endpoint: /mcp
 management:
   logging:
