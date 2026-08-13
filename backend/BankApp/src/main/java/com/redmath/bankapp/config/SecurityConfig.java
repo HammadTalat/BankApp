@@ -37,7 +37,7 @@ import tools.jackson.databind.ObjectMapper;
     justification = "Stateless JWT REST API; CSRF protection is intentionally disabled")
 public class SecurityConfig {
 
-  @Value("${app.frontend-url:http://localhost:5173}")
+  @Value("${app_frontend_url:http://localhost:5173}")
   private String frontendUrl;
 
   private final ApiAuthenticationSuccessHandler apiAuthenticationSuccessHandler;
