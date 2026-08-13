@@ -50,7 +50,10 @@ function ChatMessage({ message }) {
     const isUser = message.role === "user";
 
     return (
-        <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+        <div
+            className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+            data-testid={`chat-message-${message.role}`}
+        >
             <div
                 className={[
                     "max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm",
@@ -65,7 +68,7 @@ function ChatMessage({ message }) {
                         RedMath Assistant
                     </div>
                 )}
-                <p className="whitespace-pre-wrap">{message.content}</p>
+                <p className="whitespace-pre-wrap" data-testid="chat-message-content">{message.content}</p>
             </div>
         </div>
     );
@@ -169,7 +172,7 @@ export function ChatbotPage() {
                     <div className="mx-auto flex h-full w-full max-w-[1200px] flex-col">
                         <div className="mb-6 flex items-start justify-between gap-4">
                             <div>
-                                <h2 className="text-3xl font-bold text-gray-900">AI Assistant</h2>
+                                <h2 className="text-3xl font-bold text-gray-900" data-testid="chatbot-heading">AI Assistant</h2>
                                 <p className="mt-1 text-sm text-gray-500">
                                     Ask about your account, transactions, or RedMath Bank policies.
                                 </p>
@@ -191,7 +194,7 @@ export function ChatbotPage() {
                         )}
 
                         <div className="flex min-h-0 flex-1 flex-col rounded-xl border border-brand-border bg-brand-surface shadow-sm">
-                            <div className="flex-1 space-y-4 overflow-y-auto p-5 sm:p-6">
+                            <div className="flex-1 space-y-4 overflow-y-auto p-5 sm:p-6" data-testid="chat-messages">
                                 {messages.map((message) => (
                                     <ChatMessage key={message.id} message={message} />
                                 ))}
@@ -213,6 +216,7 @@ export function ChatbotPage() {
                             >
                                 <div className="flex items-end gap-3">
                                     <textarea
+                                        data-testid="chat-input"
                                         value={input}
                                         onChange={(event) => setInput(event.target.value)}
                                         onKeyDown={(event) => {
@@ -228,6 +232,7 @@ export function ChatbotPage() {
                                     />
                                     <button
                                         type="submit"
+                                        data-testid="chat-send-button"
                                         disabled={isSending || !input.trim()}
                                         className="inline-flex h-[52px] min-w-[52px] items-center justify-center rounded-xl bg-brand-primary px-4 text-white transition-colors hover:bg-brand-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
                                         aria-label="Send message"

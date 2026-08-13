@@ -39,10 +39,7 @@ spring:
     google:
       genai:
         api-key: ${GEMINI_API_KEY}
-        chat:
-          model: ${GEMINI_MODEL:gemini-flash-latest}
         embedding:
-          api-key: ${GEMINI_API_KEY}
           text:
             model: ${GEMINI_EMBEDDING_MODEL:gemini-embedding-001}
             dimensions: 768
@@ -82,3 +79,8 @@ services:
     url: ${ANOMALY_DETECTION_URL:http://localhost:8080}
 app:
   frontend-url: ${APP_FRONTEND_URL:http://localhost:5173}
+  ai:
+    chat-memory-size: 8
+    rag:
+      top-k: 2
+      similarity-threshold: 0.40

@@ -70,6 +70,7 @@ function ApplicationStatusCard({
         <Card
             padding={false}
             className="w-full max-w-xl p-7 text-center sm:p-9"
+            data-testid="application-status-card"
         >
             <div
                 className={`mx-auto flex h-14 w-14 items-center justify-center rounded-lg ${selectedStatus.iconClasses}`}

@@ -29,12 +29,14 @@ function Alert({
     title,
     children,
     className = "",
+    ...props
 }) {
     const selectedStyle = alertStyles[type] || alertStyles.info;
     const Icon = selectedStyle.icon;
 
     return (
         <div
+            {...props}
             role={type === "error" ? "alert" : "status"}
             className={`flex items-start gap-3 rounded-xl border p-4 ${selectedStyle.classes} ${className}`}
         >

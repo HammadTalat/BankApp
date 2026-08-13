@@ -6,6 +6,7 @@ function GoogleLoginButton() {
     return (
         <button
             type="button"
+            data-testid="google-login-button"
             onClick={() => window.location.assign(getGoogleLoginUrl())}
             className="flex w-full items-center justify-center gap-3 rounded-xl border border-brand-border bg-white px-4 py-3 text-sm font-semibold text-brand-text shadow-sm transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
         >

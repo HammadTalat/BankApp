@@ -120,7 +120,7 @@ export const DashboardPage = () => {
                 <main className="flex-1 overflow-y-auto px-6 py-6 sm:px-8 sm:py-8">
                     <div className="mx-auto w-full max-w-[1600px]">
                         <div className="mb-8">
-                            <h2 className="text-3xl font-bold text-gray-900">
+                            <h2 className="text-3xl font-bold text-gray-900" data-testid="dashboard-heading">
                                 Account Dashboard
                             </h2>
                             <p className="text-gray-500 text-sm mt-1">

@@ -107,6 +107,7 @@ function AdminHeader({
                 >
                     <button
                         ref={profileTriggerRef}
+                        data-testid="profile-menu-trigger"
                         type="button"
                         onClick={() => setProfileOpen((isOpen) => !isOpen)}
                         aria-label={`${profileOpen ? "Close" : "Open"} ${profileType} profile`}

@@ -20,8 +20,8 @@ function LoginForm({ onSubmit, isSubmitting = false }) {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-            {error && <Alert type="error">{error}</Alert>}
+        <form onSubmit={handleSubmit} className="space-y-5" noValidate data-testid="login-form">
+            {error && <Alert type="error" data-testid="login-error">{error}</Alert>}
             <div>
                 <label htmlFor="login-email" className="mb-2 block text-sm font-medium text-brand-text">Email address</label>
                 <input id="login-email" name="email" type="email" autoComplete="email" required value={values.email} onChange={(event) => setValues({ ...values, email: event.target.value })} className="w-full rounded-xl border border-brand-border bg-white px-3.5 py-3 text-sm outline-none transition focus:border-brand-primary focus:ring-4 focus:ring-red-100" placeholder="you@example.com" />

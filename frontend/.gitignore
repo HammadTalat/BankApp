@@ -23,3 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 .env
+e2e/.env
+e2e/.env.example
+e2e/reports

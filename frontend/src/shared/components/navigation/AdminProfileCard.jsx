@@ -23,6 +23,7 @@ function AdminProfileCard({
         <div
             id={id}
             ref={cardRef}
+            data-testid="profile-card"
             role="region"
             aria-label={profileRegionLabel}
             tabIndex={-1}
@@ -100,6 +101,7 @@ function AdminProfileCard({
 
                 <button
                     type="button"
+                    data-testid="profile-logout-button"
                     onClick={onLogout}
                     disabled={loggingOut}
                     className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-brand-border bg-brand-surface px-4 py-2.5 text-sm font-semibold text-brand-text transition hover:bg-red-50 hover:text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"

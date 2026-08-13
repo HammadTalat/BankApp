@@ -62,7 +62,7 @@ function CompleteGoogleProfilePage() {
                     <p className="mt-2 text-sm text-brand-muted">
                         Welcome, {user?.name}.
                     </p>
-                    <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+                    <form onSubmit={handleSubmit} className="mt-6 space-y-5" data-testid="complete-profile-form">
                         {error && <Alert type="error">{error}</Alert>}
                         <div>
                             <label htmlFor="google-address" className="mb-2 block text-sm font-medium text-brand-text">Home address</label>

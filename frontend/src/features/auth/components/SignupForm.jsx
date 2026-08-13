@@ -30,8 +30,8 @@ function SignupForm({ onSubmit, isSubmitting = false }) {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-            {error && <Alert type="error">{error}</Alert>}
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate data-testid="signup-form">
+            {error && <Alert type="error" data-testid="signup-error">{error}</Alert>}
             {[['name', 'Full name', 'text', 'Your full name'], ['email', 'Email address', 'email', 'you@example.com'], ['address', 'Home address', 'text', 'Street, city, and country']].map(([field, label, type, placeholder]) => <div key={field}><label htmlFor={`signup-${field}`} className="mb-2 block text-sm font-medium text-brand-text">{label}</label><input id={`signup-${field}`} name={field} type={type} autoComplete={field === 'name' ? 'name' : field === 'email' ? 'email' : 'street-address'} required value={values[field]} onChange={(event) => update(field, event.target.value)} placeholder={placeholder} className="w-full rounded-xl border border-brand-border bg-white px-3.5 py-3 text-sm outline-none transition focus:border-brand-primary focus:ring-4 focus:ring-red-100" /></div>)}
             <PasswordInput id="signup-password" name="password" autoComplete="new-password" value={values.password} onChange={(event) => update("password", event.target.value)} helperText="Use at least 8 characters." required />
             <PasswordInput id="signup-confirm-password" name="confirmPassword" label="Confirm password" autoComplete="new-password" value={values.confirmPassword} onChange={(event) => update("confirmPassword", event.target.value)} required />

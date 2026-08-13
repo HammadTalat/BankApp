@@ -9,7 +9,11 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "node --env-file=e2e/.env ./node_modules/.bin/cucumber-js",
+    "test:e2e:auth": "node --env-file=e2e/.env ./node_modules/.bin/cucumber-js e2e/features/authentication.feature",
+    "test:e2e:chat": "node --env-file=e2e/.env ./node_modules/.bin/cucumber-js e2e/features/chatbot.feature",
+    "test:e2e:smoke": "node --env-file=e2e/.env ./node_modules/.bin/cucumber-js --tags \"not @ai\""
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
@@ -21,6 +25,7 @@
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
+    "@cucumber/cucumber": "^11.2.0",
     "@eslint/js": "^10.0.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
@@ -33,6 +38,7 @@
     "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^17.7.0",
     "jsdom": "^30.0.1",
+    "selenium-webdriver": "^4.27.0",
     "vite": "^8.2.0",
     "vitest": "^4.1.10"
   }
