@@ -21,9 +21,9 @@ spring:
             redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:8081/login/oauth2/code/google}
 
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/banking_db}
-    username: ${DATABASE_USERNAME:postgres}
-    password: ${DATABASE_PASSWORD:postgres}
+    url: ${PG_URL:jdbc:postgresql://localhost:5432/banking_db}
+    username: ${PG_USERNAME:postgres}
+    password: ${PG_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
