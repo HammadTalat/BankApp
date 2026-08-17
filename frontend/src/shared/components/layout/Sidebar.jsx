@@ -29,7 +29,7 @@ export const Sidebar = () => {
             <div>
                 <div className="mb-10">
                     <h1 lang="ur" dir="rtl" className="text-xl font-bold tracking-tight text-white">ریڈ میتھ بینک</h1>
-                    <p className="text-xs text-gray-400 mt-0.5">Secure Banking</p>
+                    <p className="text-xs text-gray-400 mt-0.5">secure banking</p>
                 </div>
 
                 <nav className="space-y-2">
