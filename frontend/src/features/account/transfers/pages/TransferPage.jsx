@@ -205,10 +205,11 @@ export const TransferPage = () => {
 
                                         {/* Recipient Account Input */}
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-800 mb-2">
+                                            <label htmlFor="recipient-account" className="block text-xs font-bold text-gray-800 mb-2">
                                                 Recipient account number
                                             </label>
                                             <input
+                                                id="recipient-account"
                                                 type="text"
                                                 maxLength={16}
                                                 placeholder="Enter 16-digit account number"
@@ -245,10 +246,11 @@ export const TransferPage = () => {
 
                                         {/* Amount Input */}
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-800 mb-2">
+                                            <label htmlFor="transfer-amount" className="block text-xs font-bold text-gray-800 mb-2">
                                                 Amount
                                             </label>
                                             <input
+                                                id="transfer-amount"
                                                 type="number"
                                                 step="0.01"
                                                 min="0.01"
@@ -261,13 +263,14 @@ export const TransferPage = () => {
 
                                         {/* Description Input */}
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-800 mb-2">
+                                            <label htmlFor="transfer-description" className="block text-xs font-bold text-gray-800 mb-2">
                                                 Description{" "}
                                                 <span className="font-normal text-gray-400">
                           (Optional)
                         </span>
                                             </label>
                                             <input
+                                                id="transfer-description"
                                                 type="text"
                                                 maxLength={255}
                                                 placeholder="What is this transfer for?"
