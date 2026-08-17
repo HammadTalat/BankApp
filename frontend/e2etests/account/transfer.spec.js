@@ -8,7 +8,7 @@ import {
 } from "../helpers/auth.js";
 
 const recipientAccountNumber =
-    process.env.E2E_RECIPIENT_ACCOUNT || "5958212793691587";
+    process.env.E2E_RECIPIENT_ACCOUNT || "CD364D1F2CEE4AC8";
 
 test("an approved account holder can transfer available funds to a verified recipient", async ({
     browser,
