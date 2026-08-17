@@ -1,5 +1,8 @@
+/* global process */
 // @ts-check
 import { defineConfig, devices } from '@playwright/test';
+
+const interactiveMode = process.env.E2E_HEADED === 'true';
 
 /**
  * Read environment variables from file.
@@ -14,23 +17,32 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './e2etests',
-  /* Run tests in files in parallel */
-  fullyParallel: true,
+  /*
+   * These tests create users, approve applications, and post transactions.
+   * Keep the local suite serial until it runs against an isolated E2E database.
+   */
+  fullyParallel: false,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    /* Base URL to use in actions like `await page.goto('')`. */
-    // baseURL: 'http://localhost:3000',
+    /* Vite runs locally on 5173; override for a Docker/Nginx environment. */
+    // API_BASE_URL defaults to http://localhost:8081, whose CORS policy allows
+    // http://localhost:5173. Do not substitute 127.0.0.1 here.
+    baseURL: process.env.E2E_BASE_URL || 'http://localhost:5173',
+    // Use `E2E_HEADED=true` locally to watch each browser action.
+    headless: !interactiveMode,
+    launchOptions: interactiveMode ? { slowMo: 600 } : undefined,
 
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
+    /* Keep useful evidence when a browser flow fails. */
     trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
   },
 
   /* Configure projects for major browsers */
@@ -38,16 +50,6 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-    },
-
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
     },
 
     /* Test against mobile viewports. */
@@ -71,11 +73,12 @@ export default defineConfig({
     // },
   ],
 
-  /* Run your local dev server before starting the tests */
-  // webServer: {
-  //   command: 'npm run start',
-  //   url: 'http://localhost:3000',
-  //   reuseExistingServer: !process.env.CI,
-  // },
+  /* Start Vite for local E2E work. BankApp and the E2E database must be running. */
+  webServer: process.env.E2E_BASE_URL
+    ? undefined
+    : {
+        command: 'npm run dev -- --host 127.0.0.1',
+        url: 'http://localhost:5173',
+        reuseExistingServer: !process.env.CI,
+      },
 });
-
