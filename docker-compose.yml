@@ -48,7 +48,6 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}
       JWT_SECRET: ${JWT_SECRET}
-      APP_FRONTEND_URL: ${APP_FRONTEND_URL}
       MCP_SERVER_URL: http://mcp-server:8082
     depends_on:
       postgres-db:
