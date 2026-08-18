@@ -417,7 +417,7 @@ jobs:
         env:
           VM_HOST: ${{ vars.PROD_VM2_HOST }}
           VM_USER: ${{ vars.PROD_USER }}
-          VM_PATH: ${{ vars.PROD_PATH }}
+          VM_PATH: ${{ vars.PROD_PATH_VM2 }}
           DEPLOY_SHA: ${{ github.sha }}
 
         run: |
