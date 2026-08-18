@@ -3,12 +3,15 @@ package com.redmath.transactionverification;
 import com.redmath.transactionverification.dto.LlmRiskDecision;
 import com.redmath.transactionverification.dto.TransactionEvaluationRequest;
 import com.redmath.transactionverification.dto.TransactionEvaluationResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AnomalyDetectionService {
 
+    private static final Logger log = LoggerFactory.getLogger(AnomalyDetectionService.class);
     private final ChatClient chatClient;
 
     public AnomalyDetectionService(ChatClient chatClient) {
@@ -64,6 +67,7 @@ public class AnomalyDetectionService {
             }
 
         } catch (Exception e) {
+            log.info(e.toString());
             // Fallback for LLM timeouts or structural parsing errors
             return new TransactionEvaluationResponse(
                     false,
