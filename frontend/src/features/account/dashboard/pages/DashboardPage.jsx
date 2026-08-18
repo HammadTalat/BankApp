@@ -39,7 +39,6 @@ export const DashboardPage = () => {
 
     // Initial dashboard data load
     const loadDashboardData = useCallback(async () => {
-        setLoading(true);
         try {
             const [accountData, balanceData, transactionsData] = await Promise.all([
                 dashboardService.getAccountDetails().catch((err) => {
