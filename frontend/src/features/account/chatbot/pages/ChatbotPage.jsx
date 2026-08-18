@@ -10,7 +10,7 @@ const INITIAL_MESSAGE = {
     id: "welcome",
     role: "assistant",
     content:
-        "Hello! I am RedMath Bank's AI assistant. Ask me about your account balance, "
+        "Hello! I am Bank App's AI assistant. Ask me about your account balance, "
         + "recent transactions, or bank policies and fees.",
 };
 const MAX_STORED_MESSAGES = 150;
@@ -62,7 +62,7 @@ function ChatMessage({ message }) {
                 {!isUser && (
                     <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-brand-primary">
                         <Bot size={14} aria-hidden="true" />
-                        RedMath Assistant
+                        Bank App Assistant
                     </div>
                 )}
                 <p className="whitespace-pre-wrap">{message.content}</p>
@@ -171,7 +171,7 @@ export function ChatbotPage() {
                             <div>
                                 <h2 className="text-3xl font-bold text-gray-900">AI Assistant</h2>
                                 <p className="mt-1 text-sm text-gray-500">
-                                    Ask about your account, transactions, or RedMath Bank policies.
+                                    Ask about your account, transactions, or Bank App policies.
                                 </p>
                             </div>
                             <button
@@ -199,7 +199,7 @@ export function ChatbotPage() {
                                 {isSending && (
                                     <div className="flex justify-start">
                                         <div className="rounded-2xl border border-brand-border bg-brand-surface px-4 py-3 text-sm text-brand-muted shadow-sm">
-                                            RedMath Assistant is typing...
+                                            Bank App Assistant is typing...
                                         </div>
                                     </div>
                                 )}

@@ -63,7 +63,7 @@ function ComponentShowcasePage() {
         <main className="min-h-screen bg-brand-background px-5 py-8 lg:px-8 lg:py-10">
             <div className="mx-auto w-full max-w-[1440px]">
                 <PageHeader
-                    eyebrow="RedMath design system"
+                    eyebrow="Bank App design system"
                     title="Shared component showcase"
                     description="A preview of the reusable controls, feedback messages and data-display components used across the banking application."
                     action={(

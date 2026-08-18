@@ -27,7 +27,7 @@ function AccountSidebar() {
                 </span>
                 <div className="min-w-0">
                     <p lang="ur" dir="rtl" className="rm-urdu-brand text-lg font-bold text-brand-navy">
-                        ریڈ میتھ بینک
+                        بینک ایپ
                     </p>
                     <p className="mt-0.5 text-xs font-semibold text-brand-muted">Personal Banking</p>
                 </div>

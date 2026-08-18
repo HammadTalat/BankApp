@@ -28,7 +28,7 @@ export const Sidebar = () => {
         <aside className="w-64 bg-brand-navy flex flex-col justify-between py-8 px-6 text-white shrink-0">
             <div>
                 <div className="mb-10">
-                    <h1 lang="ur" dir="rtl" className="text-xl font-bold tracking-tight text-white">ریڈ میتھ بینک</h1>
+                    <h1 lang="ur" dir="rtl" className="text-xl font-bold tracking-tight text-white">بینک ایپ</h1>
                     <p className="text-xs text-gray-400 mt-0.5">Personal Banking</p>
                 </div>
 

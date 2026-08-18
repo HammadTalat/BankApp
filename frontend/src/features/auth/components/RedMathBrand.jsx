@@ -12,10 +12,10 @@ function RedMathBrand({ className = "" }) {
                     dir="rtl"
                     className="rm-urdu-brand text-xl font-bold text-brand-navy"
                 >
-                    ریڈ میتھ بینک
+                    بینک ایپ
                 </p>
                 <p className="mt-0.5 text-xs font-semibold tracking-[0.06em] text-brand-muted">
-                    RedMath Bank
+                    Bank App
                 </p>
             </div>
         </div>

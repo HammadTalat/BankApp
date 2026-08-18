@@ -54,7 +54,7 @@ function AdminSidebar({
 
                 <div className="min-w-0 flex-1">
                     <p lang="ur" dir="rtl" className="rm-urdu-brand text-lg font-bold text-brand-navy">
-                        ریڈ میتھ بینک
+                        بینک ایپ
                     </p>
                     <p className="mt-0.5 text-xs font-medium text-brand-muted">
                         Admin Portal

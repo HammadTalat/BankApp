@@ -92,7 +92,7 @@
         return (
             <section className="space-y-6">
                 <PageHeader
-                    eyebrow="RedMath Administration"
+                    eyebrow="Bank App Administration"
                     title="Dashboard"
                     description="View user applications and bank-account information from one place."
                 />

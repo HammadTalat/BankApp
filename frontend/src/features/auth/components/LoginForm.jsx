@@ -30,7 +30,7 @@ function LoginForm({ onSubmit, isSubmitting = false }) {
             <button type="submit" disabled={isSubmitting} className="w-full rounded-xl bg-brand-primary px-4 py-3 font-semibold text-white shadow-sm transition hover:bg-brand-primary-hover disabled:cursor-not-allowed disabled:opacity-60">{isSubmitting ? "Signing in…" : "Sign in"}</button>
             <div className="relative py-1 text-center before:absolute before:inset-x-0 before:top-1/2 before:border-t before:border-brand-border"><span className="relative bg-white px-3 text-xs font-medium uppercase tracking-wide text-brand-muted">or</span></div>
             <GoogleLoginButton />
-            <p className="text-center text-sm text-brand-muted">New to RedMath Bank? <Link to="/signup" className="font-semibold text-brand-primary hover:underline">Create an account</Link></p>
+            <p className="text-center text-sm text-brand-muted">New to Bank App? <Link to="/signup" className="font-semibold text-brand-primary hover:underline">Create an account</Link></p>
         </form>
     );
 }

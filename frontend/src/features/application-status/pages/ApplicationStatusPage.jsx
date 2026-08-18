@@ -189,7 +189,7 @@ function ApplicationStatusPage() {
             <div className="flex w-full max-w-xl flex-col gap-4">
                 <div className="text-center">
                     <p lang="ur" dir="rtl" className="text-2xl font-bold text-brand-navy">
-                        ریڈ میتھ بینک
+                        بینک ایپ
                     </p>
                     <p className="mt-2 text-sm font-semibold text-brand-muted">
                         Application Status
