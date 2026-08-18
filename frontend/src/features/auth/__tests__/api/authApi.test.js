@@ -24,7 +24,7 @@ import {
 describe("authApi", () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        global.fetch = vi.fn();
+        globalThis.fetch = vi.fn();
     });
 
     it("signup posts to the auth signup endpoint", async () => {
@@ -36,7 +36,7 @@ describe("authApi", () => {
     });
 
     it("login sends form-encoded credentials and returns data", async () => {
-        global.fetch.mockResolvedValue({
+        globalThis.fetch.mockResolvedValue({
             ok: true,
             json: async () => ({ email: "a@b.com" }),
         });
@@ -45,7 +45,7 @@ describe("authApi", () => {
             email: "a@b.com",
         });
 
-        expect(global.fetch).toHaveBeenCalledWith(
+        expect(globalThis.fetch).toHaveBeenCalledWith(
             "http://api.test/api/v1/auth/login",
             expect.objectContaining({
                 method: "POST",
@@ -56,12 +56,12 @@ describe("authApi", () => {
             }),
         );
 
-        const body = global.fetch.mock.calls[0][1].body;
+        const body = globalThis.fetch.mock.calls[0][1].body;
         expect(body.toString()).toBe("username=a%40b.com&password=secret");
     });
 
     it("login throws with a message when the response is not ok", async () => {
-        global.fetch.mockResolvedValue({
+        globalThis.fetch.mockResolvedValue({
             ok: false,
             status: 401,
             json: async () => ({ message: "Bad credentials" }),

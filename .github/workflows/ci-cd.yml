@@ -339,7 +339,7 @@ jobs:
 
       - name: Verify VM1 deployment
         env:
-          VM_HOST: ${{ vars.PROD_HOST }}
+          VM_HOST: ${{ vars.PROD_VM1_HOST }}
           VM_USER: ${{ vars.PROD_USER }}
 
         run: |

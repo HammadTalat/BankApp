@@ -46,7 +46,6 @@ vi.mock("../../../../shared/components/navigation/AccountSidebar.jsx", () => ({
 describe("TransferPage Component", () => {
     const mockUser = { name: "Jane Doe", email: "jane@example.com" };
     const mockSenderAccount = "1234567890123456";
-    const mockRecipientAccount = "9876543210987654";
 
     beforeEach(() => {
         vi.clearAllMocks();

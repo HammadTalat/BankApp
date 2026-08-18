@@ -25,10 +25,6 @@ import TransactionHistoryTable
     from "../../../../shared/components/transactions/TransactionHistoryTable";
 
 import {
-    maskAccountNumber,
-} from "../../../../shared/utils/formatAccountNumber";
-
-import {
     getAdminAccountDetails,
     getAdminAccountTransactions,
 } from "../api/adminAccountApi.js";
