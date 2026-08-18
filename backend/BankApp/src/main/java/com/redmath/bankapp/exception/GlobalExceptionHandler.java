@@ -11,6 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import javax.security.auth.login.AccountNotFoundException;
 import java.time.Instant;
@@ -21,19 +22,16 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    // 1. Account / Balance Not Found
     @ExceptionHandler({AccountNotFoundException.class, BalanceNotFoundException.class})
     public ResponseEntity<Map<String, Object>> handleNotFoundExceptions(Exception ex) {
         return buildErrorResponse(HttpStatus.NOT_FOUND, "Not Found", ex.getMessage());
     }
 
-    // 2. Business Rule Violations
     @ExceptionHandler(BusinessRuleException.class)
     public ResponseEntity<Map<String, Object>> handleBusinessRuleException(BusinessRuleException ex) {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, "Business Rule Violation", ex.getMessage());
     }
 
-    // 3. Risk Engine / Downstream Microservice Failures
     @ExceptionHandler(RestClientException.class)
     public ResponseEntity<Map<String, Object>> handleRestClientException(RestClientException ex) {
         log.error("Downstream service communication failed", ex);
@@ -44,14 +42,12 @@ public class GlobalExceptionHandler {
         );
     }
 
-    // 4. Illegal Arguments / State (e.g. from detectAnomaly block)
     @ExceptionHandler({IllegalStateException.class, IllegalArgumentException.class})
     public ResponseEntity<Map<String, Object>> handleIllegalState(RuntimeException ex) {
         log.warn("Invalid operation or state: {}", ex.getMessage());
         return buildErrorResponse(HttpStatus.BAD_REQUEST, "Invalid Request", ex.getMessage());
     }
 
-    // 5. DTO Validation Failures (@Valid / @NotNull)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
@@ -68,7 +64,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
-    // 6. CATCH-ALL HANDLER: Prevents unhandled exceptions from reaching Spring Security /error dispatch
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        return buildErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                "Invalid Request",
+                "Invalid value for parameter: " + ex.getName()
+        );
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
         log.error("Unhandled internal server error occurred", ex);

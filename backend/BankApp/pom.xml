@@ -351,7 +351,7 @@
             <outputFormat>XML</outputFormat>
             <outputFormat>HTML</outputFormat>
           </outputFormats>
-          <mutationThreshold>70</mutationThreshold>
+                            <mutationThreshold>80</mutationThreshold>
           <excludedClasses>
             <param>com.example.lecture02.config.*</param>
             <param>com.example.lecture02.config.SecurityConfig</param>
