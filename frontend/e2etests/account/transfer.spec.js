@@ -8,9 +8,9 @@ import {
 } from "../helpers/auth.js";
 
 const recipientAccountNumber =
-    process.env.E2E_RECIPIENT_ACCOUNT || "CD364D1F2CEE4AC8";
+    process.env.E2E_RECIPIENT_ACCOUNT || "5958212793691587";
 
-test("an approved account holder can transfer available funds to a verified recipient", async ({
+test("a high-risk transfer is blocked after the recipient is verified", async ({
     browser,
 }) => {
     const applicant = await createApprovedAccountHolder(browser);
@@ -40,12 +40,14 @@ test("an approved account holder can transfer available funds to a verified reci
             customerPage.getByRole("button", { name: "Submit Transfer" }),
         ).toBeEnabled();
 
-        await customerPage.getByLabel("Amount").fill("250");
+        await customerPage.getByLabel("Amount").fill("990");
         await customerPage.getByLabel("Description (Optional)").fill(transferDescription);
         await customerPage.getByRole("button", { name: "Submit Transfer" }).click();
 
         await expect(
-            customerPage.getByText("Transfer completed successfully! Redirecting to dashboard..."),
+            customerPage.getByText(
+                "Transaction blocked: High risk/anomalous pattern detected.",
+            ),
         ).toBeVisible();
     } finally {
         await customerContext.close();

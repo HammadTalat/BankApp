@@ -5,9 +5,10 @@ import { adminCredentials, login } from "../helpers/auth.js";
 test("an administrator can sign in and view dashboard metrics", async ({ page }) => {
     await login(page, adminCredentials, "/admin");
 
-    await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
-    await expect(page.getByText("Pending Users", { exact: true })).toBeVisible();
-    await expect(page.getByText("Total Accounts", { exact: true })).toBeVisible();
+    const dashboard = page.getByRole("main");
+    await expect(dashboard.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+    await expect(dashboard.getByText("Pending Users", { exact: true })).toBeVisible();
+    await expect(dashboard.getByText("Total Accounts", { exact: true })).toBeVisible();
 });
 
 test("invalid credentials keep the visitor on the login page", async ({ page }) => {
