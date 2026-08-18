@@ -57,3 +57,5 @@ management:
     export:
       otlp:
         enabled: false
+app:
+  frontend-url: "http://localhost:3000"
