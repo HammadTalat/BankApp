@@ -12,6 +12,7 @@ import com.redmath.bankapp.riskservice.service.RiskEvaluatorClient;
 import com.redmath.bankapp.tempconfig.security.UserPrincipal;
 import com.redmath.bankapp.transaction.dto.DepositRequest;
 import com.redmath.bankapp.transaction.dto.DepositResponse;
+import com.redmath.bankapp.transaction.dto.SpendingSummaryResponse;
 import org.springframework.security.oauth2.jwt.Jwt;
 import com.redmath.bankapp.transaction.dto.TransferRequest;
 import com.redmath.bankapp.transaction.dto.TransferResponse;
@@ -23,6 +24,7 @@ import com.redmath.bankapp.transaction.enums.TransactionIndicator;
 import com.redmath.bankapp.transaction.exception.BusinessRuleException;
 import com.redmath.bankapp.transaction.exception.InsufficientBalanceException;
 import com.redmath.bankapp.transaction.repository.AccountTransactionRepository;
+import com.redmath.bankapp.transaction.repository.SpendingAggregate;
 import com.redmath.bankapp.transaction.service.TransactionService;
 import com.redmath.bankapp.user.entity.AppUser;
 import com.redmath.bankapp.user.entity.ApprovalStatus;
@@ -268,6 +270,108 @@ class TransactionServiceTest {
             verify(balanceRepository, times(1)).findLatestBalanceForUpdate(SENDER_ACC);
             verify(balanceRepository, times(1)).findLatestBalanceForUpdate(RECEIVER_ACC);
             verify(balanceRepository, atLeastOnce()).save(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("Spending summary tests")
+    class SpendingSummaryTests {
+
+        @Test
+        void getSpendingSummary_MapsDebitOnlyDatabaseAggregate() throws Exception {
+            LocalDate startDate = LocalDate.of(2026, 8, 1);
+            LocalDate endDate = LocalDate.of(2026, 8, 10);
+            SpendingAggregate aggregate = new SpendingAggregate(
+                    new BigDecimal("450.00"), 3L, new BigDecimal("250.00"));
+
+            given(accountRepository.findByUser_Id(USER_ID)).willReturn(Optional.of(senderAccount));
+            given(transactionRepository.summarizeTransactionsByIndicatorAndDateRange(
+                    SENDER_ACC,
+                    TransactionIndicator.DEBIT,
+                    startDate.atStartOfDay(),
+                    endDate.atTime(LocalTime.MAX)
+            )).willReturn(aggregate);
+
+            SpendingSummaryResponse response = transactionService.getSpendingSummary(jwt, startDate, endDate);
+
+            assertThat(response.startDate()).isEqualTo(startDate);
+            assertThat(response.endDate()).isEqualTo(endDate);
+            assertThat(response.totalSpent()).isEqualByComparingTo("450.00");
+            assertThat(response.transactionCount()).isEqualTo(3L);
+            assertThat(response.largestExpense()).isEqualByComparingTo("250.00");
+            verify(transactionRepository).summarizeTransactionsByIndicatorAndDateRange(
+                    SENDER_ACC,
+                    TransactionIndicator.DEBIT,
+                    startDate.atStartOfDay(),
+                    endDate.atTime(LocalTime.MAX)
+            );
+        }
+
+        @Test
+        void getSpendingSummary_UsesDebitIndicatorSoCreditsDoNotCountAsSpending() throws Exception {
+            LocalDate date = LocalDate.of(2026, 8, 10);
+            given(accountRepository.findByUser_Id(USER_ID)).willReturn(Optional.of(senderAccount));
+            given(transactionRepository.summarizeTransactionsByIndicatorAndDateRange(
+                    anyString(), eq(TransactionIndicator.DEBIT), any(LocalDateTime.class), any(LocalDateTime.class)
+            )).willReturn(new SpendingAggregate(new BigDecimal("100.00"), 1L, new BigDecimal("100.00")));
+
+            transactionService.getSpendingSummary(jwt, date, date);
+
+            verify(transactionRepository).summarizeTransactionsByIndicatorAndDateRange(
+                    eq(SENDER_ACC), eq(TransactionIndicator.DEBIT), any(LocalDateTime.class), any(LocalDateTime.class));
+        }
+
+        @Test
+        void getSpendingSummary_ReturnsZeroMoneyValuesWhenNoDebitTransactionsExist() throws Exception {
+            LocalDate date = LocalDate.of(2026, 8, 10);
+            given(accountRepository.findByUser_Id(USER_ID)).willReturn(Optional.of(senderAccount));
+            given(transactionRepository.summarizeTransactionsByIndicatorAndDateRange(
+                    anyString(), eq(TransactionIndicator.DEBIT), any(LocalDateTime.class), any(LocalDateTime.class)
+            )).willReturn(new SpendingAggregate(null, 0L, null));
+
+            SpendingSummaryResponse response = transactionService.getSpendingSummary(jwt, date, date);
+
+            assertThat(response.totalSpent()).isEqualByComparingTo(BigDecimal.ZERO);
+            assertThat(response.transactionCount()).isZero();
+            assertThat(response.largestExpense()).isEqualByComparingTo(BigDecimal.ZERO);
+        }
+
+        @Test
+        void getSpendingSummary_UsesTheCurrentMonthWhenDatesAreOmitted() throws Exception {
+            LocalDate today = LocalDate.now();
+            LocalDate firstDayOfMonth = today.withDayOfMonth(1);
+            given(accountRepository.findByUser_Id(USER_ID)).willReturn(Optional.of(senderAccount));
+            given(transactionRepository.summarizeTransactionsByIndicatorAndDateRange(
+                    SENDER_ACC,
+                    TransactionIndicator.DEBIT,
+                    firstDayOfMonth.atStartOfDay(),
+                    today.atTime(LocalTime.MAX)
+            )).willReturn(new SpendingAggregate(BigDecimal.ZERO, 0L, BigDecimal.ZERO));
+
+            SpendingSummaryResponse response = transactionService.getSpendingSummary(jwt, null, null);
+
+            assertThat(response.startDate()).isEqualTo(firstDayOfMonth);
+            assertThat(response.endDate()).isEqualTo(today);
+        }
+
+        @Test
+        void getSpendingSummary_RejectsAReversedDateRange() {
+            assertThatThrownBy(() -> transactionService.getSpendingSummary(
+                    jwt, LocalDate.of(2026, 8, 11), LocalDate.of(2026, 8, 10)))
+                    .isInstanceOf(BusinessRuleException.class)
+                    .hasMessage("startDate must be on or before endDate");
+
+            verifyNoInteractions(accountRepository, transactionRepository);
+        }
+
+        @Test
+        void getSpendingSummary_UsesExistingNoLinkedAccountBehavior() {
+            given(accountRepository.findByUser_Id(USER_ID)).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> transactionService.getSpendingSummary(
+                    jwt, LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 10)))
+                    .isInstanceOf(AccountNotFoundException.class)
+                    .hasMessage("No account linked to the current user");
         }
     }
 

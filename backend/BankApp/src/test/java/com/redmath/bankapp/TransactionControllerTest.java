@@ -274,12 +274,65 @@ class TransactionControllerTest {
     @Test
     @DisplayName("GET /get-transactions - Should return 400 Bad Request on invalid date format")
     void getUserTransactions_InvalidDateFormat_Returns400() throws Exception {
-        mockMvc.perform(get("/api/v1/transaction/get-transactions")
+                mockMvc.perform(get("/api/v1/transaction/get-transactions")
                         .with(jwt().jwt(mockJwt))
                         .with(csrf())
                         .param("startDate", "01-08-2026") // Invalid ISO format
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isInternalServerError());
+                .andExpect(status().isBadRequest());
+    }
+
+    @Nested
+    @DisplayName("GET /api/v1/transaction/spending-summary")
+    class SpendingSummaryTests {
+
+        @Test
+        void getSpendingSummary_ReturnsTheAuthenticatedUsersSummary() throws Exception {
+            SpendingSummaryResponse response = new SpendingSummaryResponse(
+                    LocalDate.of(2026, 8, 1),
+                    LocalDate.of(2026, 8, 10),
+                    new BigDecimal("450.00"),
+                    3L,
+                    new BigDecimal("250.00")
+            );
+            given(transactionService.getSpendingSummary(
+                    eq(mockJwt), eq(LocalDate.of(2026, 8, 1)), eq(LocalDate.of(2026, 8, 10))
+            )).willReturn(response);
+
+            mockMvc.perform(get("/api/v1/transaction/spending-summary")
+                            .with(jwt().jwt(mockJwt))
+                            .param("startDate", "2026-08-01")
+                            .param("endDate", "2026-08-10"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.totalSpent").value(450.00))
+                    .andExpect(jsonPath("$.transactionCount").value(3))
+                    .andExpect(jsonPath("$.largestExpense").value(250.00));
+
+            verify(transactionService).getSpendingSummary(
+                    eq(mockJwt), eq(LocalDate.of(2026, 8, 1)), eq(LocalDate.of(2026, 8, 10)));
+        }
+
+        @Test
+        void getSpendingSummary_InvalidDateFormatReturnsBadRequest() throws Exception {
+            mockMvc.perform(get("/api/v1/transaction/spending-summary")
+                            .with(jwt().jwt(mockJwt))
+                            .param("startDate", "01-08-2026"))
+                    .andExpect(status().isBadRequest());
+
+            verifyNoInteractions(transactionService);
+        }
+
+        @Test
+        void getSpendingSummary_ReversedDatesReturnsBadRequest() throws Exception {
+            given(transactionService.getSpendingSummary(any(Jwt.class), any(LocalDate.class), any(LocalDate.class)))
+                    .willThrow(new BusinessRuleException("startDate must be on or before endDate"));
+
+            mockMvc.perform(get("/api/v1/transaction/spending-summary")
+                            .with(jwt().jwt(mockJwt))
+                            .param("startDate", "2026-08-11")
+                            .param("endDate", "2026-08-10"))
+                    .andExpect(status().isBadRequest());
+        }
     }
 
     @Nested
