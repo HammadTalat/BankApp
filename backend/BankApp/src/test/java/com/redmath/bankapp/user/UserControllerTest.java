@@ -35,7 +35,6 @@ import org.springframework.test.web.servlet.MvcResult;
     }
 )
 @AutoConfigureMockMvc
-@ActiveProfiles("test")
 class UserControllerTest {
 
   @Autowired

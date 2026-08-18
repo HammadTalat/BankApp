@@ -57,3 +57,5 @@ management:
     export:
       otlp:
         enabled: false
+app:
+  frontend-url: ${APP_FRONTEND_URL:http://localhost:5173}

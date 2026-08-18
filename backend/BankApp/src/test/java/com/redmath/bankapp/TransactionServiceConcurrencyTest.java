@@ -32,7 +32,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Disabled
-@ActiveProfiles("test")
 @SpringBootTest
 class TransactionServiceConcurrencyTest {
 
