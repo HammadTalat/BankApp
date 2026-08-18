@@ -58,4 +58,4 @@ management:
       otlp:
         enabled: false
 app:
-  frontend-url: "http://localhost:3000"
+  frontend-url: ${APP_FRONTEND_URL:http://localhost:5173}
