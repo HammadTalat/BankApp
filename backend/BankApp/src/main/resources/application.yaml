@@ -1,12 +1,8 @@
-server:
-  port: 8081
-  address: 0.0.0.0
-
 spring:
   application:
     name: BankApp
-  liquibase:
-    change-log: classpath:db/changelog/db.changelog-master.yaml
+  profiles:
+    default: dev
   security:
     oauth2:
       client:
@@ -20,21 +16,6 @@ spring:
               - email
             redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:8081/login/oauth2/code/google}
 
-  datasource:
-    url: ${PG_URL:jdbc:postgresql://localhost:5432/banking_db}
-    username: ${PG_USERNAME:postgres}
-    password: ${PG_PASSWORD:postgres}
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-    show-sql: true
-  profiles:
-    active:
-      - dev
   ai:
     google:
       genai:
@@ -48,7 +29,6 @@ spring:
             dimensions: 768
     vectorstore:
       pgvector:
-        initialize-schema: true
         dimensions: 768
 
     mcp:
@@ -77,7 +57,3 @@ management:
     export:
       otlp:
         enabled: false
-
-services:
-  anomaly-detection:
-    url: ${ANOMALY_DETECTION_URL:http://localhost:8080}

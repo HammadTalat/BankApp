@@ -1,0 +1,4 @@
+# Test resources take precedence over main resources, including when tests run from an IDE.
+spring:
+  profiles:
+    active: test
