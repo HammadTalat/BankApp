@@ -8,15 +8,16 @@ const interactiveMode = process.env.E2E_HEADED === 'true';
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
-// import dotenv from 'dotenv';
-// import path from 'path';
-// dotenv.config({ path: path.resolve(__dirname, '.env') });
+
 
 /**
  * @see https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
   testDir: './e2etests',
+  // A workflow creates a user, signs in twice, gets admin approval, and may
+  // post a transaction. Slow headed mode intentionally makes this longer.
+  timeout: 90_000,
   /*
    * These tests create users, approve applications, and post transactions.
    * Keep the local suite serial until it runs against an isolated E2E database.
@@ -31,21 +32,16 @@ export default defineConfig({
   reporter: 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    /* Vite runs locally on 5173; override for a Docker/Nginx environment. */
-    // API_BASE_URL defaults to http://localhost:8081, whose CORS policy allows
-    // http://localhost:5173. Do not substitute 127.0.0.1 here.
+
     baseURL: process.env.E2E_BASE_URL || 'http://localhost:5173',
-    // Use `E2E_HEADED=true` locally to watch each browser action.
     headless: !interactiveMode,
     launchOptions: interactiveMode ? { slowMo: 600 } : undefined,
 
-    /* Keep useful evidence when a browser flow fails. */
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
 
-  /* Configure projects for major browsers */
   projects: [
     {
       name: 'chromium',
@@ -73,7 +69,6 @@ export default defineConfig({
     // },
   ],
 
-  /* Start Vite for local E2E work. BankApp and the E2E database must be running. */
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : {

@@ -3,7 +3,7 @@ import { expect } from "@playwright/test";
 
 export const adminCredentials = {
     email: process.env.E2E_ADMIN_EMAIL || "admin@bank.local",
-    password: process.env.E2E_ADMIN_PASSWORD || "E2E-password-123!",
+    password: process.env.E2E_ADMIN_PASSWORD || "11111111",
 };
 
 export function createApplicant() {
