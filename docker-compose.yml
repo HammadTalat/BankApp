@@ -38,6 +38,7 @@ services:
     ports:
       - "8081:8081"
     environment:
+      APP_FRONTEND_URL: ${APP_FRONTEND_URL:-http://localhost:3000}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/bankdb
       SPRING_DATASOURCE_USERNAME: ${PG_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${PG_PASSWORD}
