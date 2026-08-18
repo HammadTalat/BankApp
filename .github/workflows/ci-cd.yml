@@ -1,0 +1,522 @@
+name: BankApp CI/CD
+
+# =========================================================
+# TRIGGERS
+# =========================================================
+
+on:
+  push:
+    branches:
+      - '**'
+
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+
+permissions:
+  contents: read
+
+
+concurrency:
+  group: bankapp-${{ github.ref }}
+  cancel-in-progress: false
+
+
+jobs:
+
+  # =========================================================
+  # MAIN SPRING BOOT APPLICATION
+  # =========================================================
+
+  bankapp-ci:
+    name: BankApp Tests & Quality
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+
+        env:
+          POSTGRES_DB: banking_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+
+        ports:
+          - 5432:5432
+
+        options: >-
+          --health-cmd "pg_isready -U postgres -d banking_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+
+    env:
+      TEST_PG_URL: jdbc:postgresql://localhost:5432/banking_test
+      TEST_PG_USERNAME: postgres
+      TEST_PG_PASSWORD: postgres
+
+
+    defaults:
+      run:
+        working-directory: backend/BankApp
+
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v5
+
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+          cache-dependency-path: backend/BankApp/pom.xml
+
+
+      - name: Make Maven wrapper executable
+        run: chmod +x mvnw
+
+
+      - name: Run backend verification
+        run: ./mvnw -B clean verify
+
+
+
+  # =========================================================
+  # REACT FRONTEND
+  # =========================================================
+
+  frontend-ci:
+    name: Frontend Tests & Lint
+    runs-on: ubuntu-latest
+
+
+    defaults:
+      run:
+        working-directory: frontend
+
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v6
+
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+
+      - name: Install dependencies
+        run: npm ci
+
+
+      - name: Run ESLint
+        run: npm run lint
+
+
+      - name: Run frontend unit tests
+        run: npm test
+
+
+      - name: Build frontend
+        run: npm run build
+
+
+
+  # =========================================================
+  # MCP SERVER
+  # =========================================================
+
+  mcp-ci:
+    name: MCP Server Build
+    runs-on: ubuntu-latest
+
+
+    defaults:
+      run:
+        working-directory: redmath-bank-mcp
+
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v5
+
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+          cache-dependency-path: redmath-bank-mcp/pom.xml
+
+
+      - name: Make Maven wrapper executable
+        run: chmod +x mvnw
+
+
+      - name: Build and test MCP server
+        run: ./mvnw -B clean test
+
+
+
+  # =========================================================
+  # ANOMALY DETECTION SERVICE
+  # =========================================================
+
+  anomaly-ci:
+    name: Anomaly Service Build
+    runs-on: ubuntu-latest
+
+
+    defaults:
+      run:
+        working-directory: anomaly-detection-service
+
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v5
+
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+          cache-dependency-path: anomaly-detection-service/pom.xml
+
+
+      - name: Make Maven wrapper executable
+        run: chmod +x mvnw
+
+
+      - name: Build and test anomaly service
+        run: ./mvnw -B clean test
+
+
+
+  # =========================================================
+  # VALIDATE DOCKER BUILD
+  # =========================================================
+
+  docker-build:
+    name: Validate Docker Images
+
+    needs:
+      - bankapp-ci
+      - frontend-ci
+      - mcp-ci
+      - anomaly-ci
+
+    runs-on: ubuntu-latest
+
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+
+      - name: Build Docker images
+        env:
+          PG_USERNAME: ci
+          PG_PASSWORD: ci-password
+
+          GOOGLE_CLIENT_ID: ci
+          GOOGLE_CLIENT_SECRET: ci
+          GOOGLE_REDIRECT_URI: http://localhost
+
+          JWT_SECRET: ci-secret
+
+          APP_FRONTEND_URL: http://localhost
+
+          OPENAI_API_KEY: ci-key
+          GEMINI_API_KEY: ci-key
+
+        run: docker compose build
+
+
+
+  # =========================================================
+  # DEPLOY PRODUCTION VM 1
+  # =========================================================
+
+  deploy-vm1:
+    name: Deploy Production VM 1
+
+    needs:
+      - docker-build
+
+    # CI runs on all branches.
+    # Deployment ONLY happens for a push to main.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    runs-on: ubuntu-latest
+
+
+    environment:
+      name: production
+      url: https://redmath-bank.duckdns.org
+
+
+    steps:
+
+      # -----------------------------------------------------
+      # Create SSH private-key file
+      # -----------------------------------------------------
+
+      - name: Configure VM1 SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
+
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/vm1_key
+
+          chmod 600 ~/.ssh/vm1_key
+
+
+      # -----------------------------------------------------
+      # Deploy the exact commit that GitHub tested
+      # -----------------------------------------------------
+
+      - name: Deploy exact commit to VM1
+        env:
+          VM_HOST: ${{ vars.PROD_VM1_HOST }}
+          VM_USER: ${{ vars.PROD_USER }}
+          VM_PATH: ${{ vars.PROD_PATH }}
+          DEPLOY_SHA: ${{ github.sha }}
+
+        run: |
+          ssh \
+            -o StrictHostKeyChecking=no \
+            -i ~/.ssh/vm1_key \
+            "$VM_USER@$VM_HOST" \
+            "set -e;
+
+             cd '$VM_PATH';
+
+             echo 'Fetching latest repository state...';
+             git fetch origin main;
+
+             echo 'Switching to main branch...';
+             git checkout main;
+
+             echo 'Deploying commit: $DEPLOY_SHA';
+             git reset --hard '$DEPLOY_SHA';
+
+             echo 'Building and starting Docker containers...';
+             docker compose up -d --build;
+
+             echo 'Current container status:';
+             docker compose ps;"
+
+
+      # -----------------------------------------------------
+      # Verify VM1 locally
+      # -----------------------------------------------------
+
+      - name: Verify VM1 deployment
+        env:
+          VM_HOST: ${{ vars.PROD_HOST }}
+          VM_USER: ${{ vars.PROD_USER }}
+
+        run: |
+          ssh \
+            -o StrictHostKeyChecking=no \
+            -i ~/.ssh/vm1_key \
+            "$VM_USER@$VM_HOST" \
+            "
+              for attempt in {1..12}; do
+
+                if curl -fsS \
+                  --max-time 10 \
+                  http://127.0.0.1:3000/ \
+                  > /dev/null; then
+
+                  echo 'VM1 application is healthy'
+                  exit 0
+                fi
+
+                echo 'Waiting for VM1 application...'
+                sleep 10
+
+              done
+
+              echo 'VM1 deployment health check failed'
+              exit 1
+            "
+
+
+
+  # =========================================================
+  # DEPLOY PRODUCTION VM 2
+  # =========================================================
+
+  deploy-vm2:
+    name: Deploy Production VM 2
+
+    # VM2 will only deploy after VM1 succeeds.
+    needs:
+      - deploy-vm1
+
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    runs-on: ubuntu-latest
+
+
+    environment:
+      name: production
+
+
+    steps:
+
+      # -----------------------------------------------------
+      # VM2 has its own private SSH key
+      # -----------------------------------------------------
+
+      - name: Configure VM2 SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.PROD_VM2_SSH_PRIVATE_KEY }}
+
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/vm2_key
+
+          chmod 600 ~/.ssh/vm2_key
+
+
+      # -----------------------------------------------------
+      # Deploy exact same commit to VM2
+      # -----------------------------------------------------
+
+      - name: Deploy exact commit to VM2
+        env:
+          VM_HOST: ${{ vars.PROD_VM2_HOST }}
+          VM_USER: ${{ vars.PROD_USER }}
+          VM_PATH: ${{ vars.PROD_PATH }}
+          DEPLOY_SHA: ${{ github.sha }}
+
+        run: |
+          ssh \
+            -o StrictHostKeyChecking=no \
+            -i ~/.ssh/vm2_key \
+            "$VM_USER@$VM_HOST" \
+            "set -e;
+
+             cd '$VM_PATH';
+
+             echo 'Fetching latest repository state...';
+             git fetch origin main;
+
+             echo 'Switching to main branch...';
+             git checkout main;
+
+             echo 'Deploying commit: $DEPLOY_SHA';
+             git reset --hard '$DEPLOY_SHA';
+
+             echo 'Building and starting Docker containers...';
+             docker compose up -d --build;
+
+             echo 'Current container status:';
+             docker compose ps;"
+
+
+      # -----------------------------------------------------
+      # Verify VM2 locally
+      # -----------------------------------------------------
+
+      - name: Verify VM2 deployment
+        env:
+          VM_HOST: ${{ vars.PROD_VM2_HOST }}
+          VM_USER: ${{ vars.PROD_USER }}
+
+        run: |
+          ssh \
+            -o StrictHostKeyChecking=no \
+            -i ~/.ssh/vm2_key \
+            "$VM_USER@$VM_HOST" \
+            "
+              for attempt in {1..12}; do
+
+                if curl -fsS \
+                  --max-time 10 \
+                  http://127.0.0.1:3000/ \
+                  > /dev/null; then
+
+                  echo 'VM2 application is healthy'
+                  exit 0
+                fi
+
+                echo 'Waiting for VM2 application...'
+                sleep 10
+
+              done
+
+              echo 'VM2 deployment health check failed'
+              exit 1
+            "
+
+
+
+  # =========================================================
+  # FINAL PUBLIC SMOKE TEST
+  # =========================================================
+
+  production-smoke-test:
+    name: Production Smoke Test
+
+    needs:
+      - deploy-vm2
+
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    runs-on: ubuntu-latest
+
+
+    steps:
+
+      - name: Test public production website
+        run: |
+          for attempt in {1..12}; do
+
+            if curl -fsS \
+              --max-time 10 \
+              https://redmath-bank.duckdns.org/ \
+              > /dev/null; then
+
+              echo "Production website is healthy"
+              exit 0
+
+            fi
+
+            echo "Waiting for production website..."
+            sleep 10
+
+          done
+
+          echo "Production smoke test failed"
+          exit 1
