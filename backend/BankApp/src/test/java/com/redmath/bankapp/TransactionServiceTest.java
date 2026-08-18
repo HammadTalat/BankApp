@@ -217,13 +217,17 @@ class TransactionServiceTest {
         @Test
         @DisplayName("Should throw AccountNotFoundException when sender account does not exist")
         void executeTransfer_SenderAccount2NotFound_ThrowsException() {
-            TransferRequest request = new TransferRequest("INVALID_RECEIVER", SENDER_ACC, new BigDecimal("100.00"), "Transfer");
-            given(accountRepository.findByIdForUpdate("INVALID_SENDER")).willReturn(Optional.empty());
+            // Arrange
+            String nonExistentSender = "INVALID_SENDER";
+            TransferRequest request = new TransferRequest(RECEIVER_ACC, nonExistentSender, new BigDecimal("100.00"), "Transfer");
 
+            given(accountRepository.findByIdForUpdate(nonExistentSender)).willReturn(Optional.empty());
+
+            // Act & Assert
             assertThatThrownBy(() -> transactionService.executeTransfer(jwt, request))
                     .isInstanceOf(AccountNotFoundException.class);
 
-            verify(accountRepository, times(1)).findByIdForUpdate("INVALID_SENDER");
+            verify(accountRepository).findByIdForUpdate(nonExistentSender);
             verifyNoMoreInteractions(accountRepository);
             verifyNoInteractions(balanceRepository, transactionRepository);
         }
