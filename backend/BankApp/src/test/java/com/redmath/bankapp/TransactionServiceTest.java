@@ -12,6 +12,7 @@ import com.redmath.bankapp.riskservice.service.RiskEvaluatorClient;
 import com.redmath.bankapp.tempconfig.security.UserPrincipal;
 import com.redmath.bankapp.transaction.dto.DepositRequest;
 import com.redmath.bankapp.transaction.dto.DepositResponse;
+import com.redmath.bankapp.transaction.exception.UnauthorizedAccessException;
 import org.springframework.security.oauth2.jwt.Jwt;
 import com.redmath.bankapp.transaction.dto.TransferRequest;
 import com.redmath.bankapp.transaction.dto.TransferResponse;
@@ -133,6 +134,7 @@ class TransactionServiceTest {
         receiverBalance = new AccountBalance(receiverAccount, new BigDecimal("500.00"), BalanceIndicator.CREDIT);
     }
 
+
     @Nested
     @DisplayName("1. Validation & Precondition Tests")
     class PreconditionTests {
@@ -206,6 +208,20 @@ class TransactionServiceTest {
             assertThatThrownBy(() -> transactionService.executeTransfer(jwt, request))
                     .isInstanceOf(AccountNotFoundException.class)
                     .hasMessage("Account not found: INVALID_SENDER");
+
+            verify(accountRepository, times(1)).findByIdForUpdate("INVALID_SENDER");
+            verifyNoMoreInteractions(accountRepository);
+            verifyNoInteractions(balanceRepository, transactionRepository);
+        }
+
+        @Test
+        @DisplayName("Should throw AccountNotFoundException when sender account does not exist")
+        void executeTransfer_SenderAccount2NotFound_ThrowsException() {
+            TransferRequest request = new TransferRequest("INVALID_RECEIVER", SENDER_ACC, new BigDecimal("100.00"), "Transfer");
+            given(accountRepository.findByIdForUpdate("INVALID_SENDER")).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> transactionService.executeTransfer(jwt, request))
+                    .isInstanceOf(AccountNotFoundException.class);
 
             verify(accountRepository, times(1)).findByIdForUpdate("INVALID_SENDER");
             verifyNoMoreInteractions(accountRepository);
@@ -532,6 +548,52 @@ class TransactionServiceTest {
 
             verify(balanceRepository, never()).findLatestBalanceForUpdate(any());
             verify(balanceRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    class AuthorizationCase {
+
+        private final Long userId = 99L;
+        private final String accountNumber = "ACC-12345";
+        private BankAccount targetAccount;
+
+        @BeforeEach
+        void setUp() {
+            targetAccount = new BankAccount();
+            targetAccount.setAccountNumber(accountNumber);
+            // Assuming your account entity tracks ownership via a user object or userId field
+            // Configure standard valid state for targetAccount to pass validateAccountOwnership & validateAccountActive
+        }
+
+        @Test
+        @DisplayName("Should throw error when someone other than account owner is attempting transaction")
+        void executeTransfer_throwsErrorWhenNotOwnerAttempts() {
+            TransferRequest request = new TransferRequest(RECEIVER_ACC, SENDER_ACC, new BigDecimal("100.00"), "Transfer");
+
+            EvaluateRiskResponse riskResponse = new EvaluateRiskResponse(true, "Valid", "Valid");
+            given(accountRepository.findByIdForUpdate(SENDER_ACC)).willReturn(Optional.of(senderAccount));
+            given(accountRepository.findByIdForUpdate(RECEIVER_ACC)).willReturn(Optional.of(receiverAccount));
+
+            assertThatThrownBy(() -> transactionService.executeTransfer(jwt, request))
+                    .isInstanceOf(UnauthorizedAccessException.class);
+
+        }
+
+        @Test
+        @DisplayName("Should throw error when someone other than account owner is attempting transaction")
+        void executeTransfer_throwsErrorWhenInactiveAccount() throws AccountNotFoundException {
+            BigDecimal transferAmount = new BigDecimal("250.00");
+            String description = "Rent Payment";
+            TransferRequest request = new TransferRequest(SENDER_ACC, RECEIVER_ACC, transferAmount, description);
+            senderAccount.setStatus(AccountStatus.CLOSED);
+            EvaluateRiskResponse riskResponse = new EvaluateRiskResponse(true, "Valid", "Valid");
+            given(accountRepository.findByIdForUpdate(SENDER_ACC)).willReturn(Optional.of(senderAccount));
+            given(accountRepository.findByIdForUpdate(RECEIVER_ACC)).willReturn(Optional.of(receiverAccount));
+
+            assertThatThrownBy(() -> transactionService.executeTransfer(jwt, request))
+                    .isInstanceOf(BusinessRuleException.class);
+
         }
     }
 }
