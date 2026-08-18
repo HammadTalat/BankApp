@@ -15,7 +15,7 @@ spring:
               - email
             redirect-uri: http://localhost/login/oauth2/code/google
   datasource:
-    url: ${TEST_PG_URL:jdbc:postgresql://localhost:5432/banking_test}
+    url: ${TEST_PG_URL:jdbc:postgresql://localhost:5433/banking_test}
     username: ${TEST_PG_USERNAME:postgres}
     password: ${TEST_PG_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
