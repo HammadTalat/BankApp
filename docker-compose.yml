@@ -12,8 +12,8 @@ services:
       POSTGRES_PASSWORD: ${PG_PASSWORD:-postgres}
 
 
-    expose:
-      - "5432"
+    ports:
+      - "5432:5432"
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -52,12 +52,12 @@ services:
       # PostgreSQL
       # -------------------------
 
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/bankdb
       SPRING_DATASOURCE_USERNAME: ${PG_USERNAME:-postgres}
       SPRING_DATASOURCE_PASSWORD: ${PG_PASSWORD:-postgres}
 
 
-      PG_URL: jdbc:postgresql://postgres-db:5432/bankdb
+      SPRING_DATASOURCE_URL: ${PG_URL:-jdbc:postgresql://postgres-db:5432/bankdb}
+      PG_URL: ${PG_URL:-jdbc:postgresql://postgres-db:5432/bankdb}
       PG_USERNAME: ${PG_USERNAME:-postgres}
       PG_PASSWORD: ${PG_PASSWORD:-postgres}
 
