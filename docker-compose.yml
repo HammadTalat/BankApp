@@ -1,107 +1,207 @@
-version: '3.8'
-
 services:
-  # ==========================================
-  # Database: PostgreSQL with PGVector Support
-  # ==========================================
-  postgres:
+
+  postgres-db:
     image: pgvector/pgvector:pg16
     container_name: postgres-db
-    restart: always
+
+    restart: unless-stopped
+
     environment:
-      POSTGRES_DB: banking_db
+      POSTGRES_DB: bankdb
       POSTGRES_USER: ${PG_USERNAME:-postgres}
       POSTGRES_PASSWORD: ${PG_PASSWORD:-postgres}
-    ports:
-      - "5432:5432"
+
+
+    expose:
+      - "5432"
+
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${PG_USERNAME:-postgres} -d banking_db"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"
+        ]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
-  # ==========================================
-  # Backend: Main Bank App (BankApp)
-  # ==========================================
-  backend:
+    networks:
+      - app-net
+
+
+
+  bank-app:
     build:
       context: ./backend/BankApp
       dockerfile: Dockerfile
-    container_name: backend-service
+
+    container_name: bank-app
+
     restart: unless-stopped
-    ports:
-      - "8081:8081"
+
+
+    expose:
+      - "8081"
+
     environment:
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:8081/login/oauth2/code/google}
-      PG_URL: ${PG_URL:-jdbc:postgresql://postgres:5432/banking_db}
+
+      # -------------------------
+      # PostgreSQL
+      # -------------------------
+
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/bankdb
+      SPRING_DATASOURCE_USERNAME: ${PG_USERNAME:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${PG_PASSWORD:-postgres}
+
+
+      PG_URL: jdbc:postgresql://postgres-db:5432/bankdb
       PG_USERNAME: ${PG_USERNAME:-postgres}
       PG_PASSWORD: ${PG_PASSWORD:-postgres}
+
+
+      # -------------------------
+      # Google OAuth
+      # -------------------------
+
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:8081/login/oauth2/code/google}
+
+      APP_FRONTEND_URL: ${APP_FRONTEND_URL:-http://localhost:5173}
+
+
+      # -------------------------
+      # Gemini
+      # -------------------------
+
       GEMINI_API_KEY: ${GEMINI_API_KEY}
+
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-flash-latest}
+
       GEMINI_EMBEDDING_MODEL: ${GEMINI_EMBEDDING_MODEL:-gemini-embedding-001}
+
+
+      # -------------------------
+      # MCP
+      # -------------------------
+
       MCP_ENABLED: ${MCP_ENABLED:-true}
-      MCP_SERVER_URL: ${MCP_SERVER_URL:-http://mcpserver:8082}
-      ANOMALY_DETECTION_URL: ${ANOMALY_DETECTION_URL:-http://anomalydetectionservice:8080}
+
+      MCP_SERVER_URL: ${MCP_SERVER_URL:-http://mcp-server:8082}
+
+
+      # -------------------------
+      # Anomaly Detection
+      # -------------------------
+
+      ANOMALY_DETECTION_URL: ${ANOMALY_DETECTION_URL:-http://anomaly-service:8080}
+
+
+      # -------------------------
+      # JWT
+      # -------------------------
+
+      JWT_SECRET: ${JWT_SECRET:-change-me}
+
+
     depends_on:
-      postgres:
+
+      postgres-db:
         condition: service_healthy
-      mcpserver:
-        condition: service_started
-      anomalydetectionservice:
+
+      mcp-server:
         condition: service_started
 
-  # ==========================================
-  # Service: Anomaly Detection (TransactionVerification)
-  # ==========================================
-  anomalydetectionservice:
-    build:
-      context: ./anomaly-detection-service
-      dockerfile: Dockerfile
-    container_name: anomaly-detection-service
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-    environment:
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      anomaly-service:
+        condition: service_started
 
-  # ==========================================
-  # Service: MCP Server (redmath-bank-mcp)
-  # ==========================================
-  mcpserver:
+    networks:
+      - app-net
+
+
+  # =========================================================
+  # MCP SERVER
+  # =========================================================
+
+  mcp-server:
     build:
       context: ./redmath-bank-mcp
       dockerfile: Dockerfile
-    container_name: mcp-server
-    restart: unless-stopped
-    ports:
-      - "8082:8082"
-    environment:
-      MCP_SERVER_PORT: "8082"
-      MCP_SERVER_ADDRESS: "0.0.0.0"
-      BANK_API_BASE_URL: ${BANK_API_BASE_URL:-http://backend:8081}
 
-  # ==========================================
-  # Frontend: React UI
-  # ==========================================
-  frontend:
+    container_name: mcp-server
+
+    restart: unless-stopped
+
+    expose:
+      - "8082"
+
+    environment:
+
+      MCP_SERVER_PORT: "8082"
+
+      MCP_SERVER_ADDRESS: "0.0.0.0"
+
+      # MCP talks back to BankApp through Docker DNS.
+      BANK_API_BASE_URL: ${BANK_API_BASE_URL:-http://bank-app:8081}
+
+    networks:
+      - app-net
+
+
+
+  anomaly-service:
+    build:
+      context: ./anomaly-detection-service
+      dockerfile: Dockerfile
+
+    container_name: anomaly-service
+
+    restart: unless-stopped
+
+    expose:
+      - "8080"
+
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+
+    networks:
+      - app-net
+
+
+
+  react-frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8081}
-    container_name: frontend-service
+
+    container_name: react-frontend
+
     restart: unless-stopped
+
+
     ports:
-      - "80:80"
-    environment:
-      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8081}
+      - "127.0.0.1:3000:80"
+
     depends_on:
-      - backend
+      - bank-app
+
+    networks:
+      - app-net
+
+
 
 volumes:
-  pgdata:
 
+
+  postgres_data:
+
+
+
+networks:
+
+  app-net:
+    driver: bridge
