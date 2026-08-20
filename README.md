@@ -1,6 +1,6 @@
 # BankApp
 
-BankApp is an enterprise-grade, microservice-based digital banking platform engineered for secure financial transactions, real-time threat prevention, and intelligent user assistance. Constructed with Java 25, Spring Boot 3, and React 18, the system is load-balanced across two Microsoft Azure Virtual Machines and rigorously adheres to Twelve-Factor App methodology, Clean Code principles, and Effective Java standards.
+BankApp is an enterprise-grade, microservice-based digital banking platform engineered for secure financial transactions, real-time threat prevention, and intelligent user assistance. Constructed with Java 25, Spring Boot 4, and React 19, the system is load-balanced across two Microsoft Azure Virtual Machines and rigorously adheres to Twelve-Factor App methodology, Clean Code principles, and Effective Java standards.
 
 ---
 
