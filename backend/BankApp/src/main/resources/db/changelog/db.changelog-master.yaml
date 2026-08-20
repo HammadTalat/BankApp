@@ -6,3 +6,6 @@ databaseChangeLog:
       file: db/changelog/changes/v1-002-account-number-primary-key.yaml
   - include:
       file: db/changelog/changes/v1-003-account-balance-local-credential-property-change.yaml
+  - include:
+      file: db/changelog/changes/v1-003-indexes-fk.yaml
+

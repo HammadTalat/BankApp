@@ -1,0 +1,39 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-fk-index-account-balance
+      author: bank-team
+      changes:
+        - createIndex:
+            tableName: account_balance
+            indexName: idx_account_balance_account_number
+            columns:
+              - column:
+                  name: account_number
+      rollback:
+        - dropIndex:
+            tableName: account_balance
+            indexName: idx_account_balance_account_number
+
+  - changeSet:
+      id: add-fk-indexes-account-transaction
+      author: dev-team
+      changes:
+        - createIndex:
+            tableName: account_transaction
+            indexName: idx_account_transaction_account_number
+            columns:
+              - column:
+                  name: account_number
+        - createIndex:
+            tableName: account_transaction
+            indexName: idx_account_transaction_recipient_account_number
+            columns:
+              - column:
+                  name: recipient_account_number
+      rollback:
+        - dropIndex:
+            tableName: account_transaction
+            indexName: idx_account_transaction_account_number
+        - dropIndex:
+            tableName: account_transaction
+            indexName: idx_account_transaction_recipient_account_number
