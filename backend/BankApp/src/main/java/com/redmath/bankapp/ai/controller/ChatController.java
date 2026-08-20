@@ -3,6 +3,7 @@ package com.redmath.bankapp.ai.controller;
 import com.redmath.bankapp.ai.dto.ChatRequest;
 import com.redmath.bankapp.ai.dto.ChatResponse;
 import com.redmath.bankapp.ai.service.ChatService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,7 +24,7 @@ public class ChatController {
 
   @PostMapping
   public ResponseEntity<ChatResponse> chat(
-      @RequestBody ChatRequest request,
+      @Valid  @RequestBody ChatRequest request,
       @AuthenticationPrincipal Jwt jwt) {
     String response = chatService.getResponse(request.message(), jwt);
     return ResponseEntity.ok(new ChatResponse(response));

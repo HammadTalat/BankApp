@@ -57,6 +57,15 @@ management:
     export:
       otlp:
         enabled: false
+
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    env:
+      enabled: false
+      show-values: never
 app:
   frontend-url: ${APP_FRONTEND_URL:http://localhost:5173}
 
