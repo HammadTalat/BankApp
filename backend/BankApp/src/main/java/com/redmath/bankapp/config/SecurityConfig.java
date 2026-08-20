@@ -7,7 +7,14 @@ import com.redmath.bankapp.auth.security.ApiAuthenticationFailureHandler;
 import com.redmath.bankapp.auth.security.ApiAuthenticationSuccessHandler;
 import com.redmath.bankapp.auth.security.OAuth2SuccessHandler;
 import com.redmath.bankapp.auth.security.PendingProfileAccessManager;
+
+import java.io.IOException;
 import java.util.List;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,169 +32,193 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import org.springframework.web.filter.OncePerRequestFilter;
 import tools.jackson.databind.ObjectMapper;
 
 @Configuration
 @EnableMethodSecurity
 @SuppressFBWarnings(
-    justification = "Stateless JWT REST API; CSRF protection is intentionally disabled")
+        justification = "Stateless JWT REST API; CSRF protection is intentionally disabled")
 public class SecurityConfig {
 
-  @Value("${app_frontend_url:http://localhost:5173}")
-  private String frontendUrl;
+    @Value("${app_frontend_url:http://localhost:5173}")
+    private String frontendUrl;
 
-  private final ApiAuthenticationSuccessHandler apiAuthenticationSuccessHandler;
-  private final ApiAuthenticationFailureHandler authenticationFailureHandler;
-  private final OAuth2SuccessHandler oAuth2SuccessHandler;
-  private final ApiSecurityService apiSecurityService;
-  private final JwtAuthenticationFilter jwtAuthenticationFilter;
-  private final PendingProfileAccessManager pendingProfileAccessManager;
+    private final ApiAuthenticationSuccessHandler apiAuthenticationSuccessHandler;
+    private final ApiAuthenticationFailureHandler authenticationFailureHandler;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
+    private final ApiSecurityService apiSecurityService;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final PendingProfileAccessManager pendingProfileAccessManager;
 
-  public SecurityConfig(
-      ApiAuthenticationSuccessHandler apiAuthenticationSuccessHandler,
-      ApiAuthenticationFailureHandler authenticationFailureHandler,
-      OAuth2SuccessHandler oAuth2SuccessHandler,
-      ApiSecurityService apiSecurityService,
-      JwtAuthenticationFilter jwtAuthenticationFilter,
-      PendingProfileAccessManager pendingProfileAccessManager) {
+    public SecurityConfig(
+            ApiAuthenticationSuccessHandler apiAuthenticationSuccessHandler,
+            ApiAuthenticationFailureHandler authenticationFailureHandler,
+            OAuth2SuccessHandler oAuth2SuccessHandler,
+            ApiSecurityService apiSecurityService,
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            PendingProfileAccessManager pendingProfileAccessManager) {
 
-    this.apiAuthenticationSuccessHandler = apiAuthenticationSuccessHandler;
-    this.authenticationFailureHandler = authenticationFailureHandler;
-    this.oAuth2SuccessHandler = oAuth2SuccessHandler;
-    this.apiSecurityService = apiSecurityService;
-    this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-    this.pendingProfileAccessManager = pendingProfileAccessManager;
-  }
+        this.apiAuthenticationSuccessHandler = apiAuthenticationSuccessHandler;
+        this.authenticationFailureHandler = authenticationFailureHandler;
+        this.oAuth2SuccessHandler = oAuth2SuccessHandler;
+        this.apiSecurityService = apiSecurityService;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.pendingProfileAccessManager = pendingProfileAccessManager;
+    }
 
-  @Bean
-  AuthenticationManager authenticationManager(
-      AuthenticationConfiguration configuration)
-      throws Exception {
+    @Bean
+    AuthenticationManager authenticationManager(
+            AuthenticationConfiguration configuration)
+            throws Exception {
 
-    return configuration.getAuthenticationManager();
+        return configuration.getAuthenticationManager();
 
-  }
-  @Bean
-  PasswordEncoder passwordEncoder() {
-    return new BCryptPasswordEncoder();
-  }
-  @Bean
-  JwtDecoder jwtDecoder() {
-    return apiSecurityService.jwtDecoder();
-  }
+    }
 
-  @Bean
-  public ObjectMapper objectMapper() {
-    return new ObjectMapper();
-  }
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
-  @Bean
-  CorsConfigurationSource corsConfigurationSource() {
-    CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOrigins(List.of(frontendUrl));
-    configuration.setAllowedMethods(List.of("GET", "POST", "PATCH", "DELETE", "OPTIONS"));
-    configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-    configuration.setAllowCredentials(true);
+    @Bean
+    JwtDecoder jwtDecoder() {
+        return apiSecurityService.jwtDecoder();
+    }
 
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", configuration);
-    return source;
-  }
-  
-  @Bean
-  SecurityFilterChain securityFilterChain(HttpSecurity http)
-      throws Exception {
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
+    }
 
-    http
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of(frontendUrl));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        configuration.setAllowCredentials(true);
 
-        .cors(Customizer.withDefaults())
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
 
-//        .csrf(csrf -> csrf.disable())
-            .csrf(csrf -> csrf
-                    .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                    .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
-                    .ignoringRequestMatchers("/api/v1/auth/login", "/api/v1/auth/signup")
-            )
+    @Bean
+    SecurityFilterChain securityFilterChain(HttpSecurity http)
+            throws Exception {
 
-        .sessionManagement(session ->
+        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
+        requestHandler.setCsrfRequestAttributeName(null);
 
-            session.sessionCreationPolicy(
-                SessionCreationPolicy.STATELESS))
+        http
 
-        .authorizeHttpRequests(auth -> auth
+                .cors(Customizer.withDefaults())
 
-            .requestMatchers(
-
-                "/swagger-ui/**",
-
-                "/v3/api-docs/**"
-
-            ).permitAll()
-
-            .requestMatchers(
-
-                "/oauth2/**",
-
-                "/login/oauth2/**"
-
-            ).permitAll()
-
-            .requestMatchers(
-
-                HttpMethod.POST,
-
-                "/api/v1/auth/signup",
-
-              "/api/v1/auth/login",
-
-              "/api/v1/auth/logout"
-
-            ).permitAll()
-
-            .anyRequest().access((authentication, context) ->
-                new AuthorizationDecision(
-                    pendingProfileAccessManager.hasAccess(
-                        context.getRequest(),
-                        authentication.get()
-                    )
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRequestHandler(requestHandler)
+                        .ignoringRequestMatchers("/api/v1/auth/login", "/api/v1/auth/signup")
                 )
-            )
 
-        )
+                .sessionManagement(session ->
 
-        .formLogin(form -> form
+                        session.sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS))
 
-            .loginProcessingUrl("/api/v1/auth/login")
+                .authorizeHttpRequests(auth -> auth
 
-            .successHandler(apiAuthenticationSuccessHandler)
+                        .requestMatchers(
 
-            .failureHandler(authenticationFailureHandler)
+                                "/swagger-ui/**",
 
-        )
+                                "/v3/api-docs/**"
 
-        .oauth2Login(oauth2 -> oauth2
-            .successHandler(oAuth2SuccessHandler)
-            .failureHandler(authenticationFailureHandler)
-        )
+                        ).permitAll()
 
-        .oauth2ResourceServer(resource ->
+                        .requestMatchers(
 
-            resource.jwt(Customizer.withDefaults())
+                                "/oauth2/**",
 
-        )
+                                "/login/oauth2/**"
 
-        .addFilterBefore(
-            jwtAuthenticationFilter,
-            UsernamePasswordAuthenticationFilter.class
-        );
+                        ).permitAll()
 
-    return http.build();
+                        .requestMatchers(
 
-  }
+                                HttpMethod.POST,
+
+                                "/api/v1/auth/signup",
+
+                                "/api/v1/auth/login",
+
+                                "/api/v1/auth/logout"
+
+                        ).permitAll()
+
+                        .anyRequest().access((authentication, context) ->
+                                new AuthorizationDecision(
+                                        pendingProfileAccessManager.hasAccess(
+                                                context.getRequest(),
+                                                authentication.get()
+                                        )
+                                )
+                        )
+
+                )
+
+                .formLogin(form -> form
+
+                        .loginProcessingUrl("/api/v1/auth/login")
+
+                        .successHandler(apiAuthenticationSuccessHandler)
+
+                        .failureHandler(authenticationFailureHandler)
+
+                )
+
+                .oauth2Login(oauth2 -> oauth2
+                        .successHandler(oAuth2SuccessHandler)
+                        .failureHandler(authenticationFailureHandler)
+                )
+
+                .oauth2ResourceServer(resource ->
+
+                        resource.jwt(Customizer.withDefaults())
+
+                )
+
+                .addFilterBefore(
+                        jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                )
+                .addFilterAfter(
+                        new CsrfCookieFilter(),
+                        UsernamePasswordAuthenticationFilter.class
+                );
+
+        return http.build();
+
+    }
+
+    private static final class CsrfCookieFilter extends OncePerRequestFilter {
+        @Override
+        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+                throws ServletException, IOException {
+            CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
+            if (csrfToken != null) {
+                // Accessing the token forces Spring to serialize it to the XSRF-TOKEN cookie
+                csrfToken.getToken();
+            }
+            filterChain.doFilter(request, response);
+        }
+
+    }
 
 }
