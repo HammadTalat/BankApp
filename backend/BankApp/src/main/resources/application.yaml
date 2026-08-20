@@ -65,3 +65,6 @@ jwt:
     key: ${JWT_PUBLIC_KEY:classpath:keys/public_key.pem}
   private:
     key: ${JWT_PRIVATE_KEY:classpath:keys/private_key.pem}
+
+bootui:
+  enabled: ON
