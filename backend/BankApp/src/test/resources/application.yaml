@@ -1,6 +1,12 @@
 server:
   port: 0
 
+jwt:
+  public:
+    key: classpath:keys/test-public.pem
+  private:
+    key: classpath:keys/test-private.pem
+
 spring:
   security:
     oauth2:
