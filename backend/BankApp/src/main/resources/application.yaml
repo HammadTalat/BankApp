@@ -59,3 +59,9 @@ management:
         enabled: false
 app:
   frontend-url: ${APP_FRONTEND_URL:http://localhost:5173}
+
+jwt:
+  public:
+    key: ${JWT_PUBLIC_KEY}
+  private:
+    key: ${JWT_PRIVATE_KEY}

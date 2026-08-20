@@ -8,6 +8,7 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.time.Instant;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
@@ -30,22 +31,16 @@ public class ApiSecurityService {
 
   private NimbusJwtDecoder jwtDecoder;
 
+  @Value("${jwt.public.key}")
+  private RSAPublicKey publicKey;
+
+  @Value("${jwt.private.key}")
+  private RSAPrivateKey privateKey;
+
   @PostConstruct
   public void initialize() {
 
     try {
-
-      KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-
-      keyPairGenerator.initialize(2048);
-
-      KeyPair keyPair = keyPairGenerator.generateKeyPair();
-
-      RSAPublicKey publicKey =
-          (RSAPublicKey) keyPair.getPublic();
-
-      RSAPrivateKey privateKey =
-          (RSAPrivateKey) keyPair.getPrivate();
 
       jwtEncoder = NimbusJwtEncoder
           .withKeyPair(publicKey, privateKey)
