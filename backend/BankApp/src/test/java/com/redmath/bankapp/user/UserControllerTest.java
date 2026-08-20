@@ -2,6 +2,7 @@ package com.redmath.bankapp.user;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
@@ -153,6 +154,7 @@ class UserControllerTest {
 
       MvcResult result = mockMvc.perform(
           post("/api/v1/me/complete-profile")
+                  .with(csrf())
               .cookie(cookie)
               .contentType(APPLICATION_JSON)
               .content(json(new CompleteProfileRequest("456 New Address Blvd")))
@@ -177,6 +179,7 @@ class UserControllerTest {
 
       MvcResult result = mockMvc.perform(
           post("/api/v1/me/complete-profile")
+                  .with(csrf())
               .cookie(cookie)
               .contentType(APPLICATION_JSON)
               .content(json(new CompleteProfileRequest("   ")))
@@ -196,6 +199,7 @@ class UserControllerTest {
 
       MvcResult result = mockMvc.perform(
           post("/api/v1/me/complete-profile")
+                  .with(csrf())
               .cookie(cookie)
               .contentType(APPLICATION_JSON)
               .content("{\"address\":null}")
@@ -209,6 +213,7 @@ class UserControllerTest {
     void completeProfile_Unauthenticated_Returns401() throws Exception {
       MvcResult result = mockMvc.perform(
           post("/api/v1/me/complete-profile")
+                  .with(csrf())
               .contentType(APPLICATION_JSON)
               .content(json(new CompleteProfileRequest("Some Address")))
       ).andReturn();
