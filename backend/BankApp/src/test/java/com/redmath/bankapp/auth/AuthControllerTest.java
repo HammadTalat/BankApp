@@ -3,6 +3,7 @@ package com.redmath.bankapp.auth;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
@@ -301,6 +302,7 @@ class AuthControllerTest {
 
       MvcResult result = mockMvc.perform(
           post("/api/v1/auth/logout").cookie(cookie)
+                  .with(csrf())
       ).andReturn();
 
       assertThat(result.getResponse().getStatus()).isEqualTo(204);
@@ -312,7 +314,7 @@ class AuthControllerTest {
     @Test
     @DisplayName("Should return 204 even when not authenticated")
     void logout_Unauthenticated_Returns204() throws Exception {
-      MvcResult result = mockMvc.perform(post("/api/v1/auth/logout")).andReturn();
+      MvcResult result = mockMvc.perform(post("/api/v1/auth/logout").with(csrf())).andReturn();
 
       assertThat(result.getResponse().getStatus()).isEqualTo(204);
     }
@@ -380,6 +382,7 @@ class AuthControllerTest {
 
       MvcResult result = mockMvc.perform(
           post("/api/v1/me/complete-profile")
+                  .with(csrf())
               .cookie(cookie)
               .contentType(APPLICATION_JSON)
               .content("{\"address\":\"New Address\"}")

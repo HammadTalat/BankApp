@@ -1,5 +1,13 @@
 import { API_BASE_URL } from "./apiConfig";
 
+// Helper function to extract a cookie value by name
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(";").shift();
+    return null;
+}
+
 async function readResponse(response) {
     if (response.status === 204) {
         return null;
@@ -47,6 +55,17 @@ async function request(path, options = {}) {
 
     if (requestHasBody && !bodyIsFormData) {
         headers.set("Content-Type", "application/json");
+    }
+
+    // --- CSRF TOKEN HANDLING ---
+    const method = (options.method || "GET").toUpperCase();
+    const isStateChangingMethod = ["POST", "PATCH", "PUT", "DELETE"].includes(method);
+
+    if (isStateChangingMethod) {
+        const csrfToken = getCookie("XSRF-TOKEN");
+        if (csrfToken) {
+            headers.set("X-XSRF-TOKEN", csrfToken);
+        }
     }
 
     const response = await fetch(

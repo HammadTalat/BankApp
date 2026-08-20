@@ -24,6 +24,8 @@ import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -33,7 +35,6 @@ import tools.jackson.databind.ObjectMapper;
 @Configuration
 @EnableMethodSecurity
 @SuppressFBWarnings(
-    value = "SPRING_CSRF_PROTECTION_DISABLED",
     justification = "Stateless JWT REST API; CSRF protection is intentionally disabled")
 public class SecurityConfig {
 
@@ -106,7 +107,12 @@ public class SecurityConfig {
 
         .cors(Customizer.withDefaults())
 
-        .csrf(csrf -> csrf.disable())
+//        .csrf(csrf -> csrf.disable())
+            .csrf(csrf -> csrf
+                    .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                    .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                    .ignoringRequestMatchers("/api/v1/auth/login", "/api/v1/auth/signup")
+            )
 
         .sessionManagement(session ->
 
